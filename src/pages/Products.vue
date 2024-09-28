@@ -1,10 +1,12 @@
 <template>
   <div class="q-pa-md row">
-
     <div class="col-md-3 col-sm-4 col-6 q-pa-sm">
-      <router-link exact v-bind:to="'/shop/category/' + productDetails.id + '/product/details' ">
+      <router-link
+        exact
+        v-bind:to="'/shop/category/' + productDetails.id + '/product/details'"
+      >
         <q-card v-ripple class="cursor-pointer">
-          <img src="https://cdn.quasar.dev/img/mountains.jpg">
+          <img src="https://cdn.quasar.dev/img/mountains.jpg" />
 
           <q-card-section>
             <div class="text-h6">{{ productDetails.productName }}</div>
@@ -16,7 +18,6 @@
         </q-card>
       </router-link>
     </div>
-
   </div>
 </template>
 
@@ -37,36 +38,26 @@ export default {
       getProductDetails: "shop/getProductDetails",
     }),
 
-    categorias(){
-
+    categorias() {
       let payload = {
         id: 2,
-      }
+      };
 
       this.getProductDetails(payload)
-      .then((response) => {
-
-          console.log(response);
-
+        .then((response) => {
           this.productDetails = response;
-          console.log(this.productDetails);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-
+        })
+        .catch((error) => {
+        });
     },
   },
 
-  data(){
-    return{
-        productDetails: []
-    }
-  }
-
-}
+  data() {
+    return {
+      productDetails: [],
+    };
+  },
+};
 </script>
 
-<style>
-
-</style>
+<style></style>
