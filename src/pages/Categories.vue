@@ -36,7 +36,7 @@ export default {
 
   methods: {
     ...mapActions({
-      getCategories: "shop/getProductCategories",
+      getCategories: "product_category/getItems",
     }),
 
     categorias() {
