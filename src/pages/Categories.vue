@@ -23,35 +23,42 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 
 export default {
   name: "PageCategories",
 
   components: {},
 
+  data() {
+    return {
+      categories: [],
+    };
+  },
   created() {
     this.categorias();
   },
 
+  computed: {
+    ...mapGetters({
+      myCompany: "people/currentCompany",
+    }),
+  },
   methods: {
     ...mapActions({
-      getCategories: "product_category/getItems",
+      getCategories: "categories/getItems",
     }),
 
     categorias() {
-      this.getCategories()
+      this.getCategories({
+        context: "products",
+        //company: this.myCompany.id,
+      })
         .then((response) => {
           this.categories = response;
         })
         .catch((error) => {});
     },
-  },
-
-  data() {
-    return {
-      categories: [],
-    };
   },
 };
 </script>

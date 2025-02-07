@@ -6,7 +6,7 @@ export const routes = [
         component: () =>  import ('@controleonline/ui-layout/src/layouts/ShopLayout.vue'),
         children: [
             {
-              name: 'ShopDefoult',
+              name: 'ShopDefault',
               path: '/shop/',
               component: () =>  import ('../pages/Categories.vue')
             },
