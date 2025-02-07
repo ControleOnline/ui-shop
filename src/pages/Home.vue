@@ -1,37 +1,23 @@
 <template>
   <div class="q-pa-md row">
-    <div
-      class="col-md-3 col-sm-4 col-6 q-pa-sm"
-      v-for="categorie in categories"
-      :key="categorie.id"
-    >
-      <router-link
-        exact
-        v-bind:to="{ name: 'ProductsInCategory', params: { id: categorie.id } }"
-      >
-        <q-card v-ripple class="cursor-pointer">
-          <img src="https://cdn.quasar.dev/img/mountains.jpg" />
-
-          <q-card-section>
-            <div class="text-h6">{{ categorie["@type"] }}</div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none">
-            {{ categorie["@type"] }}
-          </q-card-section>
-        </q-card>
-      </router-link>
-    </div>
+    <Categories />
+  </div>
+  <div class="q-pa-md row">
+    <Categories />
+  </div>
+  <div class="q-pa-md row">
+    <Categories />
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from "vuex";
+import Categories from "./Categories";
 
 export default {
   name: "PageCategories",
 
-  components: {},
+  components: { Categories },
 
   data() {
     return {

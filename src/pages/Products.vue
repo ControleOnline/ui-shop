@@ -3,7 +3,10 @@
     <div class="col-md-3 col-sm-4 col-6 q-pa-sm">
       <router-link
         exact
-        v-bind:to="'/shop/category/' + productDetails.id + '/product/details'"
+        v-bind:to="{
+          name: 'ProductDetails',
+          params: { id: productDetails.id },
+        }"
       >
         <q-card v-ripple class="cursor-pointer">
           <img src="https://cdn.quasar.dev/img/mountains.jpg" />
@@ -11,7 +14,6 @@
           <q-card-section>
             <div class="text-h6">{{ productDetails.productName }}</div>
           </q-card-section>
-
           <q-card-section class="q-pt-none">
             {{ productDetails.productDescription }}
           </q-card-section>
@@ -47,8 +49,7 @@ export default {
         .then((response) => {
           this.productDetails = response;
         })
-        .catch((error) => {
-        });
+        .catch((error) => {});
     },
   },
 
