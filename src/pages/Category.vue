@@ -54,7 +54,7 @@ export default {
 
     categorias() {
       let payload = {
-        id: this.categoryId,
+        category: '/categories/'+this.categoryId,
       };
 
       this.getProducs(payload)

@@ -13,7 +13,7 @@
           <img src="https://cdn.quasar.dev/img/mountains.jpg" />
 
           <q-card-section>
-            <div class="text-h6">{{ categorie["@type"] }}</div>
+            <div class="text-h6">{{ categorie.name }}</div>
           </q-card-section>
 
           <q-card-section class="q-pt-none">
