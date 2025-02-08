@@ -18,17 +18,17 @@ export const routes = [
       {
         name: "ProductDetails",
         path: "category/:id/product/details",
-        component: () => import("../components/products/Details.vue"),
+        component: () => import("../pages/Product.vue"),
       },
       {
         name: "ProductsInCategory",
         path: "category/:id",
-        component: () => import("../pages/Products.vue"),
+        component: () => import("../pages/Category.vue"),
       },
       {
         name: "AllProducts",
         path: "products",
-        component: () => import("../pages/Products.vue"),
+        component: () => import("../pages/Category.vue"),
       },
     ],
     meta: {

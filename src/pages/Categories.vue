@@ -44,7 +44,7 @@ export default {
 
   computed: {
     ...mapGetters({
-      myCompany: "people/currentCompany",
+      defaultCompany: "people/defaultCompany",
     }),
   },
   methods: {
@@ -55,7 +55,7 @@ export default {
     categorias() {
       this.getCategories({
         context: "products",
-        //company: this.myCompany.id,
+        company: this.defaultCompany.id,
       })
         .then((response) => {
           this.categories = response;

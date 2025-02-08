@@ -1,32 +1,23 @@
 <template>
   <div class="q-pa-md row">
-    <Categories />
-  </div>
-  <div class="q-pa-md row">
-    <Categories />
-  </div>
-  <div class="q-pa-md row">
-    <Categories />
+    <Details />
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from "vuex";
-import Categories from "./Categories";
+import Details from "../components/products/Details";
 
 export default {
   name: "PageCategories",
 
-  components: { Categories },
+  components: { Details },
 
   data() {
     return {
-      categories: [],
     };
   },
-  created() {
-  
-  },
+  created() {},
 
   computed: {
     ...mapGetters({
@@ -34,11 +25,8 @@ export default {
     }),
   },
   methods: {
-    ...mapActions({
-      
-    }),
+    ...mapActions({}),
   },
 };
 </script>
 
-<style lang="sass" scoped></style>

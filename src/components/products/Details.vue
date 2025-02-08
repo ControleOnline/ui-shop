@@ -8,15 +8,15 @@
 
     <div class="col-md-5 col-sm-12 q-pa-sm">
       <div class="details-title">
-        <h1>{{ productDetails.productName }}</h1>
+        <h1>{{ productDetails.product }}</h1>
       </div>
 
       <div class="price-container">
-        <h2>R$ 250,00</h2>
+        <h2>{{ "R$ " + $formatter.formatMoney(productDetails.price) }}</h2>
       </div>
 
       <div class="details-resume">
-        {{ productDetails.productResume }}
+        {{ productDetails.description }}
       </div>
 
       <div class="product-quantity">
@@ -27,7 +27,7 @@
 
     <div class="col-md-12">
       <h4>Descrição do produto</h4>
-      {{ productDetails.productDescription }}
+      {{ productDetails.description }}
     </div>
   </div>
 </template>
@@ -39,8 +39,15 @@ export default {
   name: "ProductDetails",
 
   components: {},
-
+  data() {
+    return {
+      productDetails: [],
+      productId: null,
+    };
+  },
   created() {
+    this.productId = decodeURIComponent(this.$route.params.id);
+
     this.categorias();
   },
 
@@ -50,22 +57,12 @@ export default {
     }),
 
     categorias() {
-      let payload = {
-        id: 2,
-      };
-
-      this.getProductDetails(payload)
+      this.getProductDetails(this.productId)
         .then((response) => {
           this.productDetails = response;
         })
         .catch((error) => {});
     },
-  },
-
-  data() {
-    return {
-      productDetails: [],
-    };
   },
 };
 </script>

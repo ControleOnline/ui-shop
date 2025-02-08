@@ -1,21 +1,21 @@
 <template>
   <div class="q-pa-md row">
-    <div class="col-md-3 col-sm-4 col-6 q-pa-sm">
+    <div v-for="product in products" class="col-md-3 col-sm-4 col-6 q-pa-sm">
       <router-link
         exact
         v-bind:to="{
           name: 'ProductDetails',
-          params: { id: productDetails.id },
+          params: { id: product.product.id },
         }"
       >
         <q-card v-ripple class="cursor-pointer">
           <img src="https://cdn.quasar.dev/img/mountains.jpg" />
 
           <q-card-section>
-            <div class="text-h6">{{ productDetails.productName }}</div>
+            <div class="text-h6">{{ product.product.product }}</div>
           </q-card-section>
           <q-card-section class="q-pt-none">
-            {{ productDetails.productDescription }}
+            {{ product.product.description }}
           </q-card-section>
         </q-card>
       </router-link>
@@ -24,39 +24,45 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 
 export default {
   name: "PageCategories",
 
   components: {},
 
+  data() {
+    return {
+      products: [],
+      categoryId: null,
+    };
+  },
   created() {
+    this.categoryId = decodeURIComponent(this.$route.params.id);
+
     this.categorias();
   },
-
+  computed: {
+    ...mapGetters({
+      defaultCompany: "people/defaultCompany",
+    }),
+  },
   methods: {
     ...mapActions({
-      getProductDetails: "products/get",
+      getProducs: "product_category/getItems",
     }),
 
     categorias() {
       let payload = {
-        id: 2,
+        id: this.categoryId,
       };
 
-      this.getProductDetails(payload)
+      this.getProducs(payload)
         .then((response) => {
-          this.productDetails = response;
+          this.products = response;
         })
         .catch((error) => {});
     },
-  },
-
-  data() {
-    return {
-      productDetails: [],
-    };
   },
 };
 </script>
