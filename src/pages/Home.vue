@@ -1,22 +1,22 @@
 <template>
   <div class="q-pa-md row">
     <Banners />
-  </div>  
+  </div>
   <div class="q-pa-md row">
     <Destaques />
-  </div>  
+  </div>
   <div class="q-pa-md row">
-    <ProductsList />    
-  </div>  
-  <div class="q-pa-md row">
-    <Categories />    
+    <ProductsList :filters="{ itemsPerPage: 4 }" />
   </div>
   <div class="q-pa-md row">
     <Categories />
   </div>
   <div class="q-pa-md row">
     <Categories />
-  </div>  
+  </div>
+  <div class="q-pa-md row">
+    <Categories />
+  </div>
 </template>
 
 <script>
@@ -36,9 +36,7 @@ export default {
       categories: [],
     };
   },
-  created() {
-  
-  },
+  created() {},
 
   computed: {
     ...mapGetters({
@@ -46,9 +44,7 @@ export default {
     }),
   },
   methods: {
-    ...mapActions({
-      
-    }),
+    ...mapActions({}),
   },
 };
 </script>

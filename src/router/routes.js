@@ -17,7 +17,7 @@ export const routes = [
       },
       {
         name: "ProductDetails",
-        path: "category/:id/product/details",
+        path: "product/:id/details",
         component: () => import("../pages/Product.vue"),
       },
       {
