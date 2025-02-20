@@ -1,7 +1,9 @@
 <template>
-  <Title :title="'ProductsList'" />
+  <div class="row col-12 q-pa-md">
+    <Title :title="'ProductsList'" />
+  </div>
   <div class="row col-12">
-    <div class="col-md-3 col-sm-4 col-6 q-pa-sm" v-for="product in products">
+    <div class="col-md-3 col-sm-4 col-6 q-pa-md" v-for="product in products">
       <router-link
         exact
         v-bind:to="{
@@ -80,6 +82,7 @@ export default {
   border-radius: 12px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   background-color: #fff;
+  padding: 15px 15px 15px 15px;
 }
 
 .product-image {

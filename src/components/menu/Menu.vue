@@ -6,28 +6,28 @@
         <q-menu>
           <q-list style="min-width: 100px">
             <q-item clickable v-close-popup>
-              <q-item-section>New tab</q-item-section>
+              <q-item-section>Categorias 01</q-item-section>
             </q-item>
             <q-item clickable v-close-popup>
-              <q-item-section>New incognito tab</q-item-section>
-            </q-item>
-            <q-separator />
-            <q-item clickable v-close-popup>
-              <q-item-section>Recent tabs</q-item-section>
-            </q-item>
-            <q-item clickable v-close-popup>
-              <q-item-section>History</q-item-section>
-            </q-item>
-            <q-item clickable v-close-popup>
-              <q-item-section>Downloads</q-item-section>
+              <q-item-section>Categorias 02</q-item-section>
             </q-item>
             <q-separator />
             <q-item clickable v-close-popup>
-              <q-item-section>Settings</q-item-section>
+              <q-item-section>Categorias 03</q-item-section>
+            </q-item>
+            <q-item clickable v-close-popup>
+              <q-item-section>Categorias 04</q-item-section>
+            </q-item>
+            <q-item clickable v-close-popup>
+              <q-item-section>Categorias 05</q-item-section>
             </q-item>
             <q-separator />
             <q-item clickable v-close-popup>
-              <q-item-section>Help &amp; Feedback</q-item-section>
+              <q-item-section>Categorias 06</q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item clickable v-close-popup>
+              <q-item-section>Precisa de ajuda?</q-item-section>
             </q-item>
           </q-list>
         </q-menu>

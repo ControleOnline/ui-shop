@@ -24,13 +24,12 @@ export default {
   font-size: 18px;
   color: #000000;
   font-weight: 500;
-  margin-bottom: 25px;
 }
 
 .titleConfigBg {
   background-color: #cbe8ec;
   padding: 16px;
   border-radius: 10px;
-  margin-bottom: 25px !important; /* Ver com o Kim pq nao funciona */
+  margin-bottom: 35px !important;
 }
 </style>
