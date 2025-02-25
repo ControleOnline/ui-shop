@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md row">
+  <div class="q-pa-sm row">
     <ProductList :filters="filters" />
   </div>
 </template>

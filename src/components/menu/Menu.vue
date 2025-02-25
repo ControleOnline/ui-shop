@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md">
+  <div class="q-pa-sm">
     <div class="q-row items-center justify-between">
       <div class="q-gutter-md row mainMenu">
       <q-btn color="primary" label="Basic Menu">

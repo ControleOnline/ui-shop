@@ -1,7 +1,5 @@
 <template>
-  <div class="q-pa-md row col-12">
-    <Title :title="'Promoções'" />
-
+  <div class="q-pa-sm row col-12">
     <q-carousel
       animated
       v-model="slide"

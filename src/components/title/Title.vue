@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md row col-12 justify-center titleConfigBg">
+  <div class="q-pa-sm row col-12 justify-center titleConfigBg text-primary">
     <span class="titleBase"> {{ $tt(this.$route.name, "title", title) }}</span>
   </div>
 </template>
@@ -19,17 +19,15 @@ export default {
 
 <style scoped>
 .titleBase {
-  line-height: 2.5em;
-  text-align: center;
-  font-size: 18px;
-  color: #000000;
+  line-height: 3em;
+  font-size: 25px;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .titleConfigBg {
-  background-color: #cbe8ec;
-  padding: 16px;
-  border-radius: 10px;
-  margin-bottom: 35px !important;
+  background-color: var(--primary);
+  padding: 0px;
+  height: 80px;
 }
 </style>

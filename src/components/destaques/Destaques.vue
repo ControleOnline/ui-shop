@@ -1,42 +1,101 @@
 <template>
-  <div class="row col-12 q-pa-md">
-    <Title :title="'Destaque'" />
 
-  </div>
-  <div class="row col-12">
-    
-    <div class="col-4 q-pa-md">
-      <q-img src="https://cdn.quasar.dev/img/parallax2.jpg">
-        <div class="absolute-bottom text-subtitle1 text-center">
-          Destaque 01
-        </div>
-      </q-img>
-    </div>
-    <div class="col-4 q-pa-md">
-      <q-img src="https://cdn.quasar.dev/img/parallax2.jpg">
-        <div class="absolute-bottom text-subtitle1 text-center">
-          Destaque 02
-        </div>
-      </q-img>
-    </div>
-    <div class="col-4 q-pa-md">
-      <q-img src="https://cdn.quasar.dev/img/parallax2.jpg">
-        <div class="absolute-bottom text-subtitle1 text-center">
-          Destaque 03
-        </div>
-      </q-img>
+  <div class="row col-12 ">
+  <div
+    class="col-4 q-pa-sm col-md-4 col-sm-12 col-xs-12"
+    v-for="(product, index) in products"
+    :key="index" 
+  >
+    <div class="row items-center q-pa-sm" style="background-color: #d3ecf3">
+      <!-- Imagem à esquerda (60% da largura, mas menor) -->
+      <div class="col-6">
+        <q-img
+          :src="$image(product.product.productFiles[0].file)"
+          @click="click(product, $event)"
+          style="max-width: 160px;"
+        />
+      </div>
+      
+      <!-- Nomes à direita (40% da largura) -->
+      <div class="col-6 flex column justify-center items-center text-subtitle1 text-weight-bolder ">
+        <div>{{ product.product.product }}</div>
+        <div class="text-subtitle2">{{ product.category.name }}</div>
+      </div>
     </div>
   </div>
+</div>
 </template>
 
 <script>
 import Title from "../title/Title";
+import { mapActions } from "vuex";
 
 export default {
-  name: "PageCategories",
-
+  name: "ProductList",
   components: { Title },
+
+  data() {
+    return {
+      products: [],
+    };
+  },
+
+  props: {
+    filters: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  computed: {
+    carouselConfigs() {
+      return {
+        store: "product_file",
+        isAdmin: false,
+      };
+    },
+  },
+  created() {
+    this.getProducs(this.filters)
+      .then((response) => {
+        this.products = response.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            rating: item.product.rating || 0,
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Erro ao carregar produtos:", error);
+      });
+  },
+
+  methods: {
+    ...mapActions({
+      getProducs: "product_category/getItems",
+    }),
+    click(oque, $event) {
+      $event.stopPropagation();
+      console.log(oque);
+    },
+  },
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+
+.text-subtitle1,.text-subtitle1 a  {
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.text-subtitle2,.text-subtitle2 a  {
+  font-size: 18px;
+  color: #000000;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+</style>

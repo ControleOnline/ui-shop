@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div
-      class="col-md-3 col-sm-4 col-6 q-pa-md"
+      class="col-md-3 col-sm-4 col-6 q-pa-sm"
       v-for="categorie in categories"
       :key="categorie.id"
     >

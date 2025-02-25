@@ -1,21 +1,12 @@
 <template>
-  <div class="q-pa-md row">
+  <div class="q-pa-none row">
     <Banners />
   </div>
-  <div class="q-pa-md row">
-    <Destaques />
+  <div class="q-pa-none row">
+    <Destaques :filters="{ itemsPerPage: 3 }" />
   </div>
-  <div class="q-pa-md row">
-    <ProductsList :filters="{ itemsPerPage: 4 }" />
-  </div>
-  <div class="q-pa-md row">
-    <Categories />
-  </div>
-  <div class="q-pa-md row">
-    <Categories />
-  </div>
-  <div class="q-pa-md row">
-    <Categories />
+  <div class="q-pa-none row">
+    <ProductsList :filters="{ itemsPerPage: 16 }" />
   </div>
 </template>
 

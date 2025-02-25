@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md row">
+  <div class="q-pa-sm row">
     <div class="col-md-7 col-sm-12 q-pa-sm">
       <div class="details-image">
         <DefaultCarousel
