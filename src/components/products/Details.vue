@@ -2,7 +2,12 @@
   <div class="q-pa-md row">
     <div class="col-md-7 col-sm-12 q-pa-sm">
       <div class="details-image">
-        <img src="https://cdn.quasar.dev/img/mountains.jpg" />
+        <DefaultCarousel
+          v-if="productDetails.productFiles"
+          :object="{ product: productDetails['@id'] }"
+          :configs="carouselConfigs"
+          :files="productDetails.productFiles"
+        />
       </div>
     </div>
 
@@ -34,11 +39,21 @@
 
 <script>
 import { mapActions } from "vuex";
+import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 
 export default {
   name: "ProductDetails",
 
-  components: {},
+  components: { DefaultCarousel },
+
+  computed: {
+    carouselConfigs() {
+      return {
+        store: "product_file",
+        isAdmin: false,
+      };
+    },
+  },
   data() {
     return {
       productDetails: [],
