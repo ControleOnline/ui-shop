@@ -56,6 +56,10 @@ export default {
       this.getCategories({
         context: "products",
         company: this.defaultCompany.id,
+        productFiles: {
+          exists: "true",
+          file: { fileType: 'image' },
+        },
       })
         .then((response) => {
           this.categories = response;

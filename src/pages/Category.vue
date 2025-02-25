@@ -26,6 +26,10 @@ export default {
     filters() {
       return {
         category: "/categories/" + this.categoryId,
+        productFiles: {
+          exists: "true",
+          file: { fileType: image },
+        },
       };
     },
   },

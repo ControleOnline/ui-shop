@@ -7,22 +7,22 @@
     <div
       class="q-hoverable product-card q-card col-6 col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 q-card q-gutter-md q-mt-md"
       v-for="product in products"
-      :key="product.product.id"
-      @mouseenter="hoveredProduct = product.product.id"
+      :key="product.id"
+      @mouseenter="hoveredProduct = product.id"
       @mouseleave="hoveredProduct = null"
     >
       <router-link
         exact
         v-bind:to="{
           name: 'ProductDetails',
-          params: { id: product.product.id },
+          params: { id: product.id },
         }"
       >
         <DefaultCarousel
-          v-if="product.product.productFiles"
-          :object="{ product: product.product['@id'] }"
+          v-if="product.productFiles"
+          :object="{ product: product['@id'] }"
           :configs="carouselConfigs"
-          :files="product.product.productFiles"
+          :files="product.productFiles"
         />
       </router-link>
       <div class="badge sale btn-primary">ON SALE</div>
@@ -31,7 +31,7 @@
         <div class="row q-pa-sm col-12">
           <div
             class="icon-container row col-12"
-            v-if="1 == 1 || hoveredProduct === product.product.id"
+            v-if="1 == 1 || hoveredProduct === product.id"
           >
             <q-btn
               flat
@@ -56,14 +56,13 @@
               />
             </div>
             <div class="text-subtitle1 text-weight-bolder">
-              {{ product.product.product }}
+              {{ product.product }}
             </div>
           </div>
           <div class="col-4 text-right column">
             <div class="text-grey-6 text-subtitle1">
               {{
-                "R$ " +
-                $formatter.formatMoney(product.product.price, "BRL", "pt-br")
+                "R$ " + $formatter.formatMoney(product.price, "BRL", "pt-br")
               }}
             </div>
             <div class="text-subtitle1 text-h6 text-blue-8">$ 24.05</div>
@@ -107,13 +106,7 @@ export default {
   created() {
     this.getProducs(this.filters)
       .then((response) => {
-        this.products = response.map((item) => ({
-          ...item,
-          product: {
-            ...item.product,
-            rating: item.product.rating || 0,
-          },
-        }));
+        this.products = response;
       })
       .catch((error) => {
         console.error("Erro ao carregar produtos:", error);
@@ -122,7 +115,7 @@ export default {
 
   methods: {
     ...mapActions({
-      getProducs: "product_category/getItems",
+      getProducs: "products/getItems",
     }),
     click(oque, $event) {
       $event.stopPropagation();
@@ -133,8 +126,6 @@ export default {
 </script>
 
 <style>
-
-
 .badge.sale {
   position: absolute;
   top: 16px;

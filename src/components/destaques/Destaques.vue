@@ -10,7 +10,7 @@
       <!-- Imagem à esquerda (60% da largura, mas menor) -->
       <div class="col-6">
         <q-img
-          :src="$image(product.product.productFiles[0].file)"
+          :src="$image(product.productFiles[0]?.file)"
           @click="click(product, $event)"
           style="max-width: 160px;"
         />
@@ -18,8 +18,8 @@
       
       <!-- Nomes à direita (40% da largura) -->
       <div class="col-6 flex column justify-center items-center text-subtitle1 text-weight-bolder ">
-        <div>{{ product.product.product }}</div>
-        <div class="text-subtitle2">{{ product.category.name }}</div>
+        <div>{{ product.product }}</div>
+        <div class="text-subtitle2">Categoria</div>
       </div>
     </div>
   </div>
@@ -57,13 +57,7 @@ export default {
   created() {
     this.getProducs(this.filters)
       .then((response) => {
-        this.products = response.map((item) => ({
-          ...item,
-          product: {
-            ...item.product,
-            rating: item.product.rating || 0,
-          },
-        }));
+        this.products = response;
       })
       .catch((error) => {
         console.error("Erro ao carregar produtos:", error);
@@ -72,7 +66,7 @@ export default {
 
   methods: {
     ...mapActions({
-      getProducs: "product_category/getItems",
+      getProducs: "products/getItems",
     }),
     click(oque, $event) {
       $event.stopPropagation();
