@@ -28,7 +28,7 @@ export default {
         category: "/categories/" + this.categoryId,
         productFiles: {
           exists: "true",
-          file: { fileType: image },
+          file: { fileType: 'image' },
         },
       };
     },
