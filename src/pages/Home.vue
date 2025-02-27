@@ -6,7 +6,9 @@
     <Destaques
       :filters="{
         itemsPerPage: 3,
-        productFiles: { exists: 'true', file: { fileType: 'image' } },
+        exists: { productFiles: 'true' },
+
+        productFiles: { file: { fileType: 'image' } },
       }"
     />
   </div>
@@ -14,7 +16,8 @@
     <ProductsList
       :filters="{
         itemsPerPage: 16,
-        productFiles: { exists: 'true', file: { fileType: 'image' } },
+        exists: { productFiles: 'true' },
+        productFiles: { file: { fileType: 'image' } },
       }"
     />
   </div>

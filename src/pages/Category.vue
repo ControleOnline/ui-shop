@@ -25,10 +25,10 @@ export default {
     }),
     filters() {
       return {
-        category: "/categories/" + this.categoryId,
+        productCategory: { category: "/categories/" + this.categoryId },
+        exists: { productFiles: "true" },
         productFiles: {
-          exists: "true",
-          file: { fileType: 'image' },
+          file: { fileType: "image" },
         },
       };
     },
