@@ -42,7 +42,13 @@
             />
             <q-btn flat round icon="shopping_cart" class="icon-box" />
             <q-btn flat round icon="share" class="icon-box" />
-            <q-btn flat round icon="info" class="icon-box" />
+            <q-btn
+              flat
+              round
+              icon="info"
+              class="icon-box"
+              @click="showDetails(product.id)"
+            />
           </div>
           <div class="row col-8 text-left column">
             <div class="text-subtitle1 text-weight-bolder">
@@ -71,21 +77,37 @@
       </div>
     </div>
   </div>
+
+  <q-dialog v-model="openModal" full-width full-height>
+    <q-card class="">
+      <q-card-section
+        class="row col-12 q-pa-sm fixed bg-primary sticky-top full-width"
+        style="z-index: 999999"
+      >
+        Header
+      </q-card-section>
+      <q-card-section class="row q-pa-md">
+        <ProductDetails :productId="productId"
+      /></q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script>
 import Title from "../title/Title";
 import { mapActions } from "vuex";
 import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
-
+import ProductDetails from "../products/Details.vue";
 export default {
   name: "ProductList",
-  components: { Title, DefaultCarousel },
+  components: { Title, DefaultCarousel, ProductDetails },
 
   data() {
     return {
       hoveredProduct: null,
       products: [],
+      openModal: false,
+      productId: null,
     };
   },
 
@@ -120,6 +142,10 @@ export default {
     click(oque, $event) {
       $event.stopPropagation();
       console.log(oque);
+    },
+    showDetails(productId) {
+      this.productId = productId;
+      this.openModal = true;
     },
   },
 };

@@ -45,7 +45,11 @@ export default {
   name: "ProductDetails",
 
   components: { DefaultCarousel },
-
+  props: {
+    productId: {
+      required: false,
+    },
+  },
   computed: {
     carouselConfigs() {
       return {
@@ -57,11 +61,12 @@ export default {
   data() {
     return {
       productDetails: [],
-      productId: null,
+      id: null,
     };
   },
   created() {
-    this.productId = decodeURIComponent(this.$route.params.id);
+    this.id =
+      this.productId || decodeURIComponent(this.$route.params.id);
 
     this.categorias();
   },
@@ -72,7 +77,7 @@ export default {
     }),
 
     categorias() {
-      this.getProductDetails(this.productId)
+      this.getProductDetails(this.id)
         .then((response) => {
           this.productDetails = response;
         })

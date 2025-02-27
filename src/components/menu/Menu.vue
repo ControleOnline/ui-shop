@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-sm">
+  <div class="q-pa-lg q-ma-none full-width bgMenu">
     <div class="q-row items-center justify-between">
       <div class="q-gutter-md row mainMenu">
         <!-- Categorias principais com hover -->
@@ -12,7 +12,7 @@
         >
           <span
             @click="navigateToCategory(category.id)"
-            class="text-no-decoration clickable"
+            class="text-no-decoration clickable span-menu"
           >
             {{ category.name }}
           </span>
@@ -36,7 +36,7 @@
                 <q-item-section>
                   <span
                     @click="navigateToCategory(child.id)"
-                    class="text-no-decoration clickable"
+                    class="text-no-decoration clickable span-menu"
                   >
                     {{ child.name }}
                   </span>
@@ -75,10 +75,6 @@
             </q-list>
           </q-menu>
         </div>
-
-        <!-- Links adicionais mantidos -->
-        <div><a href="#">Outro menu 01</a></div>
-        <div><a href="#">Outro menu 02</a></div>
       </div>
     </div>
   </div>
@@ -182,6 +178,9 @@ export default {
   color: #000000;
   font-weight: 500;
 }
+.span-menu {
+  text-transform: uppercase;
+}
 
 .mainMenu a {
   color: inherit;
@@ -195,7 +194,6 @@ export default {
 
 .menu-btn {
   padding: 8px 16px;
-  background-color: #1976d2;
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -210,5 +208,9 @@ export default {
 .clickable {
   display: block;
   cursor: pointer;
+}
+
+.bgMenu {
+  background-color: var(--primary);
 }
 </style>

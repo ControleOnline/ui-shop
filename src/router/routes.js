@@ -1,10 +1,15 @@
 export const routes = [
   {
     path: "/",
-    name: "ShopIndex",
+
     component: () =>
       import("@controleonline/ui-layout/src/layouts/ShopLayout.vue"),
     children: [
+      {
+        name: "ShopSearch",
+        path: "q=:q",
+        component: () => import("../pages/Search.vue"),
+      },
       {
         name: "ShopDefault",
         path: "home",
