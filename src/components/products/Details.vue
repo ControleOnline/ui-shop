@@ -1,7 +1,7 @@
 <template>
-  <div class="q-pa-sm row">
-    <div class="col-md-7 col-sm-12 q-pa-sm">
-      <div class="details-image">
+  <div class="row q-pa-sm full-width">
+    <div class="row col-md-6 col-sm-12 q-pa-sm left-bar">
+      <div class="row col-12 carousel-container">
         <DefaultCarousel
           v-if="productDetails.productFiles"
           :object="{ product: productDetails['@id'] }"
@@ -9,21 +9,25 @@
           :files="productDetails.productFiles"
         />
       </div>
+      <div class="row col-12 description-container">
+        <h4>Descrição do produto</h4>
+        {{ productDetails.description }}
+      </div>
     </div>
 
-    <div class="col-md-5 col-sm-12 q-pa-sm">
-      <div class="details-title">
+    <div class="row col-md-6 col-sm-12 q-pa-sm right-bar">
+      <div class="row col-12 details-title">
         <h1>{{ productDetails.product }}</h1>
       </div>
 
-      <div class="price-container">
+      <div class="row col-12 price-container">
         <h2>{{ "R$ " + $formatter.formatMoney(productDetails.price) }}</h2>
       </div>
 
-      <div class="details-resume">
+      <div class="row col-12 details-resume">
         {{ productDetails.description }}
       </div>
-      <div class="details-resume">
+      <div class="row col-12 details-resume">
         <CustomProduct
           v-if="productDetails.type === 'custom'"
           :selectedProduct="productDetails"
@@ -39,15 +43,9 @@
         />
       </div>
 
-      <div class="product-quantity">
-        <q-input dense outlined type="number" />
+      <div class="row col-12 product-add">
         <q-btn class="full-width q-pa-xs btn-primary" label="Comprar" />
       </div>
-    </div>
-
-    <div class="col-md-12">
-      <h4>Descrição do produto</h4>
-      {{ productDetails.description }}
     </div>
   </div>
 </template>
@@ -83,7 +81,6 @@ export default {
   },
   created() {
     this.id = this.productId || decodeURIComponent(this.$route.params.id);
-
     this.categorias();
   },
 
@@ -104,6 +101,24 @@ export default {
 </script>
 
 <style>
+.carousel-container,
+.q-carousel {
+  min-height: 80vh !important;
+}
+.carousel-container,
+.left-bar,
+.right-bar {
+  height: fit-content !important; /* Faz o container se ajustar ao conteúdo */
+  overflow: hidden; /* Garante que não haja conteúdo excedente */
+}
+
+.description-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .details-title h1 {
   font-size: 28px;
   font-weight: 700;
@@ -113,9 +128,5 @@ export default {
   font-size: 28px;
   font-weight: 700;
   text-transform: uppercase;
-}
-
-.details-image img {
-  width: 100%;
 }
 </style>
