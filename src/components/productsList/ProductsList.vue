@@ -178,9 +178,9 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid #5f5f5f;
+  border: 1px solid var(--primary);
   background-color: #ffffff;
-  color: #2f82cf;
+  color: var(--primary);
 }
 
 .q-btn {
