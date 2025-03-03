@@ -23,6 +23,13 @@
       <div class="details-resume">
         {{ productDetails.description }}
       </div>
+      <div class="details-resume">
+        <CustomProduct
+          :selectedProduct="productDetails"
+          @changeSelection="changeSelection"
+          @changeIngredients="changeIngredients"
+        />
+      </div>
 
       <div class="product-quantity">
         <q-input dense outlined type="number" />
@@ -40,11 +47,12 @@
 <script>
 import { mapActions } from "vuex";
 import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
+import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
 
 export default {
   name: "ProductDetails",
 
-  components: { DefaultCarousel },
+  components: { DefaultCarousel, CustomProduct },
   props: {
     productId: {
       required: false,
@@ -65,8 +73,7 @@ export default {
     };
   },
   created() {
-    this.id =
-      this.productId || decodeURIComponent(this.$route.params.id);
+    this.id = this.productId || decodeURIComponent(this.$route.params.id);
 
     this.categorias();
   },
