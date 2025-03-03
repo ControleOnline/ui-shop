@@ -1,6 +1,23 @@
 <template>
   <div class="row q-pa-sm full-width">
     <div class="row col-md-6 col-sm-12 q-pa-sm left-bar">
+      <q-btn
+        flat
+        icon="arrow_back"
+        color="primary"
+        @click="$router.back()"
+        label="Voltar"
+        class="q-mb-md"
+      />
+    </div>
+    <div class="row col-md-6 col-sm-12 q-pa-sm right-bar">
+      <div class="row col-12 details-title">
+        <h1>{{ productDetails.product }}</h1>
+      </div>
+    </div>
+  </div>
+  <div class="row q-pa-sm full-width">
+    <div class="row col-md-6 col-sm-12 q-pa-sm left-bar">
       <div class="row col-12 carousel-container">
         <DefaultCarousel
           v-if="productDetails.productFiles"
@@ -10,16 +27,11 @@
         />
       </div>
       <div class="row col-12 description-container">
-        <h4>Descrição do produto</h4>
         {{ productDetails.description }}
       </div>
     </div>
 
     <div class="row col-md-6 col-sm-12 q-pa-sm right-bar">
-      <div class="row col-12 details-title">
-        <h1>{{ productDetails.product }}</h1>
-      </div>
-
       <div class="row col-12 price-container">
         <h2>{{ "R$ " + $formatter.formatMoney(productDetails.price) }}</h2>
       </div>
@@ -42,11 +54,11 @@
           @decreaseQuantity="decreaseQuantity"
         />
       </div>
-
-      <div class="row col-12 product-add">
-        <q-btn class="full-width q-pa-xs btn-primary" label="Comprar" />
-      </div>
     </div>
+  </div>
+
+  <div class="row full-width sticky-bottom bg-white q-pa-md">
+    <addProduct />
   </div>
 </template>
 
@@ -55,11 +67,16 @@ import { mapActions } from "vuex";
 import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
 import ProductQuantity from "@controleonline/ui-orders/src/components/ProductQuantity.vue";
-
+import addProduct from "@controleonline/ui-orders/src/components/cart/addProduct";
 export default {
   name: "ProductDetails",
 
-  components: { DefaultCarousel, CustomProduct, ProductQuantity },
+  components: {
+    addProduct,
+    DefaultCarousel,
+    CustomProduct,
+    ProductQuantity,
+  },
   props: {
     productId: {
       required: false,

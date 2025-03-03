@@ -20,11 +20,7 @@ export const routes = [
         path: "categories",
         component: () => import("../pages/Categories.vue"),
       },
-      {
-        name: "ProductDetails",
-        path: "product/:id/details",
-        component: () => import("../pages/Product.vue"),
-      },
+
       {
         name: "ProductsInCategory",
         path: "category/:id",
@@ -39,5 +35,18 @@ export const routes = [
     meta: {
       requiresAuth: false,
     },
+  },
+
+  {
+    path: "/product",
+    component: () =>
+      import("@controleonline/ui-layout/src/layouts/MainLayout.vue"),
+    children: [
+      {
+        name: "ProductDetails",
+        path: ":id/details",
+        component: () => import("../pages/Product.vue"),
+      },
+    ],
   },
 ];
