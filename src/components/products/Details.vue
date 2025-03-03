@@ -1,6 +1,6 @@
 <template>
   <div class="row q-pa-sm full-width">
-    <div class="row col-md-6 col-sm-12 q-pa-sm left-bar">
+    <div class="row col-12 col-md-6 col-sm-12 q-pa-sm left-bar">
       <q-btn
         flat
         icon="arrow_back"
@@ -17,7 +17,7 @@
     </div>
   </div>
   <div class="row q-pa-sm full-width">
-    <div class="row col-md-6 col-sm-12 q-pa-sm left-bar">
+    <div class="row col-12 col-md-6 col-sm-12 q-pa-sm left-bar">
       <div class="row col-12 carousel-container">
         <DefaultCarousel
           v-if="productDetails.productFiles"
