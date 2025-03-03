@@ -25,9 +25,17 @@
       </div>
       <div class="details-resume">
         <CustomProduct
+          v-if="productDetails.type === 'custom'"
           :selectedProduct="productDetails"
           @changeSelection="changeSelection"
           @changeIngredients="changeIngredients"
+        />
+
+        <ProductQuantity
+          v-else
+          :product="productDetails"
+          @increaseQuantity="increaseQuantity"
+          @decreaseQuantity="decreaseQuantity"
         />
       </div>
 
@@ -48,11 +56,12 @@
 import { mapActions } from "vuex";
 import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
+import ProductQuantity from "@controleonline/ui-orders/src/components/ProductQuantity.vue";
 
 export default {
   name: "ProductDetails",
 
-  components: { DefaultCarousel, CustomProduct },
+  components: { DefaultCarousel, CustomProduct, ProductQuantity },
   props: {
     productId: {
       required: false,
