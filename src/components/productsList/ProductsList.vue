@@ -20,7 +20,7 @@
       >
         <DefaultCarousel
           v-if="product.productFiles"
-          :object="{ product: product['@id'] }"
+          :row="{ product: product['@id'] }"
           :configs="carouselConfigs"
           :files="product.productFiles"
         />
@@ -96,11 +96,10 @@
 <script>
 import Title from "../title/Title";
 import { mapActions } from "vuex";
-import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 import ProductDetails from "../products/Details.vue";
 export default {
   name: "ProductList",
-  components: { Title, DefaultCarousel, ProductDetails },
+  components: { Title, ProductDetails },
 
   data() {
     return {
@@ -122,6 +121,7 @@ export default {
       return {
         store: "product_file",
         isAdmin: false,
+        context: "products",
       };
     },
   },

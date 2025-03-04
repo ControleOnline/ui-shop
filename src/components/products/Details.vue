@@ -57,7 +57,6 @@
 
 <script>
 import { mapActions } from "vuex";
-import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
 import addProduct from "@controleonline/ui-orders/src/components/cart/addProduct";
 export default {
@@ -65,7 +64,6 @@ export default {
 
   components: {
     addProduct,
-    DefaultCarousel,
     CustomProduct,
     
   },
@@ -79,6 +77,7 @@ export default {
       return {
         store: "product_file",
         isAdmin: false,
+        context: "products",
       };
     },
   },
