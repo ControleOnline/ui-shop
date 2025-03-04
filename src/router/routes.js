@@ -1,6 +1,6 @@
 export const routes = [
   {
-    path: "/",
+    path: "/shop",
 
     component: () =>
       import("@controleonline/ui-layout/src/layouts/ShopLayout.vue"),
@@ -12,7 +12,7 @@ export const routes = [
       },
       {
         name: "ShopDefault",
-        path: "home",
+        path: "shop",
         component: () => import("../pages/Home.vue"),
       },
       {
