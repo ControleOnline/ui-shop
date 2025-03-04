@@ -46,19 +46,12 @@
           @changeSelection="changeSelection"
           @changeIngredients="changeIngredients"
         />
-
-        <ProductQuantity
-          v-else
-          :product="productDetails"
-          @increaseQuantity="increaseQuantity"
-          @decreaseQuantity="decreaseQuantity"
-        />
       </div>
     </div>
   </div>
 
   <div class="row full-width sticky-bottom bg-white q-pa-md">
-    <addProduct />
+    <addProduct :product="productDetails"/>
   </div>
 </template>
 
@@ -66,7 +59,6 @@
 import { mapActions } from "vuex";
 import DefaultCarousel from "@controleonline/ui-default/src/components/Default/Common/DefaultCarousel.vue";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
-import ProductQuantity from "@controleonline/ui-orders/src/components/ProductQuantity.vue";
 import addProduct from "@controleonline/ui-orders/src/components/cart/addProduct";
 export default {
   name: "ProductDetails",
@@ -75,7 +67,7 @@ export default {
     addProduct,
     DefaultCarousel,
     CustomProduct,
-    ProductQuantity,
+    
   },
   props: {
     productId: {
