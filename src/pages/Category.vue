@@ -10,6 +10,7 @@
     />
   </div>
   <div class="q-pa-sm row">
+    {{ category.name }}
     <ProductList :filters="filters" />
   </div>
 </template>
