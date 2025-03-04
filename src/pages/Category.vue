@@ -53,6 +53,8 @@ export default {
         store: "category_file",
         isAdmin: false,
         context: "categoryFiles",
+        zoom: false,
+        navigation: true,
       };
     },
   },

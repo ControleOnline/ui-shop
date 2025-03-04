@@ -108,7 +108,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .carousel-container,
 .q-carousel {
   min-height: 80vh !important;
