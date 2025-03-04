@@ -60,7 +60,6 @@ import { mapActions } from "vuex";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
 import addProduct from "@controleonline/ui-orders/src/components/cart/addProduct";
 export default {
-  name: "ProductDetails",
 
   components: {
     addProduct,

@@ -43,7 +43,7 @@ export const routes = [
       import("@controleonline/ui-layout/src/layouts/MainLayout.vue"),
     children: [
       {
-        name: "ProductDetails",
+        name: "ShopProductDetails",
         path: ":id/details",
         component: () => import("../pages/Product.vue"),
       },

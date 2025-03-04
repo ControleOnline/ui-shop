@@ -7,7 +7,7 @@
     >
       <router-link
         exact
-        v-bind:to="{ name: 'ProductDetails', params: { id: product.id } }"
+        v-bind:to="{ name: 'ShopProductDetails', params: { id: product.id } }"
       >
         <div class="row items-center q-pa-sm" style="background-color: #d3ecf3">
           <!-- Imagem à esquerda (60% da largura, mas menor) -->

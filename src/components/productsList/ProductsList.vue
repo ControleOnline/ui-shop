@@ -14,7 +14,7 @@
       <router-link
         exact
         v-bind:to="{
-          name: 'ProductDetails',
+          name: 'ShopProductDetails',
           params: { id: product.id },
         }"
       >
