@@ -1,4 +1,12 @@
 <template>
+  <div class="row col-12 carousel-container">
+    <DefaultCarousel
+      v-if="category.categoryFiles"
+      :object="{ category: category['@id'] }"
+      :configs="carouselConfigs"
+      :files="category.categoryFiles"
+    />
+  </div>
   <div class="q-pa-sm row">
     <ProductList :filters="filters" />
   </div>
@@ -12,12 +20,16 @@ export default {
   components: { ProductList },
   data() {
     return {
+      category: {},
       products: [],
       categoryId: null,
     };
   },
   created() {
     this.categoryId = decodeURIComponent(this.$route.params.id);
+    this.getCategory(this.categoryId).then((data) => {
+      this.category = data;
+    });
   },
   computed: {
     ...mapGetters({
@@ -32,7 +44,19 @@ export default {
         },
       };
     },
+
+    carouselConfigs() {
+      return {
+        store: "category_file",
+        isAdmin: false,
+        context: "categoryFiles",
+      };
+    },
   },
-  methods: {},
+  methods: {
+    ...mapActions({
+      getCategory: "categories/get",
+    }),
+  },
 };
 </script>
