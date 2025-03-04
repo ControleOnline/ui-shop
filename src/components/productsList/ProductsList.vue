@@ -113,7 +113,12 @@ export default {
   props: {
     filters: {
       type: Object,
-      default: () => ({}),
+      default: () => ({
+        itemsPerPage: 16,
+        exists: { productFiles: "true" },
+        productFiles: { file: { fileType: "image" } },
+        random: "true",
+      }),
     },
   },
   computed: {

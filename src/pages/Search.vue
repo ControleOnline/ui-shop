@@ -1,45 +1,43 @@
 <template>
   <div class="row">
-    <div
-      class="col-md-3 col-sm-4 col-6 q-pa-sm"
-      v-for="categorie in categories"
-      :key="categorie.id"
-    >
-      <router-link
-        exact
-        v-bind:to="{ name: 'ProductsInCategory', params: { id: categorie.id } }"
-      >
-        <q-card v-ripple class="cursor-pointer">
-          <img src="https://cdn.quasar.dev/img/mountains.jpg" />
+    <ProductsList
+      :filters="{
+        itemsPerPage: 32,
+        exists: { productFiles: 'true' },
+        productFiles: { file: { fileType: 'image' } },
+        random: 'true',
+        product: query,
+      }"
+    />
 
-          <q-card-section>
-            <div class="text-h6">{{ categorie.name }}</div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none">
-            {{ categorie["@type"] }}
-          </q-card-section>
-        </q-card>
-      </router-link>
-    </div>
+    <Categories
+      :filters="{
+        itemsPerPage: 32,
+        exists: { categoryFiles: 'true' },
+        categoryFiles: { file: { fileType: 'image' } },
+        random: 'true',
+        context: 'products',
+        name: query,
+      }"
+    />
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from "vuex";
+import ProductsList from "../components/productsList/ProductsList";
+import Categories from "../components/categories";
 
 export default {
-  name: "PageCategories",
-
-  components: {},
+  components: { ProductsList, Categories },
 
   data() {
     return {
-      categories: [],
+      query: "",
     };
   },
   created() {
-    this.categorias();
+    this.query = decodeURIComponent(this.$route.params.q);
   },
 
   computed: {
@@ -48,24 +46,7 @@ export default {
     }),
   },
   methods: {
-    ...mapActions({
-      getCategories: "categories/getItems",
-    }),
-
-    categorias() {
-      this.getCategories({
-        context: "products",
-        company: this.defaultCompany.id,
-        exists: { productFiles: "true" },
-        productFiles: {
-          file: { fileType: "image" },
-        },
-      })
-        .then((response) => {
-          this.categories = response;
-        })
-        .catch((error) => {});
-    },
+    ...mapActions({}),
   },
 };
 </script>

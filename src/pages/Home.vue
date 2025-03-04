@@ -3,23 +3,10 @@
     <Banners />
   </div>
   <div class="q-pa-none row">
-    <Destaques
-      :filters="{
-        itemsPerPage: 3,
-        exists: { productFiles: 'true' },
-        featured: 1,
-        productFiles: { file: { fileType: 'image' } },
-      }"
-    />
+    <Destaques />
   </div>
   <div class="q-pa-none row">
-    <ProductsList
-      :filters="{
-        itemsPerPage: 16,
-        exists: { productFiles: 'true' },
-        productFiles: { file: { fileType: 'image' } },
-      }"
-    />
+    <ProductsList />
   </div>
 </template>
 

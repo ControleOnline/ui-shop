@@ -49,7 +49,13 @@ export default {
   props: {
     filters: {
       type: Object,
-      default: () => ({}),
+      default: () => ({
+        itemsPerPage: 3,
+        exists: { productFiles: "true" },
+        featured: 1,
+        productFiles: { file: { fileType: "image" } },
+        random: "true",
+      }),
     },
   },
   computed: {
