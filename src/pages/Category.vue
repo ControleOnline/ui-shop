@@ -1,7 +1,9 @@
 <template>
-  <div class="row col-12 carousel-container">
+  <div
+    class="row col-12 carousel-container"
+    v-if="category?.categoryFiles?.length > 0"
+  >
     <DefaultCarousel
-      v-if="category.categoryFiles"
       :object="{ category: category['@id'] }"
       :configs="carouselConfigs"
       :files="category.categoryFiles"
