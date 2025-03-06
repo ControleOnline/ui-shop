@@ -4,78 +4,13 @@
   </div>
 
   <div class="row col-12 justify-between q-pa-sm q-pl-lg q-pt-lg">
-    <div
-      class="q-hoverable product-card q-card col-6 col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 q-card q-gutter-md q-mt-md"
+    <template
       v-for="product in products"
       :key="product.id"
-      @mouseenter="hoveredProduct = product.id"
-      @mouseleave="hoveredProduct = null"
+      @click="clickProduct(product)"
     >
-      <router-link
-        exact
-        v-bind:to="{
-          name: 'ShopProductDetails',
-          params: { id: product.id },
-        }"
-      >
-        <DefaultCarousel
-          v-if="product.productFiles"
-          :row="{ product: product['@id'] }"
-          :configs="carouselConfigs"
-          :files="product.productFiles"
-        />
-      </router-link>
-      <div class="badge sale btn-primary">ON SALE</div>
-
-      <div class="q-pa-sm text-center">
-        <div class="row q-pa-sm col-12">
-          <div
-            class="icon-container row col-12"
-            v-if="1 == 1 || hoveredProduct === product.id"
-          >
-            <q-btn
-              flat
-              round
-              icon="favorite"
-              class="icon-box"
-              @click="click('vovkrir')"
-            />
-            <q-btn flat round icon="shopping_cart" class="icon-box" />
-            <q-btn flat round icon="share" class="icon-box" />
-            <q-btn
-              flat
-              round
-              icon="info"
-              class="icon-box"
-              @click="showDetails(product.id)"
-            />
-          </div>
-          <div class="row col-8 text-left column">
-            <div class="text-subtitle1 text-weight-bolder">
-              <q-rating
-                :model-value="4"
-                :max="5"
-                size="16px"
-                color="amber"
-                color-inactive="grey"
-                readonly
-              />
-            </div>
-            <div class="text-subtitle1 text-weight-bolder">
-              {{ product.product }}
-            </div>
-          </div>
-          <div class="col-4 text-right column">
-            <div class="text-grey-6 text-subtitle1">
-              {{
-                "R$ " + $formatter.formatMoney(product.price, "BRL", "pt-br")
-              }}
-            </div>
-            <div class="text-subtitle1 text-h6 text-blue-8">$ 24.05</div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <productCard :product="product" @showDetails="showDetails" />
+    </template>
   </div>
 
   <q-dialog v-model="openModal" full-width full-height>
@@ -97,13 +32,13 @@
 import Title from "../title/Title";
 import { mapActions } from "vuex";
 import ProductDetails from "../products/Details.vue";
+
+import productCard from "@controleonline/ui-orders/src/components/cart/productCard";
 export default {
-  name: "ProductList",
-  components: { Title, ProductDetails },
+  components: { Title, ProductDetails, productCard },
 
   data() {
     return {
-      hoveredProduct: null,
       products: [],
       openModal: false,
       productId: null,
@@ -121,15 +56,7 @@ export default {
       }),
     },
   },
-  computed: {
-    carouselConfigs() {
-      return {
-        store: "product_file",
-        isAdmin: false,
-        context: "products",
-      };
-    },
-  },
+  computed: {},
   created() {
     this.getProducs(this.filters)
       .then((response) => {
@@ -144,9 +71,11 @@ export default {
     ...mapActions({
       getProducs: "products/getItems",
     }),
-    click(oque, $event) {
-      $event.stopPropagation();
-      console.log(oque);
+    clickProduct(product) {
+      this.$route.push({
+        name: "ShopProductDetails",
+        params: { id: product.id },
+      });
     },
     showDetails(productId) {
       this.productId = productId;
