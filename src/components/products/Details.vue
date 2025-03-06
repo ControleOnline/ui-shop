@@ -2,10 +2,11 @@
   <div class="row q-pa-sm full-width">
     <div class="row col-12 col-md-6 col-sm-12 q-pa-sm left-bar">
       <q-btn
+        v-if="back"
         flat
         icon="arrow_back"
         color="primary"
-        @click="back()"
+        @click="handleBack()"
         label="Voltar"
         class="q-mb-md"
       />
@@ -63,6 +64,9 @@ export default {
     productId: {
       required: false,
     },
+    back: {
+      default: true,
+    },
   },
   computed: {
     ...mapGetters({
@@ -100,9 +104,11 @@ export default {
       });
     },
     saved() {
-      this.$router.back();
+      this.handleBack();
     },
-    back() {
+    handleBack() {
+      this.$emit("back");
+      if (!this.back) return;
       this.$router.back();
     },
   },

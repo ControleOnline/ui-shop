@@ -4,12 +4,12 @@
   </div>
 
   <div class="row col-12 justify-between q-pa-sm q-pl-lg q-pt-lg">
-    <template
-      v-for="product in products"
-      :key="product.id"
-      @click="clickProduct(product)"
-    >
-      <productCard :product="product" @showDetails="showDetails" />
+    <template v-for="product in products" :key="product.id">
+      <productCard
+        :product="product"
+        @showDetails="showDetails"
+        @clickProduct="clickProduct"
+      />
     </template>
   </div>
 
@@ -22,7 +22,7 @@
         Header
       </q-card-section>
       <q-card-section class="row q-pa-md">
-        <ProductDetails :productId="productId"
+        <ProductDetails :productId="productId" :back="false" @back="close"
       /></q-card-section>
     </q-card>
   </q-dialog>
@@ -69,7 +69,7 @@ export default {
       getProducs: "products/getItems",
     }),
     clickProduct(product) {
-      this.$route.push({
+      this.$router.push({
         name: "ShopProductDetails",
         params: { id: product.id },
       });
@@ -77,6 +77,9 @@ export default {
     showDetails(product) {
       this.productId = product.id;
       this.openModal = true;
+    },
+    close() {
+      this.openModal = false;
     },
   },
 };

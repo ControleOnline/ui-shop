@@ -3,7 +3,7 @@
     <Banners />
   </div>
   <div class="q-pa-none row">
-    <Destaques />
+    <!-- <Destaques />-->
   </div>
   <div class="q-pa-none row">
     <ProductsList />
