@@ -30,7 +30,7 @@
 
 <script>
 import Title from "../title/Title";
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import ProductDetails from "../products/Details.vue";
 
 import productCard from "@controleonline/ui-orders/src/components/cart/productCard";
@@ -39,7 +39,6 @@ export default {
 
   data() {
     return {
-      products: [],
       openModal: false,
       productId: null,
     };
@@ -56,15 +55,13 @@ export default {
       }),
     },
   },
-  computed: {},
+  computed: {
+    ...mapGetters({
+      products: "products/items",
+    }),
+  },
   created() {
-    this.getProducs(this.filters)
-      .then((response) => {
-        this.products = response;
-      })
-      .catch((error) => {
-        console.error("Erro ao carregar produtos:", error);
-      });
+    this.getProducs(this.filters);
   },
 
   methods: {
@@ -77,73 +74,10 @@ export default {
         params: { id: product.id },
       });
     },
-    showDetails(productId) {
-      this.productId = productId;
+    showDetails(product) {
+      this.productId = product.id;
       this.openModal = true;
     },
   },
 };
 </script>
-
-<style>
-.badge.sale {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  padding: 4px 8px;
-}
-
-.icon-container {
-  /*position: absolute;*/
-  bottom: 15px;
-  left: 50%;
-
-  display: flex;
-  justify-content: space-between;
-  background: transparent;
-}
-
-.icon-box {
-  width: 20%;
-  height: 55px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid var(--primary);
-  background-color: #ffffff;
-  color: var(--primary);
-}
-
-.q-btn {
-  border-radius: 5px;
-}
-
-.text-subtitle1 {
-  font-size: 14px;
-  color: #000000;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.text-subtitle1 a {
-  font-size: 14px;
-  color: #000000;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.product-card {
-  transition: box-shadow 0.3s ease;
-}
-.product-card:hover,
-.icon-box:hover {
-  box-shadow: 0 4px 8px rgb(0 0 0 / 53%);
-}
-.icon-box:hover {
-  background-color: var(--primary) !important;
-  color: var(--text-primary) !important;
-}
-</style>
