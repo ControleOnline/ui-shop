@@ -51,20 +51,18 @@
   </div>
 
   <div class="row full-width sticky-bottom bg-white q-pa-md">
-    <addProduct :product="productDetails"/>
+    <addProduct />
   </div>
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import CustomProduct from "@controleonline/ui-orders/src/components/CustomProduct.vue";
 import addProduct from "@controleonline/ui-orders/src/components/cart/addProduct";
 export default {
-
   components: {
     addProduct,
     CustomProduct,
-    
   },
   props: {
     productId: {
@@ -72,6 +70,9 @@ export default {
     },
   },
   computed: {
+    ...mapGetters({
+      productDetails: "products/item",
+    }),
     carouselConfigs() {
       return {
         store: "product_file",
@@ -82,26 +83,20 @@ export default {
   },
   data() {
     return {
-      productDetails: [],
       id: null,
     };
   },
   created() {
-    this.id = this.productId || decodeURIComponent(this.$route.params.id);
-    this.categorias();
+    this.init();
   },
 
   methods: {
     ...mapActions({
       getProductDetails: "products/get",
     }),
-
-    categorias() {
-      this.getProductDetails(this.id)
-        .then((response) => {
-          this.productDetails = response;
-        })
-        .catch((error) => {});
+    init() {
+      this.id = this.productId || decodeURIComponent(this.$route.params.id);
+      this.getProductDetails(this.id);
     },
   },
 };
