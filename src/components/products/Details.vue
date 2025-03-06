@@ -5,7 +5,7 @@
         flat
         icon="arrow_back"
         color="primary"
-        @click="$router.back()"
+        @click="back()"
         label="Voltar"
         class="q-mb-md"
       />
@@ -40,18 +40,13 @@
         {{ productDetails.description }}
       </div>
       <div class="row col-12 details-resume">
-        <CustomProduct
-          v-if="productDetails.type === 'custom'"
-          :selectedProduct="productDetails"
-          @changeSelection="changeSelection"
-          @changeIngredients="changeIngredients"
-        />
+        <CustomProduct v-if="productDetails.type === 'custom'" />
       </div>
     </div>
   </div>
 
   <div class="row full-width sticky-bottom bg-white q-pa-md">
-    <addProduct />
+    <addProduct @saved="saved" />
   </div>
 </template>
 
@@ -93,10 +88,22 @@ export default {
   methods: {
     ...mapActions({
       getProductDetails: "products/get",
+      setProductDetails: "products/setItem",
+      setProduct: "cart/setProduct",
     }),
     init() {
       this.id = this.productId || decodeURIComponent(this.$route.params.id);
-      this.getProductDetails(this.id);
+      this.setProductDetails({});
+      this.setProduct(null);
+      this.getProductDetails(this.id).then((result) => {
+        this.setProduct(result);
+      });
+    },
+    saved() {
+      this.$router.back();
+    },
+    back() {
+      this.$router.back();
     },
   },
 };
