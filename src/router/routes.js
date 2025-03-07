@@ -58,7 +58,7 @@ export const routes = [
       {
         name: "ShopCart",
         path: "",
-        component: () => import("../pages/Cart/index.vue"),
+        component: () => import("../pages/Cart"),
       },
     ],
   },
