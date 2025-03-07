@@ -1,5 +1,9 @@
 <template>
-  <Orders :context="context" v-if="context" :orderId="orderId" />
+  <Orders
+    :context="'purchase'"
+    v-if="this.cart && this.cart.id"
+    :orderId="this.cart?.id"
+  />
 </template>
 
 <script>
@@ -12,17 +16,14 @@ export default {
   },
   computed: {
     ...mapGetters({
-      cart: "cart/item",
+      cart: "cart/order",
     }),
   },
   data() {
     return {
-      context: "purchase",
-      orderId: null,
     };
   },
   created() {
-    this.orderId = cart.id;
   },
 };
 </script>

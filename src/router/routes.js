@@ -57,7 +57,8 @@ export const routes = [
     children: [
       {
         name: "ShopCart",
-        component: () => import("../pages/Cart"),
+        path: "",
+        component: () => import("../pages/Cart/index.vue"),
       },
     ],
   },
