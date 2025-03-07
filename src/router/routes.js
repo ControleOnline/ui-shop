@@ -49,4 +49,16 @@ export const routes = [
       },
     ],
   },
+
+  {
+    path: "/cart",
+    component: () =>
+      import("@controleonline/ui-layout/src/layouts/MainLayout.vue"),
+    children: [
+      {
+        name: "ShopCart",
+        component: () => import("../pages/Cart"),
+      },
+    ],
+  },
 ];
