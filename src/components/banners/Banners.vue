@@ -11,19 +11,19 @@
     >
       <q-carousel-slide
         :name="1"
-        img-src="https://cdn.quasar.dev/img/mountains.jpg"
+        img-src="https://api.controleonline.com/files/1049/download"
       />
       <q-carousel-slide
         :name="2"
-        img-src="https://cdn.quasar.dev/img/parallax1.jpg"
+        img-src="https://api.controleonline.com/files/1049/download"
       />
       <q-carousel-slide
         :name="3"
-        img-src="https://cdn.quasar.dev/img/parallax2.jpg"
+        img-src="https://api.controleonline.com/files/1049/download"
       />
       <q-carousel-slide
         :name="4"
-        img-src="https://cdn.quasar.dev/img/quasar.jpg"
+        img-src="https://api.controleonline.com/files/1049/download"
       />
     </q-carousel>
   </div>
