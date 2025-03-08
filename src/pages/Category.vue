@@ -45,7 +45,7 @@ export default {
         productFiles: {
           file: { fileType: "image" },
         },
-        random: "true",
+        order: { name: "ASC" },
       };
     },
 

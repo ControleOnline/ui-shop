@@ -51,7 +51,7 @@ export default {
         itemsPerPage: 16,
         exists: { productFiles: "true" },
         productFiles: { file: { fileType: "image" } },
-        random: "true",
+        order:{product:'ASC'}
       }),
     },
   },

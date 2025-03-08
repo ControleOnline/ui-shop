@@ -5,7 +5,7 @@
         itemsPerPage: 32,
         exists: { productFiles: 'true' },
         productFiles: { file: { fileType: 'image' } },
-        random: 'true',
+        order: { product: 'ASC' },
         product: query,
       }"
     />
@@ -15,7 +15,7 @@
         itemsPerPage: 32,
         exists: { categoryFiles: 'true' },
         categoryFiles: { file: { fileType: 'image' } },
-        random: 'true',
+        order: { name: 'ASC' },
         context: 'products',
         name: query,
       }"

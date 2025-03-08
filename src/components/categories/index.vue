@@ -1,8 +1,8 @@
 <template>
   <div class="row col-12 justify-between q-pa-sm q-pl-lg q-pt-lg">
     <div
-    class="q-hoverable product-card q-card col-6 col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 q-card q-gutter-md q-mt-md"
-    v-for="category in categorys"
+      class="q-hoverable product-card q-card col-6 col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 q-card q-gutter-md q-mt-md"
+      v-for="category in categorys"
       :key="category.id"
     >
       <router-link
@@ -46,7 +46,7 @@ export default {
         itemsPerPage: 16,
         exists: { categoryFiles: "true" },
         categoryFiles: { file: { fileType: "image" } },
-        random: "true",
+        order: { name: "ASC" },
         context: "products",
       }),
     },
