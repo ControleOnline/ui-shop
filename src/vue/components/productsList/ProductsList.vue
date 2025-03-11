@@ -33,7 +33,7 @@ import Title from "../title/Title";
 import { mapActions, mapGetters } from "vuex";
 import ProductDetails from "../products/Details.vue";
 
-import productCard from "@controleonline/ui-orders/src/components/cart/productCard";
+import productCard from "@controleonline/ui-orders/src/vue/components/cart/productCard";
 export default {
   components: { Title, ProductDetails, productCard },
 

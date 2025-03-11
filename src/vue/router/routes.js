@@ -2,7 +2,7 @@ export const routes = [
   {
     path: "/shop",
     component: () =>
-      import("@controleonline/ui-layout/src/layouts/ShopLayout.vue"),
+      import("@controleonline/ui-layout/src/vue/layouts/ShopLayout.vue"),
     children: [
       {
         name: "ShopSearch",
@@ -41,7 +41,7 @@ export const routes = [
   {
     path: "/product",
     component: () =>
-      import("@controleonline/ui-layout/src/layouts/MainLayout.vue"),
+      import("@controleonline/ui-layout/src/vue/layouts/MainLayout.vue"),
     children: [
       {
         name: "ShopProductDetails",
@@ -55,7 +55,7 @@ export const routes = [
   {
     path: "/cart",
     component: () =>
-      import("@controleonline/ui-layout/src/layouts/MainLayout.vue"),
+      import("@controleonline/ui-layout/src/vue/layouts/MainLayout.vue"),
     children: [
       {
         name: "ShopCart",
