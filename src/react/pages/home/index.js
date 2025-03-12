@@ -16,10 +16,11 @@ export default function HomePage({navigation}) {
 }
 
 const styles = StyleSheet.create({
-  conatainer: {
+  container: {
     flex: 1,
     paddingHorizontal: 20,
     marginTop: 30,
+    paddingBottom: 60, // Espaço para o toolbar
   },
   wrapButton: {
     backgroundColor: '#88b04b',
