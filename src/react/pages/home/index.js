@@ -1,12 +1,13 @@
 import React from 'react';
 import {StyleSheet, TouchableOpacity, View, FlatList} from 'react-native';
 import {Text} from 'react-native-animatable';
-import {useTheme} from '@controleonline/ui-layout/src/react/components/ThemeProvider';
+import {getStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function HomePage({navigation}) {
-  const {menus, colors} = useTheme();
-
+  const {getters} = getStore('theme');
+  const {colors} = getters;
+  
   const handleTo = to => {
     navigation.navigate(to);
   };
