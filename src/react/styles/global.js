@@ -32,6 +32,28 @@ export default css = () => {
       alignItems: 'center',
       backgroundColor: colors['primary'],
     },
+
+    state: {
+      errorContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        elevation: 5,
+      },
+      button: {
+        marginTop: 15,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        backgroundColor: '#ff5c5c',
+        borderRadius: 5,
+      },
+      buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+      },
+    },
   });
   return globalStyles;
 };
