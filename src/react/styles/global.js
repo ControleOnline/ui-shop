@@ -31,6 +31,7 @@ export default css = () => {
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: colors['primary'],
+      flexDirection: 'row',
     },
 
     state: {
