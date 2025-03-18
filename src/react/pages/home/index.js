@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {colors} = getters;
-  
+
   const handleTo = to => {
     navigation.navigate(to);
   };
@@ -22,24 +22,10 @@ export default function HomePage({navigation}) {
     },
     {
       id: '2',
-      title: 'Clientes',
-      icon: 'users',
+      title: 'Caixa',
+      icon: 'money',
       backgroundColor: '#4682b4',
-      onPress: () => handleTo('ClientsIndex'),
-    },
-    {
-      id: '3',
-      title: 'Produtos',
-      icon: 'home',
-      backgroundColor: '#32cd32',
-      onPress: () => handleTo('ProductsIndex'),
-    },
-    {
-      id: '4',
-      title: 'CRM',
-      icon: 'address-book',
-      backgroundColor: '#20b2aa',
-      onPress: () => handleTo('CRMIndex'),
+      onPress: () => handleTo('CashRegisterIndex'),
     },
   ];
 
