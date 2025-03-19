@@ -1,13 +1,21 @@
 import React from 'react';
-import {StyleSheet, TouchableOpacity, View, FlatList} from 'react-native';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import {Text} from 'react-native-animatable';
 import {getStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import StateStore from '@controleonline/ui-layout/src/react/components/StateStore';
 
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
+  const {getters: peopleGetters} = getStore('people');
   const {colors} = getters;
-
+  const {currentCompany} = peopleGetters;
   const handleTo = to => {
     navigation.navigate(to);
   };
@@ -37,6 +45,18 @@ export default function HomePage({navigation}) {
       <Text style={styles.buttonText}>{item.title}</Text>
     </TouchableOpacity>
   );
+
+  if (!currentCompany || Object.entries(currentCompany).length === 0 || !colors  || Object.entries(colors).length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color={colors['primary'] || '#0000ff'}
+        />
+        <Text style={styles.loadingText}>Carregando...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,5 +101,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
 });
