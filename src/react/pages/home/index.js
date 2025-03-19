@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState,  useCallback} from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
@@ -7,18 +7,38 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {Text} from 'react-native-animatable';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+
 import {getStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import StateStore from '@controleonline/ui-layout/src/react/components/StateStore';
 
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
+  const {getters: configsGetters, actions: configActions} = getStore('configs');
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
+  const [pdvType, setPdvType] = useState(null);
+  const {item: config} = configsGetters;
   const handleTo = to => {
     navigation.navigate(to);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (config) setPdvType(config['pdv-type'] || 'full');
+    }, [config]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (pdvType == 'simple')
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'SalesOrderIndex'}],
+        });
+    }, [pdvType]),
+  );
 
   const buttons = [
     {
@@ -46,7 +66,15 @@ export default function HomePage({navigation}) {
     </TouchableOpacity>
   );
 
-  if (!currentCompany || Object.entries(currentCompany).length === 0 || !colors  || Object.entries(colors).length === 0) {
+  if (
+    !config ||
+    !pdvType ||
+    pdvType == 'simple' ||
+    !currentCompany ||
+    Object.entries(currentCompany).length === 0 ||
+    !colors ||
+    Object.entries(colors).length === 0
+  ) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator
