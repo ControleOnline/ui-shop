@@ -1,4 +1,4 @@
-import React, {useState,  useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
@@ -16,6 +16,7 @@ export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
   const {getters: configsGetters, actions: configActions} = getStore('configs');
+  const {actions: authActions} = getStore('auth');
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [pdvType, setPdvType] = useState(null);
@@ -26,7 +27,17 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (config) setPdvType(config['pdv-type'] || 'full');
+      if (config && Object.entries(config).length > 0)
+        setPdvType(config['pdv-type'] || 'full');
+      else if (
+        config != undefined &&
+        config !== false &&
+        authActions.isLogged()
+      )
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'SettingsPage'}],
+        });
     }, [config]),
   );
 
