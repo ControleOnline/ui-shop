@@ -16,6 +16,7 @@ export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
   const {getters: configsGetters, actions: configActions} = getStore('configs');
+  const device = JSON.parse(localStorage.getItem('device') || '{}');
   const {actions: authActions} = getStore('auth');
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
@@ -27,7 +28,12 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (config && Object.entries(config).length > 0)
+      if (
+        config &&
+        Object.entries(config).length > 0 &&
+        device &&
+        config['config-version' == device.buildNumber]
+      )
         setPdvType(config['pdv-type'] || 'full');
       else if (
         config != undefined &&
