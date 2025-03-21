@@ -32,7 +32,7 @@ export default function HomePage({navigation}) {
         config &&
         Object.entries(config).length > 0 &&
         device &&
-        config['config-version' == device.buildNumber]
+        config['config-version'] == device.buildNumber
       )
         setPdvType(config['pdv-type'] || 'full');
       else if (
