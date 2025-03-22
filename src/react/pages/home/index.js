@@ -38,6 +38,8 @@ export default function HomePage({navigation}) {
       else if (
         config != undefined &&
         config !== false &&
+        (!config['config-version'] ||
+          config['config-version'] != device.buildNumber) &&
         authActions.isLogged()
       )
         navigation.reset({
