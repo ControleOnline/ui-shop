@@ -28,35 +28,19 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (
-        config &&
-        Object.entries(config).length > 0 &&
-        device &&
-        config['config-version'] == device.buildNumber
-      )
-        setPdvType(config['pdv-type'] || 'full');
-      else if (
-        config != undefined &&
-        config !== false &&
-        (!config['config-version'] ||
-          config['config-version'] != device.buildNumber) &&
-        authActions.isLogged()
-      )
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'SettingsPage'}],
-        });
-    }, [config]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
       if (pdvType == 'simple')
         navigation.reset({
           index: 0,
           routes: [{name: 'SalesOrderIndex'}],
         });
     }, [pdvType]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (config && Object.entries(config).length > 0)
+        setPdvType(config['pdv-type'] || 'full');
+    }, [config, device]),
   );
 
   const buttons = [
