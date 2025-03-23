@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
-  const {getters: configsGetters, actions: configActions} = getStore('configs');
+  const {getters: configsGetters} = getStore('configs');
   const device = JSON.parse(localStorage.getItem('device') || '{}');
   const {actions: authActions} = getStore('auth');
   const {colors} = getters;
