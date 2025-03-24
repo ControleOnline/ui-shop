@@ -43,6 +43,9 @@ export default css = () => {
         borderRadius: 10,
         elevation: 5,
       },
+      errorText: {
+        color: '#000',
+      },
       button: {
         marginTop: 15,
         paddingVertical: 10,
