@@ -20,7 +20,7 @@ export default function HomePage({navigation}) {
   const {actions: authActions} = getStore('auth');
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
-  const [pdvType, setPdvType] = useState(null);
+  const [posType, setPosType] = useState(null);
   const {item: config} = configsGetters;
   const handleTo = to => {
     navigation.navigate(to);
@@ -28,18 +28,18 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (pdvType == 'simple')
+      if (posType == 'simple')
         navigation.reset({
           index: 0,
           routes: [{name: 'SalesOrderIndex'}],
         });
-    }, [pdvType]),
+    }, [posType]),
   );
 
   useFocusEffect(
     useCallback(() => {
       if (config && Object.entries(config).length > 0)
-        setPdvType(config['pdv-type'] || 'full');
+        setPosType(config['pos-type'] || 'full');
     }, [config, device]),
   );
 
@@ -71,8 +71,8 @@ export default function HomePage({navigation}) {
 
   if (
     !config ||
-    !pdvType ||
-    pdvType == 'simple' ||
+    !posType ||
+    posType == 'simple' ||
     !currentCompany ||
     Object.entries(currentCompany).length === 0 ||
     !colors ||
