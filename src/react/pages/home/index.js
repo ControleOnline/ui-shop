@@ -15,13 +15,11 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
-  const {getters: configsGetters} = getStore('configs');
-  const device = JSON.parse(localStorage.getItem('device') || '{}');
-  const {actions: authActions} = getStore('auth');
+  const {getters: deviceGetters} = getStore('device');
+  const {item: device} = deviceGetters;
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [posType, setPosType] = useState(null);
-  const {item: config} = configsGetters;
   const handleTo = to => {
     navigation.navigate(to);
   };
@@ -38,9 +36,9 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (config && Object.entries(config).length > 0)
-        setPosType(config['pos-type'] || 'full');
-    }, [config, device]),
+      if (device.configs && Object.keys(device.configs).length > 0)
+        setPosType(device.configs['pos-type'] || 'full');
+    }, [device]),
   );
 
   const buttons = [
@@ -68,9 +66,8 @@ export default function HomePage({navigation}) {
       <Text style={styles.buttonText}>{item.title}</Text>
     </TouchableOpacity>
   );
-
   if (
-    !config ||
+    !device.configs ||
     !posType ||
     posType == 'simple' ||
     !currentCompany ||
