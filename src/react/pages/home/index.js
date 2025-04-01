@@ -36,7 +36,7 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (device.configs && Object.keys(device.configs).length > 0)
+      if (device?.configs && Object.keys(device.configs).length > 0)
         setPosType(device.configs['pos-type'] || 'full');
     }, [device]),
   );
