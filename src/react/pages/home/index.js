@@ -15,8 +15,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 export default function HomePage({navigation}) {
   const {getters} = getStore('theme');
   const {getters: peopleGetters} = getStore('people');
-  const {getters: deviceGetters} = getStore('device');
-  const {item: device} = deviceGetters;
+  const {getters: deviceConfigGetters} = getStore('device_config');
+  const {item: device} = deviceConfigGetters;
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [posType, setPosType] = useState(null);
