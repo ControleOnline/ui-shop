@@ -20,12 +20,7 @@ export default css = () => {
       padding: 11,
       justifyContent: 'center',
       alignItems: 'center',
-    },
-    primary: {
-      backgroundColor: colors['primary'],
-      color: '#000000',
-    },
-    btnAdd: {
+      marginHorizontal: 5,
       flex: 1,
       color: '#fff',
       justifyContent: 'center',
@@ -33,7 +28,15 @@ export default css = () => {
       backgroundColor: colors['primary'],
       flexDirection: 'row',
     },
-
+    btnText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    primary: {
+      backgroundColor: colors['primary'],
+      color: '#000000',
+    },
     state: {
       errorContainer: {
         justifyContent: 'center',
@@ -45,17 +48,6 @@ export default css = () => {
       },
       errorText: {
         color: '#000',
-      },
-      button: {
-        marginTop: 15,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: '#ff5c5c',
-        borderRadius: 5,
-      },
-      buttonText: {
-        color: '#fff',
-        fontWeight: 'bold',
       },
     },
   });
