@@ -56,6 +56,20 @@ export default function HomePage({navigation}) {
       backgroundColor: '#4682b4',
       onPress: () => handleTo('CashRegisterIndex'),
     },
+    {
+      id: '3',
+      title: 'Estoque',
+      icon: 'archive',
+      backgroundColor: '#b48c46',
+      onPress: () => handleTo('CashRegisterIndex'),
+    },
+    {
+      id: '4',
+      title: 'Compras',
+      icon: 'shopping-bag',
+      backgroundColor: '#4ca96b',
+      onPress: () => handleTo('PurchasingSuggestion'),
+    },
   ];
 
   const renderButton = ({item}) => (
