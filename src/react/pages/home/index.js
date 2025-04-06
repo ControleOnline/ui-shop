@@ -61,7 +61,7 @@ export default function HomePage({navigation}) {
       title: 'Estoque',
       icon: 'archive',
       backgroundColor: '#b48c46',
-      onPress: () => handleTo('CashRegisterIndex'),
+      onPress: () => handleTo('Inventory'),
     },
     {
       id: '4',
