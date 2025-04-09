@@ -26,16 +26,6 @@ export default function HomePage({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      if (posType == 'simple')
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'SalesOrderIndex'}],
-        });
-    }, [posType]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
       if (device?.configs && Object.keys(device.configs).length > 0)
         setPosType(device.configs['pos-type'] || 'full');
     }, [device]),
@@ -82,8 +72,6 @@ export default function HomePage({navigation}) {
   );
   if (
     !device.configs ||
-    !posType ||
-    posType == 'simple' ||
     !currentCompany ||
     Object.entries(currentCompany).length === 0 ||
     !colors ||
