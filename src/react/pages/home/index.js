@@ -55,7 +55,7 @@ export default function HomePage({navigation}) {
     },
     {
       id: '4',
-      title: 'Compras',
+      title: 'Sugestão de Compras',
       icon: 'shopping-bag',
       backgroundColor: '#4ca96b',
       onPress: () => handleTo('PurchasingSuggestion'),
