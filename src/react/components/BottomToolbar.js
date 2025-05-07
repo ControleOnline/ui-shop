@@ -19,16 +19,17 @@ const BottomToolbar = ({navigation}) => {
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [posType, setPosType] = useState(null);
-  const localDevice = JSON.parse(localStorage.getItem('device') || '{}');
+  const {getters: deviceGetters} = getStore('device');
+  const {item: storagedDevice} = deviceGetters;  
 
   useFocusEffect(
     useCallback(() => {
-      if (localDevice && isLogged && currentPageName != 'SettingsPage')
+      if (storagedDevice && isLogged && currentPageName != 'SettingsPage')
         if (
           device &&
           device?.configs &&
           Object.entries(device.configs).length > 0 &&
-          device.configs['config-version'] == localDevice.buildNumber
+          device.configs['config-version'] == storagedDevice.buildNumber
         )
           setPosType(device.configs['pos-type'] || 'full');
         else
@@ -36,7 +37,7 @@ const BottomToolbar = ({navigation}) => {
             index: 0,
             routes: [{name: 'SettingsPage'}],
           });
-    }, [device, localDevice, isLogged]),
+    }, [device, storagedDevice, isLogged]),
   );
 
   useFocusEffect(
@@ -55,7 +56,7 @@ const BottomToolbar = ({navigation}) => {
           index: 0,
           routes: [{name: 'CloseCachRegister'}],
         });
-    }, [device, localDevice, isLogged]),
+    }, [device, storagedDevice, isLogged]),
   );
 
   const styles = StyleSheet.create({
