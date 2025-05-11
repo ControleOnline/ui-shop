@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import {Text} from 'react-native-animatable';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-
+import RemoteCheckoutService from '@controleonline/ui-common/src/react/components/RemoteCheckoutService';
 import {getStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -89,16 +89,19 @@ export default function HomePage({navigation}) {
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={buttons}
-        renderItem={renderButton}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.content}
-      />
-    </View>
+    <>
+      <View style={styles.container}>
+        <FlatList
+          data={buttons}
+          renderItem={renderButton}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.content}
+        />
+      </View>
+      <RemoteCheckoutService />
+    </>
   );
 }
 
