@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import {Text} from 'react-native-animatable';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import RemoteCheckoutService from '@controleonline/ui-common/src/react/components/RemoteCheckoutService';
 import {getStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -100,7 +99,6 @@ export default function HomePage({navigation}) {
           contentContainerStyle={styles.content}
         />
       </View>
-      <RemoteCheckoutService />
     </>
   );
 }
