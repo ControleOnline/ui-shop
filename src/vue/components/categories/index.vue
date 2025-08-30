@@ -37,28 +37,17 @@ export default {
   data() {
     return {
       categorys: [],
+      filters: {},
     };
   },
-  props: {
-    filters: {
-      type: Object,
-      default: () => ({
-        itemsPerPage: 16,
-        exists: { categoryFiles: "true" },
-        categoryFiles: { file: { fileType: "image" } },
-        order: { name: "ASC" },
-        context: "products",
-      }),
-    },
-  },
   created() {
-    this.getCaterories(this.filters).then((data) => {
-      this.categorys = data;
-    });
+    this.init();
   },
 
   computed: {
-    ...mapGetters({}),
+    ...mapGetters({
+      defaultCompany: "people/defaultCompany",
+    }),
 
     carouselConfigs() {
       return {
@@ -70,10 +59,30 @@ export default {
       };
     },
   },
+  watch: {
+    defaultCompany() {
+      this.init();
+    },
+  },
   methods: {
     ...mapActions({
       getCaterories: "categories/getItems",
     }),
+    init() {
+      if (!this.defaultCompany?.id) return;
+
+      this.filters = {
+        itemsPerPage: 500,
+        exists: { categoryFiles: "true" },
+        categoryFiles: { file: { fileType: "image" } },
+        order: { name: "ASC" },
+        context: "products",
+        company: this.defaultCompany.id,
+      };
+      this.getCaterories(this.filters).then((data) => {
+        this.categorys = data;
+      });
+    },
   },
 };
 </script>

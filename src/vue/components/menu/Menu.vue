@@ -103,11 +103,17 @@ export default {
       return this.categories.filter((cat) => !cat.parent);
     },
   },
+    watch: {
+    defaultCompany() {
+      this.fetchCategories();
+    },
+  },
   methods: {
     ...mapActions({
       getCategories: "categories/getItems",
     }),
     fetchCategories() {
+      if (!this.defaultCompany?.id) return;
       this.loading = true;
       this.getCategories({
         context: "products",

@@ -14,7 +14,7 @@ export const routes = [
         name: "ShopDefault",
         path: "",
         meta: { isPublic: true },
-        component: () => import("../pages/Home.vue"),
+        component: () => import("../pages/Categories.vue"),
       },
       {
         name: "ShopCategories",
