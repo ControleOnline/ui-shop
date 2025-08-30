@@ -100,7 +100,7 @@ export default {
       defaultCompany: "people/defaultCompany",
     }),
     mainCategories() {
-      return this.categories.filter((cat) => !cat.parent);
+      return this.categories?.filter((cat) => !cat.parent);
     },
   },
     watch: {
@@ -134,10 +134,10 @@ export default {
         });
     },
     hasChildren(category) {
-      return this.categories.some((cat) => cat.parent?.id === category.id);
+      return this.categories?.some((cat) => cat.parent?.id === category.id);
     },
     getChildren(parentId) {
-      return this.categories.filter((cat) => cat.parent?.id === parentId);
+      return this.categories?.filter((cat) => cat.parent?.id === parentId);
     },
     openMenu(categoryId) {
       this.activeMenu[categoryId] = true;
@@ -183,6 +183,13 @@ export default {
   font-size: 14px;
   color: #000000;
   font-weight: 500;
+
+ 
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+
 }
 .span-menu {
   text-transform: uppercase;

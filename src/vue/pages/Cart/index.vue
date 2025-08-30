@@ -16,7 +16,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      cart: "cart/order",
+      cart: "cart/item",
     }),
   },
   data() {
