@@ -34,7 +34,7 @@
 
     <div class="row col-md-6 col-sm-12 q-pa-sm right-bar">
       <div class="row col-12 price-container">
-        <h2>{{ "R$ " + $formatter.formatMoney(productDetails.price) }}</h2>
+        <h2>{{  $formatter.formatMoney(productDetails.price) }}</h2>
       </div>
 
       <div class="row col-12 details-resume">
