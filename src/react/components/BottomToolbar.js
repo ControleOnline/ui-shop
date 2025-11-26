@@ -52,12 +52,12 @@ const BottomToolbar = ({navigation}) => {
         (device.configs['cash-wallet-closed-id'] == undefined ||
           device.configs['cash-wallet-closed-id'] > 0) &&
         isLogged &&
-        currentPageName != 'CloseCachRegister' &&
+        currentPageName != 'CloseCashRegister' &&
         currentPageName != 'SettingsPage'
       ) {
         navigation.reset({
           index: 0,
-          routes: [{name: 'CloseCachRegister'}],
+          routes: [{name: 'CloseCashRegister'}],
         });
       }
     }, [device, storagedDevice, isLogged]),
