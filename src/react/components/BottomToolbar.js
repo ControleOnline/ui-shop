@@ -4,23 +4,29 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
 import Icon from 'react-native-vector-icons/Feather';
 import {useNavigationState} from '@react-navigation/native';
-import {getStore} from '@store';
+import {useStores} from '@store';
 
 const BottomToolbar = ({navigation}) => {
   const state = useNavigationState(state => state);
   const activeTab = state.routes[state.index]?.name || 'HomePage';
   const currentPageName =
     navigation.getState().routes[navigation.getState().index].name;
-  const {getters: deviceConfigGetters} = getStore('device_config');
+  const device_configStore = useStores(state => state.device_config);
+  const deviceConfigGetters = device_configStore.getters;
   const {item: device} = deviceConfigGetters;
-  const {getters: authGetters, actions: authActions} = getStore('auth');
-  const {getters: peopleGetters} = getStore('people');
-  const {getters} = getStore('theme');
+  const authStore = useStores(state => state.auth);
+  const authGetters = authStore.getters;
+  const authActions = authStore.actions;
+  const peopleStore = useStores(state => state.people);
+  const peopleGetters = peopleStore.getters;
+  const themeStore = useStores(state => state.theme);
+  const getters = themeStore.getters;
   const {isLogged} = authGetters;
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [posType, setPosType] = useState(null);
-  const {getters: deviceGetters} = getStore('device');
+  const deviceStore = useStores(state => state.device);
+  const deviceGetters = deviceStore.getters;
   const {item: storagedDevice} = deviceGetters;
 
   useFocusEffect(
