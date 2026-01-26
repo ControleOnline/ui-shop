@@ -10,6 +10,7 @@ import {Text} from 'react-native-animatable';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 
 export default function HomePage({navigation}) {
   const themeStore = useStore('theme');
@@ -22,8 +23,25 @@ export default function HomePage({navigation}) {
   const {colors} = getters;
   const {currentCompany} = peopleGetters;
   const [posType, setPosType] = useState(null);
+
+  const checkType = device?.configs?.['check-type'] || 'manual';
+
   const handleTo = to => {
     navigation.navigate(to);
+  };
+
+  const handleOpenCheckReader = () => {
+    if (checkType === 'barcode') {
+      console.log('🎥 [CAMERA] Ativando leitor de código de barras para comanda...');
+      // Aqui será ativada a câmera para leitura de código de barras
+    } else if (checkType === 'rfid') {
+      console.log('📡 [RFID] Ativando leitor RFID para comanda...');
+      // Aqui será ativado o leitor RFID
+    } else {
+      // checkType === 'manual' ou qualquer outro valor
+      console.log('📋 [MANUAL] Abrindo lista de comandas manualmente...');
+      navigation.navigate('SalesOrderIndex');
+    }
   };
 
   useFocusEffect(
@@ -33,18 +51,38 @@ export default function HomePage({navigation}) {
     }, [device]),
   );
 
-  const buttons = [
-    {
+  const getCheckButtonConfig = () => {
+    let icon = 'shopping-cart';
+    let title = 'Pedidos de Venda';
+    let iconLibrary = 'fontawesome';
+
+    if (checkType === 'barcode') {
+      icon = 'camera-alt';
+      title = 'Abrir Comanda';
+      iconLibrary = 'material';
+    } else if (checkType === 'rfid') {
+      icon = 'nfc';
+      title = 'Abrir Comanda';
+      iconLibrary = 'material';
+    }
+
+    return {
       id: '1',
-      title: 'Pedidos de Venda',
-      icon: 'shopping-cart',
+      title,
+      icon,
+      iconLibrary,
       backgroundColor: colors['primary'],
-      onPress: () => handleTo('SalesOrderIndex'),
-    },
+      onPress: handleOpenCheckReader,
+    };
+  };
+
+  const buttons = [
+    getCheckButtonConfig(),
     {
       id: '2',
       title: 'Caixa',
       icon: 'money',
+      iconLibrary: 'fontawesome',
       backgroundColor: '#4682b4',
       onPress: () => handleTo('CashRegisterIndex'),
     },
@@ -54,10 +92,15 @@ export default function HomePage({navigation}) {
     <TouchableOpacity
       style={[styles.button, {backgroundColor: item.backgroundColor}]}
       onPress={item.onPress}>
-      <Icon name={item.icon} size={30} color="#fff" style={styles.icon} />
+      {item.iconLibrary === 'material' ? (
+        <MaterialIcon name={item.icon} size={30} color="#fff" style={styles.icon} />
+      ) : (
+        <Icon name={item.icon} size={30} color="#fff" style={styles.icon} />
+      )}
       <Text style={styles.buttonText}>{item.title}</Text>
     </TouchableOpacity>
   );
+
   if (
     !device.configs ||
     !currentCompany ||
