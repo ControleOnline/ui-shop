@@ -36,7 +36,7 @@ const BottomToolbar = ({navigation}) => {
           device &&
           device?.configs &&
           Object.entries(device.configs).length > 0 &&
-          device.configs['config-version'] == storagedDevice.buildNumber
+          device.configs['config-version'] == storagedDevice.appVersion
         ) {
           setPosType(device.configs['pos-type'] || 'full');
         } else {
