@@ -36,6 +36,7 @@ const BottomToolbar = ({navigation}) => {
           device &&
           device?.configs &&
           Object.entries(device.configs).length > 0 &&
+          // ALEMAC // pega o appVersion ao invés do buildNumber
           device.configs['config-version'] == storagedDevice.appVersion
         ) {
           setPosType(device.configs['pos-type'] || 'full');
