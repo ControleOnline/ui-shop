@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import {useNavigationState} from '@react-navigation/native';
 import {useStore} from '@store';
 
-const BottomToolbar = ({navigation}) => {
+const ShopToolbar = ({navigation}) => {
   const state = useNavigationState(state => state);
   const activeTab = state.routes[state.index]?.name || 'HomePage';
   const currentPageName =
@@ -188,4 +188,4 @@ const BottomToolbar = ({navigation}) => {
     </View>
   );
 };
-export default BottomToolbar;
+export default ShopToolbar;

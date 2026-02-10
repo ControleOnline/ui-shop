@@ -1,10 +1,10 @@
 import HomePage from '@controleonline/ui-shop/src/react/pages/home/index';
-import ShopLayout from '@controleonline/ui-layout/src/react/layouts/ShopLayout';
+import DefaultLayout from '@controleonline/ui-layout/src/react/layouts/DefaultLayout';
 
 const WrappedHomePage = ({navigation}) => (
-  <ShopLayout navigation={navigation}>
+  <DefaultLayout navigation={navigation}>
     <HomePage navigation={navigation} />
-  </ShopLayout>
+  </DefaultLayout>
 );
 
 const shopRoutes = [

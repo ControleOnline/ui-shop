@@ -2,7 +2,7 @@ export const routes = [
   {
     path: "/shop",
     component: () =>
-      import("@controleonline/ui-layout/src/vue/layouts/ShopLayout.vue"),
+      import("@controleonline/ui-layout/src/vue/layouts/DefaultLayout.vue"),
     children: [
       {
         name: "ShopSearch",
