@@ -1,19 +1,19 @@
-import React, {useState, useCallback} from 'react';
-import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 import Icon from 'react-native-vector-icons/Feather';
-import {useNavigationState} from '@react-navigation/native';
-import {useStore} from '@store';
+import { useNavigationState } from '@react-navigation/native';
+import { useStore } from '@store';
 
-const ShopToolbar = ({navigation}) => {
+const ShopToolbar = ({ navigation }) => {
   const state = useNavigationState(state => state);
   const activeTab = state.routes[state.index]?.name || 'HomePage';
   const currentPageName =
     navigation.getState().routes[navigation.getState().index].name;
   const device_configStore = useStore('device_config');
   const deviceConfigGetters = device_configStore.getters;
-  const {item: device} = deviceConfigGetters;
+  const { item: device } = deviceConfigGetters;
   const authStore = useStore('auth');
   const authGetters = authStore.getters;
   const authActions = authStore.actions;
@@ -21,13 +21,13 @@ const ShopToolbar = ({navigation}) => {
   const peopleGetters = peopleStore.getters;
   const themeStore = useStore('theme');
   const getters = themeStore.getters;
-  const {isLogged} = authGetters;
-  const {colors} = getters;
-  const {currentCompany} = peopleGetters;
+  const { isLogged } = authGetters;
+  const { colors } = getters;
+  const { currentCompany } = peopleGetters;
   const [posType, setPosType] = useState(null);
   const deviceStore = useStore('device');
   const deviceGetters = deviceStore.getters;
-  const {item: storagedDevice} = deviceGetters;
+  const { item: storagedDevice } = deviceGetters;
 
   useFocusEffect(
     useCallback(() => {
@@ -43,7 +43,7 @@ const ShopToolbar = ({navigation}) => {
         } else {
           navigation.reset({
             index: 0,
-            routes: [{name: 'SettingsPage'}],
+            routes: [{ name: 'SettingsPage' }],
           });
         }
       }
@@ -64,7 +64,7 @@ const ShopToolbar = ({navigation}) => {
       ) {
         navigation.reset({
           index: 0,
-          routes: [{name: 'CloseCashRegister'}],
+          routes: [{ name: 'CloseCashRegister' }],
         });
       }
     }, [device, storagedDevice, isLogged]),
