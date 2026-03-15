@@ -1,13 +1,7 @@
 import {env} from '@env';
 
-const normalizeHost = value =>
-  String(value || '')
-    .trim()
-    .replace(/^https?:\/\//i, '')
-    .replace(/\/+$/, '');
-
 export const getHost = () =>
-  normalizeHost(env.DOMAIN || (typeof location !== 'undefined' ? location.host : ''));
+  env.DOMAIN || (typeof location !== 'undefined' ? location.host : '');
 
 export const buildFileUrl = fileId => {
   if (!fileId) return '';
