@@ -45,7 +45,7 @@ export default function OrdersPage() {
   return (
     <ShopShell
       onSearch={query =>
-        navigation.navigate(query ? 'ShopSearchPage' : 'SalesOrderIndex', {q: query})
+        navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
         <ScrollView style={{flex: 1, padding: 16, backgroundColor: '#f5f5f5'}}>

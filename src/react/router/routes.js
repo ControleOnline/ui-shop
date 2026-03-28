@@ -74,7 +74,7 @@ const shopRoutes = [
 ];
 
 export const menuStorefrontRoute = {
-  name: 'SalesOrderIndex',
+  name: 'ShopIndex',
   path: 'shop',
   component: StorefrontHome,
   options: {

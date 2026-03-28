@@ -57,7 +57,7 @@ export default function StorefrontHome() {
     <ShopShell
       searchValue=""
       onSearch={query =>
-        navigation.navigate(query ? 'ShopSearchPage' : 'SalesOrderIndex', {
+        navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {
           q: query,
         })
       }>

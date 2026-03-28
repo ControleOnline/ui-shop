@@ -124,7 +124,7 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
             overflow: 'visible',
           }}>
           <View style={{flexDirection: 'row', alignItems: 'center', gap: 18}}>
-            <TouchableOpacity onPress={() => navigation.navigate('SalesOrderIndex')}>
+            <TouchableOpacity onPress={() => navigation.navigate('ShopIndex')}>
               {logoUrl ? (
                 <Image
                   source={{uri: logoUrl}}

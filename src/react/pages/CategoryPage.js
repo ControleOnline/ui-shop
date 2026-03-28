@@ -54,7 +54,7 @@ export default function CategoryPage() {
   return (
     <ShopShell
       onSearch={query =>
-        navigation.navigate(query ? 'ShopSearchPage' : 'SalesOrderIndex', {q: query})
+        navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
         <>

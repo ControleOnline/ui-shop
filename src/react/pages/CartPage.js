@@ -47,7 +47,7 @@ export default function CartPage() {
   return (
     <ShopShell
       onSearch={query =>
-        navigation.navigate(query ? 'ShopSearchPage' : 'SalesOrderIndex', {q: query})
+        navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
         <>

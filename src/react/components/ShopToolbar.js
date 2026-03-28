@@ -125,7 +125,7 @@ const ShopToolbar = ({ navigation }) => {
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
-          navigation.navigate('SalesOrderIndex');
+          navigation.navigate('ShopIndex');
         }}
         disabled={
           !currentCompany || Object.entries(currentCompany).length === 0
@@ -133,12 +133,12 @@ const ShopToolbar = ({ navigation }) => {
         <Icon
           name="shopping-bag"
           size={15}
-          color={activeTab === 'SalesOrderIndex' ? '#007AFF' : '#666'}
+          color={activeTab === 'ShopIndex' ? '#007AFF' : '#666'}
         />
         <Text
           style={[
             styles.buttonText,
-            activeTab === 'SalesOrderIndex' && styles.activeText,
+            activeTab === 'ShopIndex' && styles.activeText,
           ]}>
           Pedidos
         </Text>
