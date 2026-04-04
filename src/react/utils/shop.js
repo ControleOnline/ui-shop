@@ -1,11 +1,17 @@
 import {env} from '@env';
+import {
+  resolveAppDomain,
+  resolveCompanyDomain,
+} from '@controleonline/ui-common/src/utils/appDomain';
 
-export const getHost = () =>
-  env.DOMAIN || (typeof location !== 'undefined' ? location.host : '');
+export const SHOP_PRODUCT_TYPES = ['product', 'manufactured', 'custom', 'service'];
 
-export const buildFileUrl = fileId => {
+export const getHost = company =>
+  resolveCompanyDomain(company, resolveAppDomain(env.DOMAIN));
+
+export const buildFileUrl = (fileId, company = null) => {
   if (!fileId) return '';
-  return `${String(env.API_ENTRYPOINT || '').replace(/\/$/, '')}/files/${fileId}/download?app-domain=${encodeURIComponent(getHost())}`;
+  return `${String(env.API_ENTRYPOINT || '').replace(/\/$/, '')}/files/${fileId}/download?app-domain=${encodeURIComponent(getHost(company))}`;
 };
 
 export const formatMoney = value => {
@@ -28,14 +34,19 @@ export const getImageFromRelations = relations => {
 export const pickTheme = company => {
   const companyColors = company?.theme?.colors || {};
   return {
-    header: companyColors['header-primary'] || '#073a53',
-    primary: companyColors.primary || '#1f95c6',
-    background: companyColors.background || '#f4f7fb',
+    header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
+    primary: companyColors.primary || '#0E7490',
+    accent: companyColors.accent || companyColors.secondary || '#F59E0B',
+    background: companyColors.background || '#F3F7FB',
     surface: companyColors.surface || '#ffffff',
     text: companyColors['text-primary'] || '#111827',
     muted: companyColors['text-secondary'] || '#64748b',
-    darkCard: '#1f1f1f',
-    darkBorder: '#6b7280',
+    cardBorder: companyColors.border || '#D7E1EC',
+    onPrimary: companyColors['text-on-primary'] || '#ffffff',
+    success: companyColors.success || '#22C55E',
+    danger: companyColors.danger || '#EF4444',
+    darkCard: companyColors['card-dark'] || '#163042',
+    darkBorder: companyColors['card-dark-border'] || '#406179',
   };
 };
 

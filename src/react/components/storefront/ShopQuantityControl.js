@@ -1,34 +1,61 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 
-const findOrderProduct = (cart, product) => {
+const productGroupRequirementCache = new Map();
+
+const extractItems = response => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.member)) return response.member;
+  if (Array.isArray(response?.['hydra:member']))
+    return response['hydra:member'];
+  return [];
+};
+
+const findOrderProduct = (cart, product, orderProductId = null) => {
+  if (orderProductId) {
+    const targetId = normalizeId(orderProductId);
+    return (cart?.orderProducts || []).find(
+      item => normalizeId(item?.id || item?.['@id']) === targetId,
+    );
+  }
+
   const productId = normalizeId(product?.id || product?.['@id']);
   return (cart?.orderProducts || []).find(
-    item => normalizeId(item?.product?.id || item?.product?.['@id']) === productId,
+    item =>
+      normalizeId(item?.product?.id || item?.product?.['@id']) === productId,
   );
 };
 
 export default function ShopQuantityControl({
   product,
   cart,
+  orderProduct = null,
+  orderProductId = null,
   refreshCart,
   style,
   textStyle,
   iconColor = '#1f95c6',
   defaultQuantity = 0,
 }) {
+  const navigation = useNavigation();
   const orderProductsStore = useStore('order_products');
   const {actions: orderProductActions} = orderProductsStore;
+  const productGroupStore = useStore('product_group');
+  const peopleStore = useStore('people');
+  const {defaultCompany, currentCompany} = peopleStore.getters;
   const [quantity, setQuantity] = useState(defaultQuantity);
   const timeoutRef = useRef(null);
 
-  const currentOrderProduct = useMemo(
-    () => findOrderProduct(cart, product),
-    [cart, product],
-  );
+  const currentOrderProduct = useMemo(() => {
+    if (orderProduct?.id || orderProduct?.['@id']) {
+      return orderProduct;
+    }
+    return findOrderProduct(cart, product, orderProductId);
+  }, [cart, orderProduct, orderProductId, product]);
 
   useEffect(() => {
     setQuantity(Number(currentOrderProduct?.quantity || defaultQuantity || 0));
@@ -36,26 +63,40 @@ export default function ShopQuantityControl({
 
   const persist = useCallback(
     nextQuantity => {
-      if (!cart?.id || !product?.['@id']) return;
+      const productIri =
+        product?.['@id'] ||
+        (normalizeId(product?.id) ? `/products/${normalizeId(product.id)}` : null);
+      if (!productIri) return;
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       timeoutRef.current = setTimeout(async () => {
         try {
-          if (nextQuantity <= 0 && currentOrderProduct?.id) {
-            await orderProductActions.remove(currentOrderProduct.id);
+          let activeCart = cart;
+          if (!activeCart?.id && refreshCart) {
+            activeCart = await refreshCart();
+          }
+          if (!activeCart?.id) return;
+
+          const targetId =
+            currentOrderProduct?.id || normalizeId(orderProductId);
+          const orderIri = activeCart?.['@id'] || `/orders/${activeCart.id}`;
+
+          if (nextQuantity <= 0 && targetId) {
+            await orderProductActions.remove(targetId);
           } else if (nextQuantity > 0) {
             await orderProductActions.save({
-              id: currentOrderProduct?.id || null,
-              parentProduct: null,
-              product: product['@id'],
-              product_group_id: null,
+              id: targetId || null,
+              parentProduct:
+                currentOrderProduct?.parentProduct?.['@id'] || null,
+              product: productIri,
+              product_group_id: currentOrderProduct?.productGroup?.id || null,
               quantity: nextQuantity,
-              order: cart['@id'],
+              order: orderIri,
             });
           }
         } finally {
-          refreshCart?.();
+          await refreshCart?.();
         }
       }, 350);
     },
@@ -63,6 +104,9 @@ export default function ShopQuantityControl({
       cart?.id,
       cart?.['@id'],
       currentOrderProduct?.id,
+      currentOrderProduct?.parentProduct?.['@id'],
+      currentOrderProduct?.productGroup?.id,
+      orderProductId,
       orderProductActions,
       product,
       refreshCart,
@@ -76,11 +120,74 @@ export default function ShopQuantityControl({
     [],
   );
 
-  const increase = useCallback(() => {
+  const ensureCustomizationRequired = useCallback(async () => {
+    if (orderProductId || orderProduct?.id || orderProduct?.['@id']) {
+      return false;
+    }
+
+    const inlineHasGroups =
+      Array.isArray(product?.productGroups) && product.productGroups.length > 0;
+    if (inlineHasGroups || product?.type === 'custom') {
+      return true;
+    }
+
+    const productId = normalizeId(product?.id || product?.['@id']);
+    if (!productId) {
+      return false;
+    }
+
+    const providerId = defaultCompany?.id || currentCompany?.id || '';
+    const cacheKey = `${providerId}:${productId}`;
+    if (productGroupRequirementCache.has(cacheKey)) {
+      return productGroupRequirementCache.get(cacheKey);
+    }
+
+    const baseFilter = {
+      parentProduct: `/products/${productId}`,
+      itemsPerPage: 1,
+    };
+
+    let groups = [];
+    if (providerId) {
+      const byPeople = await productGroupStore.actions.getItems({
+        ...baseFilter,
+        people: providerId,
+      });
+      groups = extractItems(byPeople);
+    }
+    if (groups.length === 0) {
+      const fallback = await productGroupStore.actions.getItems(baseFilter);
+      groups = extractItems(fallback);
+    }
+
+    const hasGroups = groups.length > 0;
+    productGroupRequirementCache.set(cacheKey, hasGroups);
+    return hasGroups;
+  }, [
+    currentCompany?.id,
+    defaultCompany?.id,
+    orderProduct,
+    orderProductId,
+    product,
+    productGroupStore.actions,
+  ]);
+
+  const increase = useCallback(async () => {
+    try {
+      const requiresCustomization = await ensureCustomizationRequired();
+      if (requiresCustomization) {
+        navigation.navigate('CustomizeScreen', {product});
+        return;
+      }
+    } catch {
+      navigation.navigate('CustomizeScreen', {product});
+      return;
+    }
+
     const next = quantity + 1;
     setQuantity(next);
     persist(next);
-  }, [persist, quantity]);
+  }, [ensureCustomizationRequired, navigation, persist, product, quantity]);
 
   const decrease = useCallback(() => {
     const next = quantity > 0 ? quantity - 1 : 0;

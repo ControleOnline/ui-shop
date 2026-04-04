@@ -11,52 +11,48 @@ export default function ShopCategoryCard({category, onPress, company}) {
       onPress={onPress}
       activeOpacity={0.85}
       style={{
-        backgroundColor: theme.darkCard,
-        borderRadius: 4,
+        backgroundColor: theme.surface,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: theme.cardBorder,
         overflow: 'hidden',
         flex: 1,
-        minWidth: 260,
+        minWidth: 150,
       }}>
       <View
         style={{
-          margin: 12,
-          borderWidth: 2,
-          borderStyle: 'dotted',
-          borderColor: theme.darkBorder,
-          minHeight: 220,
+          minHeight: 150,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: theme.darkCard,
+          backgroundColor: `${theme.primary}10`,
         }}>
         {imageUrl ? (
           <Image
             source={{uri: imageUrl}}
-            resizeMode="contain"
-            style={{width: '80%', height: 160}}
+            resizeMode="cover"
+            style={{width: '100%', height: 170}}
           />
-        ) : null}
+        ) : (
+          <Text style={{fontSize: 32, color: theme.primary, fontWeight: '700'}}>MENU</Text>
+        )}
       </View>
 
-      <View style={{paddingHorizontal: 14, paddingBottom: 18}}>
+      <View style={{paddingHorizontal: 12, paddingVertical: 12}}>
         <Text
           style={{
-            color: '#fff',
-            fontSize: 18,
-            fontWeight: '600',
-            textDecorationLine: 'underline',
+            color: theme.text,
+            fontSize: 16,
+            fontWeight: '700',
           }}>
           {category?.name}
         </Text>
         <Text
           style={{
-            marginTop: 10,
-            color: '#fff',
-            fontSize: 13,
-            textDecorationLine: 'underline',
+            marginTop: 4,
+            color: theme.muted,
+            fontSize: 12,
           }}>
-          {category?.['@type'] || 'Category'}
+          {category?.description || 'Toque para ver os pratos'}
         </Text>
       </View>
     </TouchableOpacity>

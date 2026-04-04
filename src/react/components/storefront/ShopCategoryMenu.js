@@ -10,22 +10,35 @@ export default function ShopCategoryMenu({categories = [], onSelect, company}) {
   );
 
   return (
-    <View style={{backgroundColor: theme.primary, paddingVertical: 16}}>
+    <View
+      style={{
+        backgroundColor: theme.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.cardBorder,
+        paddingVertical: 10,
+      }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{paddingHorizontal: 16, gap: 22}}>
+        contentContainerStyle={{paddingHorizontal: 14, gap: 10}}>
         {topLevel.map(category => (
           <TouchableOpacity
             key={category.id}
             onPress={() => onSelect?.(category)}
-            style={{paddingVertical: 8}}>
+            activeOpacity={0.9}
+            style={{
+              backgroundColor: `${theme.primary}12`,
+              borderColor: `${theme.primary}35`,
+              borderWidth: 1,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 999,
+            }}>
             <Text
               style={{
-                color: '#fff',
-                fontSize: 14,
+                color: theme.primary,
+                fontSize: 12,
                 fontWeight: '700',
-                textTransform: 'uppercase',
               }}>
               {category.name}
             </Text>

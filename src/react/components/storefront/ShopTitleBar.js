@@ -8,13 +8,15 @@ export default function ShopTitleBar({title, company}) {
   return (
     <View
       style={{
-        backgroundColor: theme.primary,
-        minHeight: 80,
-        alignItems: 'center',
+        backgroundColor: theme.surface,
+        minHeight: 52,
+        alignItems: 'flex-start',
         justifyContent: 'center',
         paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.cardBorder,
       }}>
-      <Text style={{color: '#fff', fontSize: 26, fontWeight: '500'}}>
+      <Text style={{color: theme.text, fontSize: 20, fontWeight: '700'}}>
         {title}
       </Text>
     </View>

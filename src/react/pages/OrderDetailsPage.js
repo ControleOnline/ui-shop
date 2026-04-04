@@ -1,34 +1,29 @@
 import React, {useCallback, useState} from 'react';
-import {ScrollView, Text, View} from 'react-native';
+import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
-import {formatMoney} from '@controleonline/ui-shop/src/react/utils/shop';
+import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
 export default function OrderDetailsPage() {
   const navigation = useNavigation();
   const route = useRoute();
   const orderId = String(route.params?.id || '');
   const ordersStore = useStore('orders');
-  const categoriesStore = useStore('categories');
   const peopleStore = useStore('people');
   const {defaultCompany} = peopleStore.getters;
+  const theme = pickTheme(defaultCompany);
   const [order, setOrder] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       if (!orderId) return;
-      categoriesStore.actions.getItems({
-        itemsPerPage: 500,
-        exists: {categoryFiles: 'true'},
-        categoryFiles: {file: {fileType: 'image'}},
-        order: {name: 'ASC'},
-        context: 'products',
-        company: defaultCompany?.id,
-      });
       ordersStore.actions.get(orderId).then(setOrder);
-    }, [categoriesStore.actions, defaultCompany?.id, orderId, ordersStore.actions]),
+    }, [orderId, ordersStore.actions]),
   );
+
+  const items = order?.orderProducts || [];
 
   return (
     <ShopShell
@@ -36,50 +31,104 @@ export default function OrderDetailsPage() {
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
-        <ScrollView style={{flex: 1, backgroundColor: '#111', padding: 16}}>
-          <View style={{flexDirection: 'row', gap: 16}}>
-            <View style={{flex: 2, backgroundColor: '#1f1f1f', padding: 20}}>
-              <Text style={{color: '#1f95c6', fontSize: 22, fontWeight: '700'}}>
-                Order Details
-              </Text>
-              <View style={{marginTop: 20}}>
-                <Text style={{color: '#fff', fontSize: 18}}>Order #{order?.id}</Text>
-                <Text style={{color: '#fff', marginTop: 8}}>
-                  {order?.orderDate}
-                </Text>
-                <Text style={{color: '#fff', marginTop: 8}}>
-                  {formatMoney(order?.price)}
+        <ScrollView style={{flex: 1}} contentContainerStyle={{padding: 14, paddingBottom: 24}}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{flexDirection: 'row', alignItems: 'center', marginBottom: 10}}>
+            <Icon name="arrow-back" size={20} color={theme.primary} />
+            <Text style={{marginLeft: 8, color: theme.primary, fontWeight: '700'}}>Voltar</Text>
+          </TouchableOpacity>
+
+          <View
+            style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: `${theme.primary}30`,
+              backgroundColor: `${theme.primary}10`,
+              padding: 14,
+              marginBottom: 12,
+            }}>
+            <Text style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>PEDIDO</Text>
+            <Text style={{marginTop: 5, color: theme.text, fontSize: 22, fontWeight: '800'}}>
+              #{order?.id || orderId}
+            </Text>
+            <Text style={{marginTop: 4, color: theme.muted, fontSize: 13}}>
+              {order?.orderDate
+                ? new Date(order.orderDate).toLocaleDateString('pt-BR')
+                : 'Carregando data...'}
+            </Text>
+          </View>
+
+          <View
+            style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: theme.cardBorder,
+              backgroundColor: theme.surface,
+              padding: 14,
+              marginBottom: 12,
+            }}>
+            <Text style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>Resumo</Text>
+            <View style={{marginTop: 10, gap: 8}}>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text style={{color: theme.muted}}>Status</Text>
+                <Text style={{color: theme.text, fontWeight: '700'}}>
+                  {order?.status?.status || '--'}
                 </Text>
               </View>
-            </View>
-
-            <View style={{flex: 1, gap: 16}}>
-              <View style={{backgroundColor: '#1f1f1f', padding: 20}}>
-                <Text style={{color: '#fff', fontWeight: '700'}}>Client</Text>
-                <Text style={{color: '#fff', marginTop: 12}}>
-                  {order?.client?.name} {order?.client?.alias}
+              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text style={{color: theme.muted}}>Cliente</Text>
+                <Text style={{color: theme.text, fontWeight: '700'}}>
+                  {order?.client?.alias || order?.client?.name || '--'}
+                </Text>
+              </View>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text style={{color: theme.text, fontSize: 16, fontWeight: '700'}}>Total</Text>
+                <Text style={{color: theme.primary, fontSize: 20, fontWeight: '900'}}>
+                  {formatMoney(order?.price)}
                 </Text>
               </View>
             </View>
           </View>
 
-          <View style={{marginTop: 16, backgroundColor: '#1f1f1f', padding: 20}}>
-            {(order?.orderProducts || []).map(orderProduct => (
+          <View
+            style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: theme.cardBorder,
+              backgroundColor: theme.surface,
+              overflow: 'hidden',
+            }}>
+            <View style={{padding: 14, borderBottomWidth: 1, borderBottomColor: theme.cardBorder}}>
+              <Text style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>Itens</Text>
+            </View>
+            {items.map(orderProduct => (
               <View
                 key={orderProduct.id}
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  paddingVertical: 14,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
                   borderBottomWidth: 1,
-                  borderColor: '#444',
+                  borderBottomColor: theme.cardBorder,
                 }}>
-                <Text style={{color: '#fff'}}>{orderProduct.product.product}</Text>
-                <Text style={{color: '#fff'}}>
-                  {orderProduct.quantity} x {formatMoney(orderProduct.price)}
+                <Text style={{color: theme.text, fontSize: 14, fontWeight: '700'}}>
+                  {orderProduct?.product?.product}
                 </Text>
+                <View style={{marginTop: 6, flexDirection: 'row', justifyContent: 'space-between'}}>
+                  <Text style={{color: theme.muted, fontSize: 12}}>
+                    {orderProduct.quantity} x {formatMoney(orderProduct.price)}
+                  </Text>
+                  <Text style={{color: theme.primary, fontWeight: '800'}}>
+                    {formatMoney(orderProduct.total ?? orderProduct.quantity * orderProduct.price)}
+                  </Text>
+                </View>
               </View>
             ))}
+            {items.length === 0 && (
+              <View style={{padding: 18, alignItems: 'center'}}>
+                <Text style={{color: theme.muted}}>Nenhum item encontrado.</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       )}
