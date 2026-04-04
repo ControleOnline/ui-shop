@@ -21,6 +21,7 @@ import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {
   buildFileUrl,
   formatMoney,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -58,16 +59,18 @@ export default function ProductPage() {
           setProduct(nextProduct);
           productsStore.actions.setItem(nextProduct);
 
-          const nextProductId = String(
-            nextProduct?.id || nextProduct?.['@id'] || '',
-          ).replace(/\D/g, '');
+          const nextProductId = normalizeId(
+            nextProduct?.id || nextProduct?.['@id'],
+          );
+          const providerId = defaultCompany?.id || '';
           const inlineHasGroups =
             Array.isArray(nextProduct?.productGroups) &&
             nextProduct.productGroups.length > 0;
 
           if (!nextProductId) {
             setHasCustomizationGroups(
-              inlineHasGroups || nextProduct?.type === 'custom',
+              (!providerId && inlineHasGroups) ||
+                nextProduct?.type === 'custom',
             );
             return;
           }
@@ -77,23 +80,15 @@ export default function ProductPage() {
             itemsPerPage: 1,
           };
 
-          let groups = [];
-          if (defaultCompany?.id) {
-            const byPeople = await productGroupStore.actions.getItems({
-              ...baseFilter,
-              people: defaultCompany.id,
-            });
-            groups = extractItems(byPeople);
-          }
+          const groupFilters = providerId
+            ? {...baseFilter, people: providerId}
+            : baseFilter;
 
-          if (groups.length === 0) {
-            const fallback =
-              await productGroupStore.actions.getItems(baseFilter);
-            groups = extractItems(fallback);
-          }
+          const response = await productGroupStore.actions.getItems(groupFilters);
+          const groups = extractItems(response);
 
           setHasCustomizationGroups(
-            inlineHasGroups ||
+            (!providerId && inlineHasGroups) ||
               nextProduct?.type === 'custom' ||
               groups.length > 0,
           );
@@ -244,12 +239,16 @@ export default function ProductPage() {
               </View>
             ) : requiresCustomization ? (
               <TouchableOpacity
-                onPress={() =>
+                onPress={async () => {
+                  try {
+                    await refreshCart?.();
+                  } catch {}
                   navigation.navigate('CustomizeScreen', {
                     product,
+                    productId: normalizeId(product?.id || product?.['@id']),
                     redirectToCart: true,
-                  })
-                }
+                  });
+                }}
                 style={{
                   minHeight: 50,
                   borderRadius: 12,

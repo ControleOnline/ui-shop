@@ -125,9 +125,10 @@ export default function ShopQuantityControl({
       return false;
     }
 
+    const providerId = defaultCompany?.id || currentCompany?.id || '';
     const inlineHasGroups =
       Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-    if (inlineHasGroups || product?.type === 'custom') {
+    if ((!providerId && inlineHasGroups) || product?.type === 'custom') {
       return true;
     }
 
@@ -136,7 +137,6 @@ export default function ShopQuantityControl({
       return false;
     }
 
-    const providerId = defaultCompany?.id || currentCompany?.id || '';
     const cacheKey = `${providerId}:${productId}`;
     if (productGroupRequirementCache.has(cacheKey)) {
       return productGroupRequirementCache.get(cacheKey);
@@ -147,18 +147,12 @@ export default function ShopQuantityControl({
       itemsPerPage: 1,
     };
 
-    let groups = [];
-    if (providerId) {
-      const byPeople = await productGroupStore.actions.getItems({
-        ...baseFilter,
-        people: providerId,
-      });
-      groups = extractItems(byPeople);
-    }
-    if (groups.length === 0) {
-      const fallback = await productGroupStore.actions.getItems(baseFilter);
-      groups = extractItems(fallback);
-    }
+    const groupFilters = providerId
+      ? {...baseFilter, people: providerId}
+      : baseFilter;
+
+    const response = await productGroupStore.actions.getItems(groupFilters);
+    const groups = extractItems(response);
 
     const hasGroups = groups.length > 0;
     productGroupRequirementCache.set(cacheKey, hasGroups);
@@ -173,21 +167,35 @@ export default function ShopQuantityControl({
   ]);
 
   const increase = useCallback(async () => {
+    let requiresCustomization = false;
     try {
-      const requiresCustomization = await ensureCustomizationRequired();
-      if (requiresCustomization) {
-        navigation.navigate('CustomizeScreen', {product});
-        return;
-      }
+      requiresCustomization = await ensureCustomizationRequired();
     } catch {
-      navigation.navigate('CustomizeScreen', {product});
+      requiresCustomization = false;
+    }
+
+    if (requiresCustomization) {
+      try {
+        await refreshCart?.();
+      } catch {}
+      navigation.navigate('CustomizeScreen', {
+        product,
+        productId: normalizeId(product?.id || product?.['@id']),
+      });
       return;
     }
 
     const next = quantity + 1;
     setQuantity(next);
     persist(next);
-  }, [ensureCustomizationRequired, navigation, persist, product, quantity]);
+  }, [
+    ensureCustomizationRequired,
+    navigation,
+    persist,
+    product,
+    quantity,
+    refreshCart,
+  ]);
 
   const decrease = useCallback(() => {
     const next = quantity > 0 ? quantity - 1 : 0;

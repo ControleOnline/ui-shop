@@ -7,6 +7,7 @@ import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {
   formatMoney,
   getImageFromRelations,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -126,12 +127,16 @@ export default function ShopProductCard({product, compact = false}) {
 
         {requiresCustomization ? (
           <TouchableOpacity
-            onPress={() =>
+            onPress={async () => {
+              try {
+                await refreshCart?.();
+              } catch {}
               navigation.navigate('CustomizeScreen', {
                 product,
+                productId: normalizeId(product?.id || product?.['@id']),
                 redirectToCart: true,
-              })
-            }
+              });
+            }}
             style={{
               marginTop: 12,
               minHeight: 42,
