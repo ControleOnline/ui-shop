@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import md5 from 'md5';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
+import {env} from '@env';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {
   buildFileUrl,
@@ -68,7 +69,7 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
   }, [searchValue]);
 
   useEffect(() => {
-    const socket = new WebSocket('wss://ws.controleonline.com');
+    const socket = new WebSocket(env.SOCKET);
     socket.onmessage = event => {
       setSocketMessages(previous => [...previous.slice(-4), event.data]);
     };
