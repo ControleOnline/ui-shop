@@ -14,7 +14,6 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import md5 from 'md5';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
-import {env} from '@env';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {
   buildFileUrl,
@@ -59,7 +58,6 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
-  const [socketMessages, setSocketMessages] = useState([]);
   const [darkMode, setDarkMode] = useState(
     JSON.parse(localStorage.getItem('config') || '{}')?.themeMode === 'dark',
   );
@@ -67,14 +65,6 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
   useEffect(() => {
     setSearchTerm(searchValue);
   }, [searchValue]);
-
-  useEffect(() => {
-    const socket = new WebSocket(env.SOCKET);
-    socket.onmessage = event => {
-      setSocketMessages(previous => [...previous.slice(-4), event.data]);
-    };
-    return () => socket.close();
-  }, []);
 
   const session = getSession();
   const accountUser = user && Object.keys(user).length > 0 ? user : session;
@@ -549,29 +539,6 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {socketMessages.length > 0 && !isMobile && (
-              <View
-                style={{
-                  marginTop: 18,
-                  backgroundColor: darkMode ? '#1f1f1f' : '#111',
-                  padding: 14,
-                  borderRadius: 8,
-                }}>
-                <Text style={{color: '#fff', fontSize: 14, fontWeight: '700'}}>
-                  Mensagens do WebSocket
-                </Text>
-                <ScrollView style={{maxHeight: 100, marginTop: 8}}>
-                  {socketMessages.map((message, index) => (
-                    <Text
-                      key={`${index}-${message}`}
-                      style={{color: '#fff', fontSize: 12}}>
-                      {message}
-                    </Text>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
