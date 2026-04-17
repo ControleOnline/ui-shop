@@ -8,6 +8,7 @@ import OrdersPage from '@controleonline/ui-shop/src/react/pages/OrdersPage';
 import OrderDetailsPage from '@controleonline/ui-shop/src/react/pages/OrderDetailsPage';
 import ProfilePage from '@controleonline/ui-shop/src/react/pages/ProfilePage';
 import CardsPage from '@controleonline/ui-shop/src/react/pages/CardsPage';
+import ShopDownloadPage from '@controleonline/ui-shop/src/react/pages/ShopDownloadPage';
 
 const shopRoutes = [
   {
@@ -92,6 +93,15 @@ const shopRoutes = [
     options: {
       headerShown: false,
       title: 'Cartões',
+    },
+  },
+  {
+    name: 'ShopDownloadPage',
+    path: 'download',
+    component: ShopDownloadPage,
+    options: {
+      headerShown: false,
+      title: 'Baixar cardapio',
     },
   },
 ];
