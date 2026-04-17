@@ -4,6 +4,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import styles from './CheckoutPage.styles';
 
@@ -46,11 +47,6 @@ import {
   inlineStyle_564_22,
   inlineStyle_572_16,
   inlineStyle_578_22,
-  inlineStyle_586_12,
-  inlineStyle_602_14,
-  inlineStyle_612_20,
-  inlineStyle_620_14,
-  inlineStyle_632_22,
 } from './CheckoutPage.styles';
 
 import { inlineStyle_371_12 } from './CheckoutPage.styles';
@@ -111,6 +107,28 @@ const sortInvoicesByDateDesc = invoices =>
     return bDate - aDate;
   });
 
+const getInvoiceStatusKeys = invoice => ({
+  realStatus: normalizeText(
+    invoice?.status?.realStatus || invoice?.status?.real_status,
+  ),
+  status: normalizeText(invoice?.status?.status),
+});
+
+const isCanceledInvoice = invoice => {
+  const {realStatus, status} = getInvoiceStatusKeys(invoice);
+  return ['canceled', 'cancelled'].includes(realStatus) || ['canceled', 'cancelled'].includes(status);
+};
+
+const isPaidInvoice = invoice => {
+  const {realStatus, status} = getInvoiceStatusKeys(invoice);
+  return realStatus === 'closed' || ['closed', 'paid'].includes(status);
+};
+
+const pickReusableInvoice = invoices =>
+  sortInvoicesByDateDesc(invoices).find(invoice => {
+    return !isCanceledInvoice(invoice) && !isPaidInvoice(invoice);
+  }) || null;
+
 export default function CheckoutPage() {
   const navigation = useNavigation();
   const {cart, defaultCompany, currentCompany, refreshCart} = useShopCart({
@@ -131,6 +149,7 @@ export default function CheckoutPage() {
 
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [cards, setCards] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [invoice, setInvoice] = useState(null);
@@ -149,6 +168,21 @@ export default function CheckoutPage() {
     0,
   );
   const cartTotal = Number(cart?.price || 0);
+  const paidAmount = useMemo(
+    () =>
+      invoices.reduce((sum, currentInvoice) => {
+        if (!isPaidInvoice(currentInvoice)) {
+          return sum;
+        }
+
+        return sum + Number(currentInvoice?.price || 0);
+      }, 0),
+    [invoices],
+  );
+  const pendingAmount = useMemo(
+    () => Math.max(cartTotal - paidAmount, 0),
+    [cartTotal, paidAmount],
+  );
 
   const cardPaymentTypes = useMemo(
     () =>
@@ -217,6 +251,7 @@ export default function CheckoutPage() {
 
       setPaymentTypes(fetchedPaymentTypes);
       setCards(fetchedCards);
+      setInvoices(fetchedInvoices);
       setSelectedCard(
         previous =>
           fetchedCards.find(item => item?.id === previous?.id) ||
@@ -224,7 +259,7 @@ export default function CheckoutPage() {
           null,
       );
       setPendingStatus(pickPendingStatus(fetchedStatuses));
-      setInvoice(fetchedInvoices[0] || null);
+      setInvoice(pickReusableInvoice(fetchedInvoices));
     } catch (e) {
       setError(
         e?.message || 'Não foi possível carregar os dados de pagamento.',
@@ -254,7 +289,17 @@ export default function CheckoutPage() {
         throw new Error('Carrinho não encontrado para checkout.');
       }
 
-      if (invoice?.id) {
+      if (pendingAmount <= 0.009) {
+        throw new Error('Este pedido ja foi pago.');
+      }
+
+      const activeInvoiceGateway = detectGatewayByPaymentType(invoice);
+      if (
+        invoice?.id &&
+        !isCanceledInvoice(invoice) &&
+        !isPaidInvoice(invoice) &&
+        activeInvoiceGateway === gateway
+      ) {
         return invoice;
       }
 
@@ -283,6 +328,12 @@ export default function CheckoutPage() {
       }
 
       const createdInvoice = await invoiceActions.save(payload);
+      setInvoices(currentInvoices =>
+        sortInvoicesByDateDesc([
+          createdInvoice,
+          ...currentInvoices.filter(item => item?.id !== createdInvoice?.id),
+        ]),
+      );
       setInvoice(createdInvoice);
       return createdInvoice;
     },
@@ -295,6 +346,7 @@ export default function CheckoutPage() {
       hasCart,
       invoice,
       invoiceActions,
+      pendingAmount,
       pendingStatus,
       pickPaymentTypeForGateway,
     ],
@@ -361,6 +413,47 @@ export default function CheckoutPage() {
     setMessage('Copie manualmente o código Pix exibido.');
   }, [pixData?.payload]);
 
+  const checkoutBlocked = isLoading || isProcessing || !hasCart || !itemsCount;
+  const checkoutActions = useMemo(
+    () => [
+      pixPaymentTypes.length > 0
+        ? {
+            key: 'pix',
+            label: 'Gerar Pix',
+            icon: 'qr-code-scanner',
+            variant: 'success',
+            loading: isProcessing,
+            disabled: checkoutBlocked || pendingAmount <= 0.009,
+            onPress: handleGeneratePix,
+          }
+        : null,
+      cardPaymentTypes.length > 0
+        ? {
+            key: 'card',
+            label: 'Pagar com cartao',
+            icon: 'credit-card',
+            variant: 'primary',
+            loading: isProcessing,
+            disabled:
+              checkoutBlocked ||
+              pendingAmount <= 0.009 ||
+              !selectedCard?.id,
+            onPress: handlePayWithCard,
+          }
+        : null,
+    ],
+    [
+      cardPaymentTypes.length,
+      checkoutBlocked,
+      handleGeneratePix,
+      handlePayWithCard,
+      isProcessing,
+      pendingAmount,
+      pixPaymentTypes.length,
+      selectedCard?.id,
+    ],
+  );
+
   return (
     <ShopShell
       onSearch={query =>
@@ -370,7 +463,10 @@ export default function CheckoutPage() {
         <View style={inlineStyle_326_14}>
           <ScrollView
             style={inlineStyle_328_12}
-            contentContainerStyle={inlineStyle_371_12}>
+            contentContainerStyle={[
+              inlineStyle_371_12,
+              {paddingBottom: 232},
+            ]}>
             <View
               style={inlineStyle_331_14({
                 theme: theme,
@@ -590,42 +686,13 @@ export default function CheckoutPage() {
             )}
           </ScrollView>
 
-          <View
-            style={inlineStyle_586_12({
-              theme: theme,
-            })}>
-            <TouchableOpacity
-              onPress={handleGeneratePix}
-              disabled={isLoading || isProcessing || !hasCart || !itemsCount}
-              style={inlineStyle_602_14({
-                isLoading: isLoading,
-                isProcessing: isProcessing,
-                theme: theme,
-              })}>
-              <Text style={inlineStyle_612_20({
-                theme: theme,
-              })}>
-                Gerar Pix
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handlePayWithCard}
-              disabled={isLoading || isProcessing || !hasCart || !itemsCount}
-              style={inlineStyle_620_14({
-                isLoading: isLoading,
-                isProcessing: isProcessing,
-                theme: theme,
-              })}>
-              {isProcessing ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={inlineStyle_632_22}>
-                  Pagar com cartão
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          <ShopPaymentBar
+            actions={checkoutActions}
+            paidAmount={paidAmount}
+            pendingAmount={pendingAmount}
+            theme={theme}
+            totalAmount={cartTotal}
+          />
         </View>
       )}
     </ShopShell>
