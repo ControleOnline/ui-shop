@@ -6,6 +6,30 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 
+import {
+  inlineStyle_45_10,
+  inlineStyle_55_12,
+  inlineStyle_63_18,
+  inlineStyle_64_18,
+  inlineStyle_67_18,
+  inlineStyle_72_16,
+  inlineStyle_80_16,
+  inlineStyle_89_22,
+  inlineStyle_90_24,
+  inlineStyle_94_20,
+  inlineStyle_100_26,
+  inlineStyle_106_22,
+  inlineStyle_110_40,
+  inlineStyle_114_22,
+  inlineStyle_123_14,
+  inlineStyle_132_20,
+  inlineStyle_135_20,
+  inlineStyle_140_16,
+  inlineStyle_150_22,
+} from './OrdersPage.styles';
+
+import { inlineStyle_75_10 } from './OrdersPage.styles';
+
 export default function OrdersPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
@@ -42,7 +66,7 @@ export default function OrdersPage() {
       }>
       {() => (
         <ScrollView
-          style={{flex: 1}}
+          style={inlineStyle_45_10}
           onLayout={event => {
             const nextWidth = event?.nativeEvent?.layout?.width;
             if (!nextWidth) return;
@@ -50,26 +74,29 @@ export default function OrdersPage() {
               Math.abs(current - nextWidth) < 1 ? current : nextWidth,
             );
           }}
-          contentContainerStyle={{padding: 14, paddingBottom: 30}}>
+          contentContainerStyle={inlineStyle_75_10}>
           <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: `${theme.primary}30`,
-              backgroundColor: `${theme.primary}10`,
-              padding: 14,
-              marginBottom: 12,
-            }}>
-            <Text style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>AREA LOGADA</Text>
-            <Text style={{marginTop: 6, color: theme.text, fontSize: 22, fontWeight: '800'}}>
+            style={inlineStyle_55_12({
+              theme: theme,
+            })}>
+            <Text style={inlineStyle_63_18({
+              theme: theme,
+            })}>AREA LOGADA</Text>
+            <Text style={inlineStyle_64_18({
+              theme: theme,
+            })}>
               Meus pedidos
             </Text>
-            <Text style={{marginTop: 4, color: theme.muted, fontSize: 13}}>
+            <Text style={inlineStyle_67_18({
+              theme: theme,
+            })}>
               {orders.length} pedido(s) encontrado(s)
             </Text>
           </View>
 
-          <View style={{flexDirection: 'row', flexWrap: 'wrap', gap}}>
+          <View style={inlineStyle_72_16({
+            gap: gap,
+          })}>
             {orders.map(order => (
               <TouchableOpacity
                 key={order.id}
@@ -77,41 +104,42 @@ export default function OrdersPage() {
                 onPress={() =>
                   navigation.navigate('ShopOrderDetailsPage', {id: String(order.id)})
                 }
-                style={{
-                  width: cardWidth,
-                  backgroundColor: theme.surface,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.cardBorder,
-                  padding: 14,
-                  gap: 10,
-                }}>
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', gap: 10}}>
-                  <Text style={{fontSize: 16, fontWeight: '800', color: theme.text}}>
+                style={inlineStyle_80_16({
+                  cardWidth: cardWidth,
+                  theme: theme,
+                })}>
+                <View style={inlineStyle_89_22}>
+                  <Text style={inlineStyle_90_24({
+                    theme: theme,
+                  })}>
                     Pedido #{order.id}
                   </Text>
                   <View
-                    style={{
-                      backgroundColor: order?.status?.color || theme.primary,
-                      borderRadius: 999,
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                    }}>
-                    <Text style={{color: '#fff', fontSize: 11, fontWeight: '800'}}>
+                    style={inlineStyle_94_20({
+                      order: order,
+                      theme: theme,
+                    })}>
+                    <Text style={inlineStyle_100_26}>
                       {order?.status?.status || 'Status'}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={{color: theme.muted, fontSize: 12}}>
+                <Text style={inlineStyle_106_22({
+                  theme: theme,
+                })}>
                   {new Date(order.orderDate).toLocaleDateString('pt-BR')}
                 </Text>
 
-                <Text numberOfLines={1} style={{color: theme.text, fontSize: 13}}>
+                <Text numberOfLines={1} style={inlineStyle_110_40({
+                  theme: theme,
+                })}>
                   {order?.provider?.alias || order?.provider?.name}
                 </Text>
 
-                <Text style={{marginTop: 4, fontSize: 20, fontWeight: '900', color: theme.primary}}>
+                <Text style={inlineStyle_114_22({
+                  theme: theme,
+                })}>
                   {formatMoney(order?.price)}
                 </Text>
               </TouchableOpacity>
@@ -120,34 +148,25 @@ export default function OrdersPage() {
 
           {orders.length === 0 && (
             <View
-              style={{
-                marginTop: 4,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-                padding: 24,
-                alignItems: 'center',
-              }}>
-              <Text style={{color: theme.text, fontSize: 16, fontWeight: '700'}}>
+              style={inlineStyle_123_14({
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_132_20({
+                theme: theme,
+              })}>
                 Nenhum pedido ainda
               </Text>
-              <Text style={{marginTop: 6, color: theme.muted, fontSize: 13}}>
+              <Text style={inlineStyle_135_20({
+                theme: theme,
+              })}>
                 Seus pedidos aparecerao aqui.
               </Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('ShopIndex')}
-                style={{
-                  marginTop: 16,
-                  minHeight: 42,
-                  minWidth: 180,
-                  borderRadius: 12,
-                  backgroundColor: theme.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingHorizontal: 18,
-                }}>
-                <Text style={{color: '#fff', fontWeight: '800'}}>Voltar ao cardapio</Text>
+                style={inlineStyle_140_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_150_22}>Voltar ao cardapio</Text>
               </TouchableOpacity>
             </View>
           )}

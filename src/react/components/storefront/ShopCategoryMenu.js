@@ -1,6 +1,8 @@
 import React, {useMemo} from 'react';
 import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import { inlineStyle_14_6, inlineStyle_29_12, inlineStyle_38_14 } from './ShopCategoryMenu.styles';
+import { inlineStyle_21_8 } from './ShopCategoryMenu.styles';
 
 export default function ShopCategoryMenu({categories = [], onSelect, company}) {
   const theme = pickTheme(company);
@@ -11,35 +13,25 @@ export default function ShopCategoryMenu({categories = [], onSelect, company}) {
 
   return (
     <View
-      style={{
-        backgroundColor: theme.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.cardBorder,
-        paddingVertical: 10,
-      }}>
+      style={inlineStyle_14_6({
+        theme: theme,
+      })}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{paddingHorizontal: 14, gap: 10}}>
+        contentContainerStyle={inlineStyle_21_8}>
         {topLevel.map(category => (
           <TouchableOpacity
             key={category.id}
             onPress={() => onSelect?.(category)}
             activeOpacity={0.9}
-            style={{
-              backgroundColor: `${theme.primary}12`,
-              borderColor: `${theme.primary}35`,
-              borderWidth: 1,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              borderRadius: 999,
-            }}>
+            style={inlineStyle_29_12({
+              theme: theme,
+            })}>
             <Text
-              style={{
-                color: theme.primary,
-                fontSize: 12,
-                fontWeight: '700',
-              }}>
+              style={inlineStyle_38_14({
+                theme: theme,
+              })}>
               {category.name}
             </Text>
           </TouchableOpacity>

@@ -1,22 +1,59 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import styles from './CheckoutPage.styles';
+
 import {
   formatMoney,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_326_14,
+  inlineStyle_328_12,
+  inlineStyle_331_14,
+  inlineStyle_339_16,
+  inlineStyle_343_16,
+  inlineStyle_351_20,
+  inlineStyle_355_16,
+  inlineStyle_366_14,
+  inlineStyle_375_16,
+  inlineStyle_380_22,
+  inlineStyle_385_18,
+  inlineStyle_410_26,
+  inlineStyle_422_22,
+  inlineStyle_429_14,
+  inlineStyle_438_16,
+  inlineStyle_445_18,
+  inlineStyle_450_24,
+  inlineStyle_457_22,
+  inlineStyle_468_22,
+  inlineStyle_480_28,
+  inlineStyle_484_24,
+  inlineStyle_489_24,
+  inlineStyle_504_16,
+  inlineStyle_513_18,
+  inlineStyle_522_20,
+  inlineStyle_526_18,
+  inlineStyle_534_24,
+  inlineStyle_540_18,
+  inlineStyle_549_24,
+  inlineStyle_558_16,
+  inlineStyle_564_22,
+  inlineStyle_572_16,
+  inlineStyle_578_22,
+  inlineStyle_586_12,
+  inlineStyle_602_14,
+  inlineStyle_612_20,
+  inlineStyle_620_14,
+  inlineStyle_632_22,
+} from './CheckoutPage.styles';
+
+import { inlineStyle_371_12 } from './CheckoutPage.styles';
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
@@ -330,71 +367,57 @@ export default function CheckoutPage() {
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
-        <View style={{flex: 1}}>
+        <View style={inlineStyle_326_14}>
           <ScrollView
-            style={{flex: 1}}
-            contentContainerStyle={{padding: 14, paddingBottom: 120}}>
+            style={inlineStyle_328_12}
+            contentContainerStyle={inlineStyle_371_12}>
             <View
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: `${theme.primary}30`,
-                backgroundColor: `${theme.primary}10`,
-                padding: 14,
-              }}>
+              style={inlineStyle_331_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>
+                style={inlineStyle_339_16({
+                  theme: theme,
+                })}>
                 CHECKOUT
               </Text>
               <Text
-                style={{
-                  marginTop: 4,
-                  color: theme.text,
-                  fontSize: 22,
-                  fontWeight: '800',
-                }}>
+                style={inlineStyle_343_16({
+                  theme: theme,
+                })}>
                 Pedido #{cart?.id || '--'}
               </Text>
-              <Text style={{marginTop: 6, color: theme.muted, fontSize: 13}}>
+              <Text style={inlineStyle_351_20({
+                theme: theme,
+              })}>
                 {itemsCount} item(ns)
               </Text>
               <Text
-                style={{
-                  marginTop: 6,
-                  color: theme.primary,
-                  fontSize: 28,
-                  fontWeight: '900',
-                }}>
+                style={inlineStyle_355_16({
+                  theme: theme,
+                })}>
                 {formatMoney(cartTotal)}
               </Text>
             </View>
 
             <View
-              style={{
-                marginTop: 12,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-                padding: 14,
-              }}>
+              style={inlineStyle_366_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>
+                style={inlineStyle_375_16({
+                  theme: theme,
+                })}>
                 Método financeiro
               </Text>
 
               {isLoading ? (
-                <View style={{paddingVertical: 18, alignItems: 'center'}}>
+                <View style={inlineStyle_380_22}>
                   <ActivityIndicator color={theme.primary} />
                 </View>
               ) : paymentTypes.length > 0 ? (
                 <View
-                  style={{
-                    marginTop: 10,
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                  }}>
+                  style={inlineStyle_385_18}>
                   {paymentTypes.map(item => {
                     const gateway = detectGatewayByPaymentType(item);
                     const label = item?.paymentType?.paymentType || 'Pagamento';
@@ -414,11 +437,9 @@ export default function CheckoutPage() {
                           },
                         ]}>
                         <Text
-                          style={{
-                            color: theme.text,
-                            fontSize: 12,
-                            fontWeight: '700',
-                          }}>
+                          style={inlineStyle_410_26({
+                            theme: theme,
+                          })}>
                           {label}
                         </Text>
                       </View>
@@ -426,42 +447,40 @@ export default function CheckoutPage() {
                   })}
                 </View>
               ) : (
-                <Text style={{marginTop: 10, color: theme.muted}}>
+                <Text style={inlineStyle_422_22({
+                  theme: theme,
+                })}>
                   Nenhuma forma de pagamento disponível para esta empresa.
                 </Text>
               )}
             </View>
 
             <View
-              style={{
-                marginTop: 12,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-                padding: 14,
-              }}>
+              style={inlineStyle_429_14({
+                theme: theme,
+              })}>
               <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 10,
-                }}>
+                style={inlineStyle_438_16}>
                 <Text
-                  style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>
+                  style={inlineStyle_445_18({
+                    theme: theme,
+                  })}>
                   Cartões salvos
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('ShopCardsPage')}>
-                  <Text style={{color: theme.primary, fontWeight: '800'}}>
+                  <Text style={inlineStyle_450_24({
+                    theme: theme,
+                  })}>
                     Gerenciar
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {cards.length === 0 ? (
-                <Text style={{color: theme.muted}}>
+                <Text style={inlineStyle_457_22({
+                  theme: theme,
+                })}>
                   Nenhum cartão salvo. Cadastre um cartão para pagar com
                   crédito.
                 </Text>
@@ -472,32 +491,26 @@ export default function CheckoutPage() {
                     <TouchableOpacity
                       key={card.id}
                       onPress={() => setSelectedCard(card)}
-                      style={{
-                        borderRadius: 14,
-                        borderWidth: 1,
-                        borderColor: isSelected
-                          ? theme.primary
-                          : theme.cardBorder,
-                        backgroundColor: isSelected
-                          ? `${theme.primary}12`
-                          : '#fff',
-                        padding: 12,
-                        marginTop: 8,
-                      }}>
-                      <Text style={{color: theme.text, fontWeight: '800'}}>
+                      style={inlineStyle_468_22({
+                        isSelected: isSelected,
+                        theme: theme,
+                      })}>
+                      <Text style={inlineStyle_480_28({
+                        theme: theme,
+                      })}>
                         {(card?.type || 'Crédito').toUpperCase()}
                       </Text>
                       <Text
-                        style={{marginTop: 2, color: theme.text, fontSize: 15}}>
+                        style={inlineStyle_484_24({
+                          theme: theme,
+                        })}>
                         {card?.number_group_1 || '****'} •••• ••••{' '}
                         {card?.number_group_4 || '****'}
                       </Text>
                       <Text
-                        style={{
-                          marginTop: 2,
-                          color: theme.muted,
-                          fontSize: 12,
-                        }}>
+                        style={inlineStyle_489_24({
+                          theme: theme,
+                        })}>
                         {card?.name || 'Titular'}
                       </Text>
                     </TouchableOpacity>
@@ -508,16 +521,13 @@ export default function CheckoutPage() {
 
             {!!pixData?.payload && (
               <View
-                style={{
-                  marginTop: 12,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.cardBorder,
-                  backgroundColor: theme.surface,
-                  padding: 14,
-                }}>
+                style={inlineStyle_504_16({
+                  theme: theme,
+                })}>
                 <Text
-                  style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>
+                  style={inlineStyle_513_18({
+                    theme: theme,
+                  })}>
                   Pix gerado
                 </Text>
                 {pixData?.encodedImage ? (
@@ -526,34 +536,27 @@ export default function CheckoutPage() {
                       uri: `data:image/png;base64,${pixData.encodedImage}`,
                     }}
                     resizeMode="contain"
-                    style={{width: '100%', height: 260, marginTop: 10}}
+                    style={inlineStyle_522_20}
                   />
                 ) : null}
                 <View
-                  style={{
-                    marginTop: 10,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    backgroundColor: '#fff',
-                    padding: 10,
-                  }}>
-                  <Text style={{color: theme.text, fontSize: 12}}>
+                  style={inlineStyle_526_18({
+                    theme: theme,
+                  })}>
+                  <Text style={inlineStyle_534_24({
+                    theme: theme,
+                  })}>
                     {pixData.payload}
                   </Text>
                 </View>
                 <TouchableOpacity
                   onPress={handleCopyPix}
-                  style={{
-                    marginTop: 10,
-                    minHeight: 40,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Text style={{color: theme.text, fontWeight: '700'}}>
+                  style={inlineStyle_540_18({
+                    theme: theme,
+                  })}>
+                  <Text style={inlineStyle_549_24({
+                    theme: theme,
+                  })}>
                     Copiar código Pix
                   </Text>
                 </TouchableOpacity>
@@ -562,13 +565,12 @@ export default function CheckoutPage() {
 
             {!!error && (
               <View
-                style={{
-                  marginTop: 12,
-                  borderRadius: 12,
-                  backgroundColor: `${theme.danger}15`,
-                  padding: 10,
-                }}>
-                <Text style={{color: theme.danger, fontWeight: '700'}}>
+                style={inlineStyle_558_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_564_22({
+                  theme: theme,
+                })}>
                   {error}
                 </Text>
               </View>
@@ -576,13 +578,12 @@ export default function CheckoutPage() {
 
             {!!message && (
               <View
-                style={{
-                  marginTop: 10,
-                  borderRadius: 12,
-                  backgroundColor: `${theme.success}18`,
-                  padding: 10,
-                }}>
-                <Text style={{color: theme.success, fontWeight: '700'}}>
+                style={inlineStyle_572_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_578_22({
+                  theme: theme,
+                })}>
                   {message}
                 </Text>
               </View>
@@ -590,33 +591,20 @@ export default function CheckoutPage() {
           </ScrollView>
 
           <View
-            style={{
-              position: 'absolute',
-              left: 12,
-              right: 12,
-              bottom: 12,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              padding: 10,
-              flexDirection: 'row',
-              gap: 10,
-            }}>
+            style={inlineStyle_586_12({
+              theme: theme,
+            })}>
             <TouchableOpacity
               onPress={handleGeneratePix}
               disabled={isLoading || isProcessing || !hasCart || !itemsCount}
-              style={{
-                flex: 1,
-                minHeight: 46,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: theme.success,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isLoading || isProcessing ? 0.6 : 1,
-              }}>
-              <Text style={{color: theme.success, fontWeight: '800'}}>
+              style={inlineStyle_602_14({
+                isLoading: isLoading,
+                isProcessing: isProcessing,
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_612_20({
+                theme: theme,
+              })}>
                 Gerar Pix
               </Text>
             </TouchableOpacity>
@@ -624,19 +612,15 @@ export default function CheckoutPage() {
             <TouchableOpacity
               onPress={handlePayWithCard}
               disabled={isLoading || isProcessing || !hasCart || !itemsCount}
-              style={{
-                flex: 1,
-                minHeight: 46,
-                borderRadius: 12,
-                backgroundColor: theme.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isLoading || isProcessing ? 0.6 : 1,
-              }}>
+              style={inlineStyle_620_14({
+                isLoading: isLoading,
+                isProcessing: isProcessing,
+                theme: theme,
+              })}>
               {isProcessing ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{color: '#fff', fontWeight: '800'}}>
+                <Text style={inlineStyle_632_22}>
                   Pagar com cartão
                 </Text>
               )}
@@ -647,12 +631,3 @@ export default function CheckoutPage() {
     </ShopShell>
   );
 }
-
-const styles = StyleSheet.create({
-  methodChip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-});

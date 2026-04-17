@@ -1,4 +1,5 @@
 import React, {useMemo, useState} from 'react';
+
 import {
   ActivityIndicator,
   Alert,
@@ -8,16 +9,60 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+
 import {
   formatMoney,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_139_14,
+  inlineStyle_141_12,
+  inlineStyle_144_14,
+  inlineStyle_153_16,
+  inlineStyle_157_16,
+  inlineStyle_165_20,
+  inlineStyle_172_16,
+  inlineStyle_184_18,
+  inlineStyle_193_18,
+  inlineStyle_203_18,
+  inlineStyle_214_20,
+  inlineStyle_222_18,
+  inlineStyle_237_24,
+  inlineStyle_244_26,
+  inlineStyle_252_28,
+  inlineStyle_261_28,
+  inlineStyle_274_30,
+  inlineStyle_295_26,
+  inlineStyle_301_32,
+  inlineStyle_312_30,
+  inlineStyle_321_28,
+  inlineStyle_326_34,
+  inlineStyle_331_30,
+  inlineStyle_353_18,
+  inlineStyle_363_20,
+  inlineStyle_367_26,
+  inlineStyle_368_26,
+  inlineStyle_373_20,
+  inlineStyle_378_22,
+  inlineStyle_386_22,
+  inlineStyle_400_12,
+  inlineStyle_415_14,
+  inlineStyle_424_20,
+  inlineStyle_432_14,
+  inlineStyle_445_18,
+  inlineStyle_457_14,
+  inlineStyle_467_16,
+} from './CartPage.styles';
+
+import { inlineStyle_185_12, inlineStyle_310_30 } from './CartPage.styles';
 
 const groupOrderProductComponents = orderProduct => {
   const components = Array.isArray(orderProduct?.orderProductComponents)
@@ -136,82 +181,58 @@ export default function CartPage() {
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
-        <View style={{flex: 1}}>
+        <View style={inlineStyle_139_14}>
           <ScrollView
-            style={{flex: 1}}
-            contentContainerStyle={{padding: 14, paddingBottom: 130}}>
+            style={inlineStyle_141_12}
+            contentContainerStyle={inlineStyle_185_12}>
             <View
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: `${theme.primary}30`,
-                backgroundColor: `${theme.primary}10`,
-                padding: 14,
-                marginBottom: 12,
-              }}>
+              style={inlineStyle_144_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>
+                style={inlineStyle_153_16({
+                  theme: theme,
+                })}>
                 CARRINHO
               </Text>
               <Text
-                style={{
-                  marginTop: 5,
-                  color: theme.text,
-                  fontSize: 22,
-                  fontWeight: '800',
-                }}>
+                style={inlineStyle_157_16({
+                  theme: theme,
+                })}>
                 Seu pedido
               </Text>
-              <Text style={{marginTop: 5, color: theme.muted, fontSize: 13}}>
+              <Text style={inlineStyle_165_20({
+                theme: theme,
+              })}>
                 {itemsCount} item(ns) no carrinho
               </Text>
             </View>
 
             {rows.length === 0 ? (
               <View
-                style={{
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.cardBorder,
-                  backgroundColor: theme.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 42,
-                  paddingHorizontal: 20,
-                }}>
+                style={inlineStyle_172_16({
+                  theme: theme,
+                })}>
                 <Icon name="shopping-cart" size={44} color={theme.muted} />
                 <Text
-                  style={{
-                    marginTop: 10,
-                    color: theme.text,
-                    fontSize: 16,
-                    fontWeight: '700',
-                  }}>
+                  style={inlineStyle_184_18({
+                    theme: theme,
+                  })}>
                   Carrinho vazio
                 </Text>
                 <Text
-                  style={{
-                    marginTop: 6,
-                    color: theme.muted,
-                    fontSize: 13,
-                    textAlign: 'center',
-                  }}>
+                  style={inlineStyle_193_18({
+                    theme: theme,
+                  })}>
                   Volte ao cardapio para adicionar produtos.
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('ShopIndex')}
-                  style={{
-                    marginTop: 18,
-                    minHeight: 42,
-                    minWidth: 180,
-                    borderRadius: 12,
-                    backgroundColor: theme.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingHorizontal: 18,
-                  }}>
+                  style={inlineStyle_203_18({
+                    theme: theme,
+                  })}>
                   <Text
-                    style={{color: '#fff', fontSize: 14, fontWeight: '800'}}>
+                    style={inlineStyle_214_20}>
                     Ver cardapio
                   </Text>
                 </TouchableOpacity>
@@ -219,13 +240,9 @@ export default function CartPage() {
             ) : (
               <>
                 <View
-                  style={{
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    backgroundColor: theme.surface,
-                    overflow: 'hidden',
-                  }}>
+                  style={inlineStyle_222_18({
+                    theme: theme,
+                  })}>
                   {rows.map(row => {
                     const rowTotal = Number(
                       row?.total ?? row?.quantity * row?.price ?? 0,
@@ -234,48 +251,32 @@ export default function CartPage() {
                     return (
                       <View
                         key={row.id}
-                        style={{
-                          padding: 12,
-                          borderBottomWidth: 1,
-                          borderBottomColor: theme.cardBorder,
-                          gap: 10,
-                        }}>
+                        style={inlineStyle_237_24({
+                          theme: theme,
+                        })}>
                         <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: 8,
-                          }}>
+                          style={inlineStyle_244_26}>
                           <Text
                             numberOfLines={2}
-                            style={{
-                              flex: 1,
-                              color: theme.text,
-                              fontSize: 15,
-                              fontWeight: '700',
-                            }}>
+                            style={inlineStyle_252_28({
+                              theme: theme,
+                            })}>
                             {row?.product?.product}
                           </Text>
                           <Text
-                            style={{
-                              color: theme.primary,
-                              fontSize: 14,
-                              fontWeight: '800',
-                            }}>
+                            style={inlineStyle_261_28({
+                              theme: theme,
+                            })}>
                             {formatMoney(rowTotal)}
                           </Text>
                         </View>
-
                         {Object.entries(groupedComponents).map(
                           ([groupName, components]) => (
                             <Text
                               key={`${row.id}-${groupName}`}
-                              style={{
-                                color: theme.muted,
-                                fontSize: 12,
-                                lineHeight: 16,
-                              }}>
+                              style={inlineStyle_274_30({
+                                theme: theme,
+                              })}>
                               {groupName}:{' '}
                               {components
                                 .map(component => {
@@ -290,15 +291,13 @@ export default function CartPage() {
                             </Text>
                           ),
                         )}
-
                         <View
-                          style={{
-                            flexDirection: isMobile ? 'column' : 'row',
-                            alignItems: isMobile ? 'stretch' : 'center',
-                            justifyContent: 'space-between',
-                            gap: 10,
-                          }}>
-                          <View style={{maxWidth: isMobile ? '100%' : 190}}>
+                          style={inlineStyle_295_26({
+                            isMobile: isMobile,
+                          })}>
+                          <View style={inlineStyle_301_32({
+                            isMobile: isMobile,
+                          })}>
                             <ShopQuantityControl
                               product={row.product}
                               orderProduct={row}
@@ -309,33 +308,23 @@ export default function CartPage() {
                                 await reloadRows();
                               }}
                               iconColor={theme.primary}
-                              style={{
-                                minHeight: 42,
-                                borderRadius: 10,
-                              }}
-                              textStyle={{fontSize: 18, fontWeight: '700'}}
+                              style={inlineStyle_312_30}
+                              textStyle={inlineStyle_310_30}
                             />
                           </View>
 
                           <View
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              gap: 12,
-                            }}>
-                            <Text style={{color: theme.muted, fontSize: 12}}>
+                            style={inlineStyle_321_28}>
+                            <Text style={inlineStyle_326_34({
+                              theme: theme,
+                            })}>
                               {formatMoney(row?.price)}
                             </Text>
                             <TouchableOpacity
                               onPress={() => handleRemoveRow(row)}
-                              style={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: 10,
-                                backgroundColor: `${theme.danger}18`,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}>
+                              style={inlineStyle_331_30({
+                                theme: theme,
+                              })}>
                               <Icon
                                 name="delete-outline"
                                 size={20}
@@ -350,44 +339,32 @@ export default function CartPage() {
                 </View>
 
                 <View
-                  style={{
-                    marginTop: 12,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    backgroundColor: theme.surface,
-                    padding: 14,
-                    gap: 8,
-                  }}>
+                  style={inlineStyle_353_18({
+                    theme: theme,
+                  })}>
                   <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                    }}>
-                    <Text style={{color: theme.muted}}>Itens</Text>
-                    <Text style={{color: theme.text, fontWeight: '700'}}>
+                    style={inlineStyle_363_20}>
+                    <Text style={inlineStyle_367_26({
+                      theme: theme,
+                    })}>Itens</Text>
+                    <Text style={inlineStyle_368_26({
+                      theme: theme,
+                    })}>
                       {itemsCount}
                     </Text>
                   </View>
                   <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                    }}>
+                    style={inlineStyle_373_20}>
                     <Text
-                      style={{
-                        color: theme.text,
-                        fontSize: 16,
-                        fontWeight: '700',
-                      }}>
+                      style={inlineStyle_378_22({
+                        theme: theme,
+                      })}>
                       Total
                     </Text>
                     <Text
-                      style={{
-                        color: theme.primary,
-                        fontSize: 20,
-                        fontWeight: '900',
-                      }}>
+                      style={inlineStyle_386_22({
+                        theme: theme,
+                      })}>
                       {formatMoney(total)}
                     </Text>
                   </View>
@@ -397,31 +374,18 @@ export default function CartPage() {
           </ScrollView>
 
           <View
-            style={{
-              position: 'absolute',
-              left: 12,
-              right: 12,
-              bottom: 12,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              padding: 10,
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: 10,
-            }}>
+            style={inlineStyle_400_12({
+              isMobile: isMobile,
+              theme: theme,
+            })}>
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopIndex')}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Text style={{color: theme.text, fontWeight: '700'}}>
+              style={inlineStyle_415_14({
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_424_20({
+                theme: theme,
+              })}>
                 Continuar comprando
               </Text>
             </TouchableOpacity>
@@ -429,23 +393,18 @@ export default function CartPage() {
             <TouchableOpacity
               onPress={handleClearCart}
               disabled={isClearing || rows.length === 0}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                borderRadius: 12,
-                backgroundColor:
-                  rows.length === 0 ? theme.cardBorder : `${theme.danger}22`,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              style={inlineStyle_432_14({
+                rows: rows,
+                theme: theme,
+              })}>
               {isClearing ? (
                 <ActivityIndicator color={theme.danger} />
               ) : (
                 <Text
-                  style={{
-                    color: rows.length === 0 ? theme.muted : theme.danger,
-                    fontWeight: '800',
-                  }}>
+                  style={inlineStyle_445_18({
+                    rows: rows,
+                    theme: theme,
+                  })}>
                   Limpar carrinho
                 </Text>
               )}
@@ -454,20 +413,15 @@ export default function CartPage() {
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopCheckoutPage')}
               disabled={rows.length === 0}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                borderRadius: 12,
-                backgroundColor:
-                  rows.length === 0 ? theme.cardBorder : theme.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              style={inlineStyle_457_14({
+                rows: rows,
+                theme: theme,
+              })}>
               <Text
-                style={{
-                  color: rows.length === 0 ? theme.muted : '#fff',
-                  fontWeight: '800',
-                }}>
+                style={inlineStyle_467_16({
+                  rows: rows,
+                  theme: theme,
+                })}>
                 Finalizar e pagar
               </Text>
             </TouchableOpacity>

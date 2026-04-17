@@ -2,6 +2,16 @@ import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 import {getImageFromRelations, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
+import {
+  inlineStyle_13_6,
+  inlineStyle_23_8,
+  inlineStyle_33_12,
+  inlineStyle_36_16,
+  inlineStyle_40_12,
+  inlineStyle_42_10,
+  inlineStyle_50_10,
+} from './ShopCategoryCard.styles';
+
 export default function ShopCategoryCard({category, onPress, company}) {
   const theme = pickTheme(company);
   const imageUrl = getImageFromRelations(category?.categoryFiles);
@@ -10,48 +20,36 @@ export default function ShopCategoryCard({category, onPress, company}) {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      style={{
-        backgroundColor: theme.surface,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: theme.cardBorder,
-        overflow: 'hidden',
-        flex: 1,
-        minWidth: 150,
-      }}>
+      style={inlineStyle_13_6({
+        theme: theme,
+      })}>
       <View
-        style={{
-          minHeight: 150,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: `${theme.primary}10`,
-        }}>
+        style={inlineStyle_23_8({
+          theme: theme,
+        })}>
         {imageUrl ? (
           <Image
             source={{uri: imageUrl}}
             resizeMode="cover"
-            style={{width: '100%', height: 170}}
+            style={inlineStyle_33_12}
           />
         ) : (
-          <Text style={{fontSize: 32, color: theme.primary, fontWeight: '700'}}>MENU</Text>
+          <Text style={inlineStyle_36_16({
+            theme: theme,
+          })}>MENU</Text>
         )}
       </View>
-
-      <View style={{paddingHorizontal: 12, paddingVertical: 12}}>
+      <View style={inlineStyle_40_12}>
         <Text
-          style={{
-            color: theme.text,
-            fontSize: 16,
-            fontWeight: '700',
-          }}>
+          style={inlineStyle_42_10({
+            theme: theme,
+          })}>
           {category?.name}
         </Text>
         <Text
-          style={{
-            marginTop: 4,
-            color: theme.muted,
-            fontSize: 12,
-          }}>
+          style={inlineStyle_50_10({
+            theme: theme,
+          })}>
           {category?.description || 'Toque para ver os pratos'}
         </Text>
       </View>

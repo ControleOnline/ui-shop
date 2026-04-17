@@ -1,20 +1,45 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import styles from './CardsPage.styles';
+
+import {
+  inlineStyle_237_14,
+  inlineStyle_239_12,
+  inlineStyle_242_14,
+  inlineStyle_250_16,
+  inlineStyle_254_16,
+  inlineStyle_262_20,
+  inlineStyle_268_14,
+  inlineStyle_277_16,
+  inlineStyle_282_22,
+  inlineStyle_286_22,
+  inlineStyle_301_26,
+  inlineStyle_303_24,
+  inlineStyle_311_24,
+  inlineStyle_321_24,
+  inlineStyle_350_14,
+  inlineStyle_359_16,
+  inlineStyle_363_20,
+  inlineStyle_382_24,
+  inlineStyle_441_20,
+  inlineStyle_498_16,
+  inlineStyle_504_22,
+  inlineStyle_512_16,
+  inlineStyle_518_22,
+  inlineStyle_526_12,
+  inlineStyle_541_14,
+  inlineStyle_550_20,
+  inlineStyle_558_14,
+  inlineStyle_570_22,
+} from './CardsPage.styles';
+
+import { inlineStyle_271_12 } from './CardsPage.styles';
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
@@ -242,56 +267,52 @@ export default function CardsPage() {
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
-        <View style={{flex: 1}}>
+        <View style={inlineStyle_237_14}>
           <ScrollView
-            style={{flex: 1}}
-            contentContainerStyle={{padding: 14, paddingBottom: 126}}>
+            style={inlineStyle_239_12}
+            contentContainerStyle={inlineStyle_271_12}>
             <View
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: `${theme.primary}30`,
-                backgroundColor: `${theme.primary}10`,
-                padding: 14,
-              }}>
+              style={inlineStyle_242_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>
+                style={inlineStyle_250_16({
+                  theme: theme,
+                })}>
                 CARTEIRA
               </Text>
               <Text
-                style={{
-                  marginTop: 4,
-                  color: theme.text,
-                  fontSize: 22,
-                  fontWeight: '800',
-                }}>
+                style={inlineStyle_254_16({
+                  theme: theme,
+                })}>
                 Meus cartões
               </Text>
-              <Text style={{marginTop: 6, color: theme.muted, fontSize: 13}}>
+              <Text style={inlineStyle_262_20({
+                theme: theme,
+              })}>
                 Cadastre e gerencie seus cartões para pagar em poucos toques.
               </Text>
             </View>
 
             <View
-              style={{
-                marginTop: 12,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-                padding: 14,
-              }}>
+              style={inlineStyle_268_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>
+                style={inlineStyle_277_16({
+                  theme: theme,
+                })}>
                 Cartões salvos
               </Text>
 
               {isLoading ? (
-                <View style={{paddingVertical: 20, alignItems: 'center'}}>
+                <View style={inlineStyle_282_22}>
                   <ActivityIndicator color={theme.primary} />
                 </View>
               ) : cards.length === 0 ? (
-                <Text style={{marginTop: 10, color: theme.muted}}>
+                <Text style={inlineStyle_286_22({
+                  theme: theme,
+                })}>
                   Nenhum cartão salvo ainda.
                 </Text>
               ) : (
@@ -306,31 +327,24 @@ export default function CardsPage() {
                         backgroundColor: `${theme.primary}10`,
                       },
                     ]}>
-                    <View style={{flex: 1}}>
+                    <View style={inlineStyle_301_26}>
                       <Text
-                        style={{
-                          color: theme.text,
-                          fontSize: 12,
-                          fontWeight: '800',
-                        }}>
+                        style={inlineStyle_303_24({
+                          theme: theme,
+                        })}>
                         {(card?.type || 'credit').toUpperCase()}
                       </Text>
                       <Text
-                        style={{
-                          marginTop: 2,
-                          color: theme.text,
-                          fontSize: 16,
-                          fontWeight: '800',
-                        }}>
+                        style={inlineStyle_311_24({
+                          theme: theme,
+                        })}>
                         {card?.number_group_1 || '****'} •••• ••••{' '}
                         {card?.number_group_4 || '****'}
                       </Text>
                       <Text
-                        style={{
-                          marginTop: 2,
-                          color: theme.muted,
-                          fontSize: 12,
-                        }}>
+                        style={inlineStyle_321_24({
+                          theme: theme,
+                        })}>
                         {card?.name || 'Titular'}
                       </Text>
                     </View>
@@ -355,20 +369,17 @@ export default function CardsPage() {
             </View>
 
             <View
-              style={{
-                marginTop: 12,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-                padding: 14,
-              }}>
+              style={inlineStyle_350_14({
+                theme: theme,
+              })}>
               <Text
-                style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>
+                style={inlineStyle_359_16({
+                  theme: theme,
+                })}>
                 Novo cartão
               </Text>
 
-              <View style={{marginTop: 12, flexDirection: 'row', gap: 8}}>
+              <View style={inlineStyle_363_20}>
                 {['credit', 'debit'].map(type => {
                   const selected = form.type === type;
                   return (
@@ -387,11 +398,10 @@ export default function CardsPage() {
                         },
                       ]}>
                       <Text
-                        style={{
-                          color: selected ? theme.primary : theme.text,
-                          fontWeight: '700',
-                          textTransform: 'capitalize',
-                        }}>
+                        style={inlineStyle_382_24({
+                          selected: selected,
+                          theme: theme,
+                        })}>
                         {type === 'credit' ? 'Crédito' : 'Débito'}
                       </Text>
                     </TouchableOpacity>
@@ -446,7 +456,7 @@ export default function CardsPage() {
                 ]}
               />
 
-              <View style={{flexDirection: 'row', gap: 8}}>
+              <View style={inlineStyle_441_20}>
                 <TextInput
                   value={form.expirationMonth}
                   onChangeText={value =>
@@ -503,13 +513,12 @@ export default function CardsPage() {
 
             {!!error && (
               <View
-                style={{
-                  marginTop: 12,
-                  borderRadius: 12,
-                  padding: 10,
-                  backgroundColor: `${theme.danger}18`,
-                }}>
-                <Text style={{color: theme.danger, fontWeight: '700'}}>
+                style={inlineStyle_498_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_504_22({
+                  theme: theme,
+                })}>
                   {error}
                 </Text>
               </View>
@@ -517,13 +526,12 @@ export default function CardsPage() {
 
             {!!message && (
               <View
-                style={{
-                  marginTop: 10,
-                  borderRadius: 12,
-                  padding: 10,
-                  backgroundColor: `${theme.success}18`,
-                }}>
-                <Text style={{color: theme.success, fontWeight: '700'}}>
+                style={inlineStyle_512_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_518_22({
+                  theme: theme,
+                })}>
                   {message}
                 </Text>
               </View>
@@ -531,31 +539,17 @@ export default function CardsPage() {
           </ScrollView>
 
           <View
-            style={{
-              position: 'absolute',
-              left: 12,
-              right: 12,
-              bottom: 12,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              padding: 10,
-              flexDirection: 'row',
-              gap: 10,
-            }}>
+            style={inlineStyle_526_12({
+              theme: theme,
+            })}>
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopCheckoutPage')}
-              style={{
-                flex: 1,
-                minHeight: 46,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Text style={{color: theme.text, fontWeight: '700'}}>
+              style={inlineStyle_541_14({
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_550_20({
+                theme: theme,
+              })}>
                 Voltar ao checkout
               </Text>
             </TouchableOpacity>
@@ -563,19 +557,14 @@ export default function CardsPage() {
             <TouchableOpacity
               onPress={handleSaveCard}
               disabled={isSaving}
-              style={{
-                flex: 1,
-                minHeight: 46,
-                borderRadius: 12,
-                backgroundColor: theme.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isSaving ? 0.7 : 1,
-              }}>
+              style={inlineStyle_558_14({
+                isSaving: isSaving,
+                theme: theme,
+              })}>
               {isSaving ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{color: '#fff', fontWeight: '800'}}>
+                <Text style={inlineStyle_570_22}>
                   Salvar cartão
                 </Text>
               )}
@@ -586,40 +575,3 @@ export default function CardsPage() {
     </ShopShell>
   );
 }
-
-const styles = StyleSheet.create({
-  cardItem: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  typeChip: {
-    minHeight: 36,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    marginTop: 10,
-  },
-  smallInput: {
-    flex: 1,
-  },
-});

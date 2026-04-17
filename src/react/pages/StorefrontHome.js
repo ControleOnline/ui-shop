@@ -7,6 +7,18 @@ import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/store
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
+import {
+  inlineStyle_78_12,
+  inlineStyle_87_14,
+  inlineStyle_95_20,
+  inlineStyle_98_20,
+  inlineStyle_101_20,
+  inlineStyle_106_14,
+  inlineStyle_114_40,
+  inlineStyle_124_18,
+  inlineStyle_134_24,
+} from './StorefrontHome.styles';
+
 const getColumns = width => {
   if (width >= 1500) return 4;
   if (width >= 1100) return 3;
@@ -75,7 +87,7 @@ export default function StorefrontHome() {
             company={defaultCompany}
           />
           <ScrollView
-            style={{flex: 1}}
+            style={inlineStyle_78_12}
             onLayout={event => {
               const nextWidth = event?.nativeEvent?.layout?.width;
               if (!nextWidth) return;
@@ -84,34 +96,33 @@ export default function StorefrontHome() {
               );
             }}>
             <View
-              style={{
-                margin: 14,
-                borderRadius: 18,
-                backgroundColor: `${theme.primary}10`,
-                borderWidth: 1,
-                borderColor: `${theme.primary}30`,
-                padding: 16,
-              }}>
-              <Text style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>
+              style={inlineStyle_87_14({
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_95_20({
+                theme: theme,
+              })}>
                 CARDAPIO DIGITAL
               </Text>
-              <Text style={{marginTop: 6, color: theme.text, fontSize: 20, fontWeight: '800'}}>
+              <Text style={inlineStyle_98_20({
+                theme: theme,
+              })}>
                 Escolha sua categoria
               </Text>
-              <Text style={{marginTop: 6, color: theme.muted, fontSize: 13}}>
+              <Text style={inlineStyle_101_20({
+                theme: theme,
+              })}>
                 Navegue pelos pratos e monte seu pedido em poucos toques.
               </Text>
             </View>
             <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap,
-                paddingHorizontal: 14,
-                paddingBottom: 92,
-              }}>
+              style={inlineStyle_106_14({
+                gap: gap,
+              })}>
               {topCategories.map(category => (
-                <View key={category.id} style={{width: cardWidth}}>
+                <View key={category.id} style={inlineStyle_114_40({
+                  cardWidth: cardWidth,
+                })}>
                   <ShopCategoryCard
                     category={category}
                     company={defaultCompany}
@@ -121,17 +132,12 @@ export default function StorefrontHome() {
               ))}
               {topCategories.length === 0 && (
                 <View
-                  style={{
-                    width: '100%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    borderRadius: 16,
-                    padding: 24,
-                    backgroundColor: theme.surface,
-                  }}>
-                  <Text style={{color: theme.text, fontSize: 15, fontWeight: '700'}}>
+                  style={inlineStyle_124_18({
+                    theme: theme,
+                  })}>
+                  <Text style={inlineStyle_134_24({
+                    theme: theme,
+                  })}>
                     Nenhuma categoria encontrada
                   </Text>
                 </View>

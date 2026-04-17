@@ -4,12 +4,31 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+
 import {
   formatMoney,
   getImageFromRelations,
   normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_25_6,
+  inlineStyle_42_10,
+  inlineStyle_53_14,
+  inlineStyle_56_18,
+  inlineStyle_67_12,
+  inlineStyle_87_12,
+  inlineStyle_89_10,
+  inlineStyle_96_12,
+  inlineStyle_107_12,
+  inlineStyle_118_12,
+  inlineStyle_140_12,
+  inlineStyle_151_14,
+  inlineStyle_161_12,
+} from './ShopProductCard.styles';
+
+import { inlineStyle_143_12 } from './ShopProductCard.styles';
 
 export default function ShopProductCard({product, compact = false}) {
   const navigation = useNavigation();
@@ -22,15 +41,10 @@ export default function ShopProductCard({product, compact = false}) {
 
   return (
     <View
-      style={{
-        backgroundColor: theme.surface,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: theme.cardBorder,
-        overflow: 'hidden',
-        flex: 1,
-        minWidth: compact ? 150 : 180,
-      }}>
+      style={inlineStyle_25_6({
+        compact: compact,
+        theme: theme,
+      })}>
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() =>
@@ -39,21 +53,22 @@ export default function ShopProductCard({product, compact = false}) {
           })
         }>
         <View
-          style={{
-            minHeight: compact ? 118 : 148,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: `${theme.primary}10`,
-            position: 'relative',
-          }}>
+          style={inlineStyle_42_10({
+            compact: compact,
+            theme: theme,
+          })}>
           {imageUrl ? (
             <Image
               source={{uri: imageUrl}}
               resizeMode="cover"
-              style={{width: '100%', height: compact ? 140 : 170}}
+              style={inlineStyle_53_14({
+                compact: compact,
+              })}
             />
           ) : (
-            <Text style={{color: theme.primary, fontWeight: '800'}}>
+            <Text style={inlineStyle_56_18({
+              theme: theme,
+            })}>
               SEM IMAGEM
             </Text>
           )}
@@ -64,63 +79,36 @@ export default function ShopProductCard({product, compact = false}) {
                 id: String(product?.id || ''),
               })
             }
-            style={{
-              position: 'absolute',
-              right: 10,
-              bottom: 10,
-              width: 34,
-              height: 34,
-              backgroundColor: theme.surface,
-              borderRadius: 17,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.15,
-              shadowRadius: 6,
-              shadowOffset: {width: 0, height: 3},
-            }}>
+            style={inlineStyle_67_12({
+              theme: theme,
+            })}>
             <Icon name="open-in-full" size={18} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
-
-      <View style={{paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12}}>
+      <View style={inlineStyle_87_12}>
         <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 6,
-          }}>
+          style={inlineStyle_89_10}>
           <Text
-            style={{
-              flex: 1,
-              color: theme.text,
-              fontSize: 14,
-              fontWeight: '700',
-              lineHeight: 18,
-            }}
+            style={inlineStyle_96_12({
+              theme: theme,
+            })}
             numberOfLines={2}>
             {product?.product}
           </Text>
           <Text
-            style={{
-              color: theme.primary,
-              fontSize: 14,
-              fontWeight: '800',
-            }}>
+            style={inlineStyle_107_12({
+              theme: theme,
+            })}>
             {formatMoney(product?.price)}
           </Text>
         </View>
         {product?.description ? (
           <Text
             numberOfLines={2}
-            style={{
-              marginTop: 6,
-              color: theme.muted,
-              fontSize: 12,
-              lineHeight: 16,
-            }}>
+            style={inlineStyle_118_12({
+              theme: theme,
+            })}>
             {product.description}
           </Text>
         ) : null}
@@ -137,18 +125,13 @@ export default function ShopProductCard({product, compact = false}) {
                 redirectToCart: true,
               });
             }}
-            style={{
-              marginTop: 12,
-              minHeight: 42,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: theme.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: `${theme.primary}10`,
-            }}>
+            style={inlineStyle_140_12({
+              theme: theme,
+            })}>
             <Text
-              style={{color: theme.primary, fontSize: 13, fontWeight: '800'}}>
+              style={inlineStyle_151_14({
+                theme: theme,
+              })}>
               Personalizar
             </Text>
           </TouchableOpacity>
@@ -158,8 +141,8 @@ export default function ShopProductCard({product, compact = false}) {
             cart={cart}
             refreshCart={refreshCart}
             iconColor={theme.primary}
-            style={{marginTop: 12, minHeight: 44, borderRadius: 12}}
-            textStyle={{fontSize: 18, fontWeight: '700'}}
+            style={inlineStyle_161_12}
+            textStyle={inlineStyle_143_12}
           />
         )}
       </View>

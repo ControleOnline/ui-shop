@@ -6,11 +6,43 @@ import {useStore} from '@store';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+
 import {
   buildFileUrl,
   getInitials,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_54_10,
+  inlineStyle_57_12,
+  inlineStyle_66_14,
+  inlineStyle_79_18,
+  inlineStyle_82_22,
+  inlineStyle_88_14,
+  inlineStyle_96_18,
+  inlineStyle_99_18,
+  inlineStyle_105_12,
+  inlineStyle_115_14,
+  inlineStyle_124_16,
+  inlineStyle_126_22,
+  inlineStyle_135_14,
+  inlineStyle_144_16,
+  inlineStyle_146_22,
+  inlineStyle_155_14,
+  inlineStyle_164_16,
+  inlineStyle_166_22,
+  inlineStyle_175_14,
+  inlineStyle_184_16,
+  inlineStyle_186_22,
+  inlineStyle_195_14,
+  inlineStyle_202_16,
+  inlineStyle_204_22,
+  inlineStyle_217_12,
+  inlineStyle_225_18,
+} from './ProfilePage.styles';
+
+import { inlineStyle_85_10 } from './ProfilePage.styles';
 
 const getAvatarUrl = user => {
   if (user?.avatar?.file?.id) return buildFileUrl(user.avatar.file.id);
@@ -51,79 +83,61 @@ export default function ShopProfilePage() {
       }>
       {() => (
         <ScrollView
-          style={{flex: 1}}
-          contentContainerStyle={{padding: 14, paddingBottom: 20}}>
+          style={inlineStyle_54_10}
+          contentContainerStyle={inlineStyle_85_10}>
           <View
-            style={{
-              borderRadius: 18,
-              borderWidth: 1,
-              borderColor: `${theme.primary}30`,
-              backgroundColor: `${theme.primary}10`,
-              padding: 16,
-              alignItems: 'center',
-            }}>
+            style={inlineStyle_57_12({
+              theme: theme,
+            })}>
             <View
-              style={{
-                width: 86,
-                height: 86,
-                borderRadius: 43,
-                overflow: 'hidden',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: theme.primary,
-              }}>
+              style={inlineStyle_66_14({
+                theme: theme,
+              })}>
               {avatarUrl ? (
                 <Image
                   source={{uri: avatarUrl}}
                   resizeMode="cover"
-                  style={{width: '100%', height: '100%'}}
+                  style={inlineStyle_79_18}
                 />
               ) : (
-                <Text style={{color: '#fff', fontSize: 30, fontWeight: '800'}}>
+                <Text style={inlineStyle_82_22}>
                   {getInitials(displayName)}
                 </Text>
               )}
             </View>
             <Text
-              style={{
-                marginTop: 12,
-                color: theme.text,
-                fontSize: 22,
-                fontWeight: '800',
-              }}>
+              style={inlineStyle_88_14({
+                theme: theme,
+              })}>
               {displayName}
             </Text>
-            <Text style={{marginTop: 4, color: theme.muted, fontSize: 13}}>
+            <Text style={inlineStyle_96_18({
+              theme: theme,
+            })}>
               {email}
             </Text>
-            <Text style={{marginTop: 2, color: theme.muted, fontSize: 13}}>
+            <Text style={inlineStyle_99_18({
+              theme: theme,
+            })}>
               {phone}
             </Text>
           </View>
 
           <View
-            style={{
-              marginTop: 12,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              overflow: 'hidden',
-            }}>
+            style={inlineStyle_105_12({
+              theme: theme,
+            })}>
             <TouchableOpacity
               onPress={() => navigation.navigate('ProfilePage')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.cardBorder,
-              }}>
+              style={inlineStyle_115_14({
+                theme: theme,
+              })}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                style={inlineStyle_124_16}>
                 <Icon name="person-outline" size={20} color={theme.primary} />
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+                <Text style={inlineStyle_126_22({
+                  theme: theme,
+                })}>
                   Editar perfil completo
                 </Text>
               </View>
@@ -132,18 +146,15 @@ export default function ShopProfilePage() {
 
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopCartPage')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.cardBorder,
-              }}>
+              style={inlineStyle_135_14({
+                theme: theme,
+              })}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                style={inlineStyle_144_16}>
                 <Icon name="shopping-cart" size={20} color={theme.primary} />
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+                <Text style={inlineStyle_146_22({
+                  theme: theme,
+                })}>
                   Meu carrinho
                 </Text>
               </View>
@@ -152,18 +163,15 @@ export default function ShopProfilePage() {
 
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopCheckoutPage')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.cardBorder,
-              }}>
+              style={inlineStyle_155_14({
+                theme: theme,
+              })}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                style={inlineStyle_164_16}>
                 <Icon name="payments" size={20} color={theme.primary} />
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+                <Text style={inlineStyle_166_22({
+                  theme: theme,
+                })}>
                   Pagamento e Pix
                 </Text>
               </View>
@@ -172,18 +180,15 @@ export default function ShopProfilePage() {
 
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopCardsPage')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.cardBorder,
-              }}>
+              style={inlineStyle_175_14({
+                theme: theme,
+              })}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                style={inlineStyle_184_16}>
                 <Icon name="credit-card" size={20} color={theme.primary} />
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+                <Text style={inlineStyle_186_22({
+                  theme: theme,
+                })}>
                   Meus cartões
                 </Text>
               </View>
@@ -192,16 +197,13 @@ export default function ShopProfilePage() {
 
             <TouchableOpacity
               onPress={() => navigation.navigate('ShopOrdersPage')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-              }}>
+              style={inlineStyle_195_14}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                style={inlineStyle_202_16}>
                 <Icon name="receipt-long" size={20} color={theme.primary} />
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+                <Text style={inlineStyle_204_22({
+                  theme: theme,
+                })}>
                   Meus pedidos
                 </Text>
               </View>
@@ -214,15 +216,12 @@ export default function ShopProfilePage() {
               authActions.logOut();
               navigation.reset({index: 0, routes: [{name: 'SignInPage'}]});
             }}
-            style={{
-              marginTop: 12,
-              minHeight: 46,
-              borderRadius: 12,
-              backgroundColor: `${theme.danger}20`,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Text style={{color: theme.danger, fontWeight: '800'}}>
+            style={inlineStyle_217_12({
+              theme: theme,
+            })}>
+            <Text style={inlineStyle_225_18({
+              theme: theme,
+            })}>
               Sair da conta
             </Text>
           </TouchableOpacity>

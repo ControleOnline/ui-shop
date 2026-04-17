@@ -9,6 +9,21 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import ShopTitleBar from '@controleonline/ui-shop/src/react/components/storefront/ShopTitleBar';
 import {pickTheme, SHOP_PRODUCT_TYPES} from '@controleonline/ui-shop/src/react/utils/shop';
 
+import {
+  inlineStyle_92_12,
+  inlineStyle_101_14,
+  inlineStyle_109_20,
+  inlineStyle_110_20,
+  inlineStyle_114_18,
+  inlineStyle_115_20,
+  inlineStyle_117_41,
+  inlineStyle_123_22,
+  inlineStyle_125_44,
+  inlineStyle_139_18,
+  inlineStyle_147_24,
+  inlineStyle_150_24,
+} from './SearchPage.styles';
+
 export default function SearchPage() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -89,7 +104,7 @@ export default function SearchPage() {
           />
           <ShopTitleBar title="Resultados" company={defaultCompany} />
           <ScrollView
-            style={{flex: 1}}
+            style={inlineStyle_92_12}
             onLayout={event => {
               const nextWidth = event?.nativeEvent?.layout?.width;
               if (!nextWidth) return;
@@ -98,31 +113,38 @@ export default function SearchPage() {
               );
             }}>
             <View
-              style={{
-                margin: 14,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: `${theme.primary}25`,
-                backgroundColor: `${theme.primary}10`,
-                padding: 14,
-              }}>
-              <Text style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>BUSCA</Text>
-              <Text style={{color: theme.text, fontSize: 18, fontWeight: '800', marginTop: 4}}>
+              style={inlineStyle_101_14({
+                theme: theme,
+              })}>
+              <Text style={inlineStyle_109_20({
+                theme: theme,
+              })}>BUSCA</Text>
+              <Text style={inlineStyle_110_20({
+                theme: theme,
+              })}>
                 {q ? `Resultados para "${q}"` : 'Digite algo para buscar'}
               </Text>
             </View>
-            <View style={{paddingHorizontal: 14, gap: 14, paddingBottom: 92}}>
-              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap}}>
+            <View style={inlineStyle_114_18}>
+              <View style={inlineStyle_115_20({
+                gap: gap,
+              })}>
                 {searchProducts.map(product => (
-                  <View key={product.id} style={{width: cardWidth}}>
+                  <View key={product.id} style={inlineStyle_117_41({
+                    cardWidth: cardWidth,
+                  })}>
                     <ShopProductCard product={product} compact />
                   </View>
                 ))}
               </View>
               {searchCategories.length > 0 && (
-                <View style={{flexDirection: 'row', flexWrap: 'wrap', gap}}>
+                <View style={inlineStyle_123_22({
+                  gap: gap,
+                })}>
                   {searchCategories.map(category => (
-                    <View key={category.id} style={{width: cardWidth}}>
+                    <View key={category.id} style={inlineStyle_125_44({
+                      cardWidth: cardWidth,
+                    })}>
                       <ShopCategoryCard
                         category={category}
                         company={defaultCompany}
@@ -136,18 +158,17 @@ export default function SearchPage() {
               )}
               {searchProducts.length === 0 && searchCategories.length === 0 && q && (
                 <View
-                  style={{
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: theme.cardBorder,
-                    backgroundColor: theme.surface,
-                    padding: 22,
-                    alignItems: 'center',
-                  }}>
-                  <Text style={{color: theme.text, fontSize: 15, fontWeight: '700'}}>
+                  style={inlineStyle_139_18({
+                    theme: theme,
+                  })}>
+                  <Text style={inlineStyle_147_24({
+                    theme: theme,
+                  })}>
                     Nenhum resultado encontrado
                   </Text>
-                  <Text style={{color: theme.muted, marginTop: 6, fontSize: 12}}>
+                  <Text style={inlineStyle_150_24({
+                    theme: theme,
+                  })}>
                     Tente outro termo de busca.
                   </Text>
                 </View>

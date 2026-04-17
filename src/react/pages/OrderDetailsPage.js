@@ -6,6 +6,40 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
+import {
+  inlineStyle_34_20,
+  inlineStyle_37_12,
+  inlineStyle_39_18,
+  inlineStyle_43_12,
+  inlineStyle_51_18,
+  inlineStyle_52_18,
+  inlineStyle_55_18,
+  inlineStyle_63_12,
+  inlineStyle_71_18,
+  inlineStyle_72_18,
+  inlineStyle_73_20,
+  inlineStyle_74_22,
+  inlineStyle_75_22,
+  inlineStyle_79_20,
+  inlineStyle_80_22,
+  inlineStyle_81_22,
+  inlineStyle_85_20,
+  inlineStyle_86_22,
+  inlineStyle_87_22,
+  inlineStyle_95_12,
+  inlineStyle_102_18,
+  inlineStyle_103_20,
+  inlineStyle_108_16,
+  inlineStyle_114_22,
+  inlineStyle_117_22,
+  inlineStyle_118_24,
+  inlineStyle_121_24,
+  inlineStyle_128_20,
+  inlineStyle_129_22,
+} from './OrderDetailsPage.styles';
+
+import { inlineStyle_66_46 } from './OrderDetailsPage.styles';
+
 export default function OrderDetailsPage() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -31,28 +65,31 @@ export default function OrderDetailsPage() {
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }>
       {() => (
-        <ScrollView style={{flex: 1}} contentContainerStyle={{padding: 14, paddingBottom: 24}}>
+        <ScrollView style={inlineStyle_34_20} contentContainerStyle={inlineStyle_66_46}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{flexDirection: 'row', alignItems: 'center', marginBottom: 10}}>
+            style={inlineStyle_37_12}>
             <Icon name="arrow-back" size={20} color={theme.primary} />
-            <Text style={{marginLeft: 8, color: theme.primary, fontWeight: '700'}}>Voltar</Text>
+            <Text style={inlineStyle_39_18({
+              theme: theme,
+            })}>Voltar</Text>
           </TouchableOpacity>
 
           <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: `${theme.primary}30`,
-              backgroundColor: `${theme.primary}10`,
-              padding: 14,
-              marginBottom: 12,
-            }}>
-            <Text style={{color: theme.primary, fontSize: 12, fontWeight: '800'}}>PEDIDO</Text>
-            <Text style={{marginTop: 5, color: theme.text, fontSize: 22, fontWeight: '800'}}>
+            style={inlineStyle_43_12({
+              theme: theme,
+            })}>
+            <Text style={inlineStyle_51_18({
+              theme: theme,
+            })}>PEDIDO</Text>
+            <Text style={inlineStyle_52_18({
+              theme: theme,
+            })}>
               #{order?.id || orderId}
             </Text>
-            <Text style={{marginTop: 4, color: theme.muted, fontSize: 13}}>
+            <Text style={inlineStyle_55_18({
+              theme: theme,
+            })}>
               {order?.orderDate
                 ? new Date(order.orderDate).toLocaleDateString('pt-BR')
                 : 'Carregando data...'}
@@ -60,31 +97,40 @@ export default function OrderDetailsPage() {
           </View>
 
           <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              padding: 14,
-              marginBottom: 12,
-            }}>
-            <Text style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>Resumo</Text>
-            <View style={{marginTop: 10, gap: 8}}>
-              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                <Text style={{color: theme.muted}}>Status</Text>
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+            style={inlineStyle_63_12({
+              theme: theme,
+            })}>
+            <Text style={inlineStyle_71_18({
+              theme: theme,
+            })}>Resumo</Text>
+            <View style={inlineStyle_72_18}>
+              <View style={inlineStyle_73_20}>
+                <Text style={inlineStyle_74_22({
+                  theme: theme,
+                })}>Status</Text>
+                <Text style={inlineStyle_75_22({
+                  theme: theme,
+                })}>
                   {order?.status?.status || '--'}
                 </Text>
               </View>
-              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                <Text style={{color: theme.muted}}>Cliente</Text>
-                <Text style={{color: theme.text, fontWeight: '700'}}>
+              <View style={inlineStyle_79_20}>
+                <Text style={inlineStyle_80_22({
+                  theme: theme,
+                })}>Cliente</Text>
+                <Text style={inlineStyle_81_22({
+                  theme: theme,
+                })}>
                   {order?.client?.alias || order?.client?.name || '--'}
                 </Text>
               </View>
-              <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                <Text style={{color: theme.text, fontSize: 16, fontWeight: '700'}}>Total</Text>
-                <Text style={{color: theme.primary, fontSize: 20, fontWeight: '900'}}>
+              <View style={inlineStyle_85_20}>
+                <Text style={inlineStyle_86_22({
+                  theme: theme,
+                })}>Total</Text>
+                <Text style={inlineStyle_87_22({
+                  theme: theme,
+                })}>
                   {formatMoney(order?.price)}
                 </Text>
               </View>
@@ -92,41 +138,46 @@ export default function OrderDetailsPage() {
           </View>
 
           <View
-            style={{
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              backgroundColor: theme.surface,
-              overflow: 'hidden',
-            }}>
-            <View style={{padding: 14, borderBottomWidth: 1, borderBottomColor: theme.cardBorder}}>
-              <Text style={{color: theme.text, fontSize: 16, fontWeight: '800'}}>Itens</Text>
+            style={inlineStyle_95_12({
+              theme: theme,
+            })}>
+            <View style={inlineStyle_102_18({
+              theme: theme,
+            })}>
+              <Text style={inlineStyle_103_20({
+                theme: theme,
+              })}>Itens</Text>
             </View>
             {items.map(orderProduct => (
               <View
                 key={orderProduct.id}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.cardBorder,
-                }}>
-                <Text style={{color: theme.text, fontSize: 14, fontWeight: '700'}}>
+                style={inlineStyle_108_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_114_22({
+                  theme: theme,
+                })}>
                   {orderProduct?.product?.product}
                 </Text>
-                <View style={{marginTop: 6, flexDirection: 'row', justifyContent: 'space-between'}}>
-                  <Text style={{color: theme.muted, fontSize: 12}}>
+                <View style={inlineStyle_117_22}>
+                  <Text style={inlineStyle_118_24({
+                    theme: theme,
+                  })}>
                     {orderProduct.quantity} x {formatMoney(orderProduct.price)}
                   </Text>
-                  <Text style={{color: theme.primary, fontWeight: '800'}}>
+                  <Text style={inlineStyle_121_24({
+                    theme: theme,
+                  })}>
                     {formatMoney(orderProduct.total ?? orderProduct.quantity * orderProduct.price)}
                   </Text>
                 </View>
               </View>
             ))}
             {items.length === 0 && (
-              <View style={{padding: 18, alignItems: 'center'}}>
-                <Text style={{color: theme.muted}}>Nenhum item encontrado.</Text>
+              <View style={inlineStyle_128_20}>
+                <Text style={inlineStyle_129_22({
+                  theme: theme,
+                })}>Nenhum item encontrado.</Text>
               </View>
             )}
           </View>

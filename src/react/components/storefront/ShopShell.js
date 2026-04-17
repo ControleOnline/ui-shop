@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+
 import {
   Image,
   Modal,
@@ -10,17 +11,73 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import md5 from 'md5';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+
 import {
   buildFileUrl,
   getHost,
   getInitials,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_118_10,
+  inlineStyle_119_12,
+  inlineStyle_121_10,
+  inlineStyle_128_12,
+  inlineStyle_135_14,
+  inlineStyle_146_20,
+  inlineStyle_155_20,
+  inlineStyle_164_22,
+  inlineStyle_175_20,
+  inlineStyle_177_18,
+  inlineStyle_180_20,
+  inlineStyle_191_22,
+  inlineStyle_214_18,
+  inlineStyle_224_18,
+  inlineStyle_228_18,
+  inlineStyle_241_16,
+  inlineStyle_255_12,
+  inlineStyle_273_14,
+  inlineStyle_282_14,
+  inlineStyle_303_10,
+  inlineStyle_305_12,
+  inlineStyle_329_16,
+  inlineStyle_332_18,
+  inlineStyle_345_10,
+  inlineStyle_358_12,
+  inlineStyle_369_18,
+  inlineStyle_370_20,
+  inlineStyle_372_18,
+  inlineStyle_381_18,
+  inlineStyle_388_20,
+  inlineStyle_398_18,
+  inlineStyle_399_24,
+  inlineStyle_409_18,
+  inlineStyle_410_24,
+  inlineStyle_420_18,
+  inlineStyle_421_24,
+  inlineStyle_431_18,
+  inlineStyle_432_24,
+  inlineStyle_438_18,
+  inlineStyle_444_24,
+  inlineStyle_445_26,
+  inlineStyle_447_22,
+  inlineStyle_460_16,
+  inlineStyle_468_16,
+  inlineStyle_473_18,
+  inlineStyle_485_22,
+  inlineStyle_490_22,
+  inlineStyle_497_18,
+  inlineStyle_508_18,
+  inlineStyle_531_18,
+  inlineStyle_538_24,
+} from './ShopShell.styles';
 
 const getSession = () => {
   try {
@@ -115,88 +172,60 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
   );
 
   return (
-    <View style={{flex: 1, backgroundColor: shellBackground}}>
-      <View style={{backgroundColor: theme.header}}>
+    <View style={inlineStyle_118_10({
+      shellBackground: shellBackground,
+    })}>
+      <View style={inlineStyle_119_12({
+        theme: theme,
+      })}>
         <View
-          style={{
-            paddingHorizontal: shellPadding,
-            paddingTop: isMobile ? 12 : 18,
-            paddingBottom: isMobile ? 14 : 18,
-            gap: 14,
-          }}>
+          style={inlineStyle_121_10({
+            isMobile: isMobile,
+            shellPadding: shellPadding,
+          })}>
           <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-            }}>
+            style={inlineStyle_128_12}>
             <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                flex: 1,
-              }}>
+              style={inlineStyle_135_14}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('ShopIndex')}>
                 {logoUrl ? (
                   <Image
                     source={{uri: logoUrl}}
-                    style={{
-                      width: isMobile ? 56 : 82,
-                      height: isMobile ? 56 : 64,
-                      borderRadius: 10,
-                    }}
+                    style={inlineStyle_146_20({
+                      isMobile: isMobile,
+                    })}
                     resizeMode="cover"
                   />
                 ) : (
                   <View
-                    style={{
-                      width: isMobile ? 56 : 82,
-                      height: isMobile ? 56 : 64,
-                      borderRadius: 12,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                    }}>
+                    style={inlineStyle_155_20({
+                      isMobile: isMobile,
+                    })}>
                     <Text
-                      style={{
-                        color: '#fff',
-                        fontSize: isMobile ? 18 : 24,
-                        fontWeight: '800',
-                      }}>
+                      style={inlineStyle_164_22({
+                        isMobile: isMobile,
+                      })}>
                       {getInitials(defaultCompany?.alias || 'CO')}
                     </Text>
                   </View>
                 )}
               </TouchableOpacity>
 
-              <View style={{flex: 1}}>
+              <View style={inlineStyle_175_20}>
                 <View
-                  style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                  style={inlineStyle_177_18}>
                   <Text
                     numberOfLines={1}
-                    style={{
-                      color: '#fff',
-                      fontSize: isMobile ? 15 : 20,
-                      fontWeight: '700',
-                      flexShrink: 1,
-                    }}>
+                    style={inlineStyle_180_20({
+                      isMobile: isMobile,
+                    })}>
                     {displayCompany}
                   </Text>
                   {companyList.length > 1 && (
                     <TouchableOpacity
                       onPress={() => setCompanyOpen(open => !open)}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.45)',
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
+                      style={inlineStyle_191_22}>
                       <Icon
                         name={
                           companyOpen
@@ -211,58 +240,30 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                 </View>
                 <Text
                   numberOfLines={1}
-                  style={{
-                    color: 'rgba(255,255,255,0.86)',
-                    fontSize: 12,
-                    marginTop: 3,
-                  }}>
+                  style={inlineStyle_214_18}>
                   Cardapio digital
                 </Text>
               </View>
             </View>
 
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+            <View style={inlineStyle_224_18}>
               {!isMobile && (
                 <TouchableOpacity
                   onPress={() => setAccountOpen(true)}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
+                  style={inlineStyle_228_18}>
                   <Icon name="notifications" size={20} color="#fff" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 onPress={() => setAccountOpen(true)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+                style={inlineStyle_241_16}>
                 <Icon name="account-circle" size={22} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
 
           <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(255,255,255,0.16)',
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.24)',
-              paddingHorizontal: 12,
-              minHeight: 44,
-              gap: 8,
-            }}>
+            style={inlineStyle_255_12}>
             <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
             <TextInput
               value={searchTerm}
@@ -270,29 +271,16 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
               onSubmitEditing={submitSearch}
               placeholder="Busque pratos, bebidas ou categorias"
               placeholderTextColor="rgba(255,255,255,0.75)"
-              style={{
-                flex: 1,
-                color: '#fff',
-                fontSize: 14,
-                minHeight: 40,
-              }}
+              style={inlineStyle_273_14}
             />
             <TouchableOpacity
               onPress={submitSearch}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 10,
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              style={inlineStyle_282_14}>
               <Icon name="arrow-forward" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
-
       <Modal
         visible={companyOpen && companyList.length > 1}
         transparent
@@ -300,25 +288,13 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setCompanyOpen(false)}
-          style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.25)'}}>
+          style={inlineStyle_303_10}>
           <View
-            style={{
-              position: 'absolute',
-              top: isMobile ? 78 : 92,
-              left: shellPadding,
-              right: isMobile ? shellPadding : undefined,
-              zIndex: 99999,
-              elevation: 20,
-              backgroundColor: surface,
-              minWidth: isMobile ? undefined : 320,
-              maxWidth: isMobile ? undefined : 420,
-              borderRadius: 12,
-              paddingVertical: 6,
-              shadowColor: '#000',
-              shadowOpacity: 0.28,
-              shadowRadius: 12,
-              shadowOffset: {width: 0, height: 6},
-            }}>
+            style={inlineStyle_305_12({
+              isMobile: isMobile,
+              shellPadding: shellPadding,
+              surface: surface,
+            })}>
             {companyList.map(company => (
               <TouchableOpacity
                 key={company.id}
@@ -326,10 +302,12 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                   peopleActions.setCurrentCompany(company);
                   setCompanyOpen(false);
                 }}
-                style={{paddingHorizontal: 14, paddingVertical: 12}}>
+                style={inlineStyle_329_16}>
                 <Text
                   numberOfLines={1}
-                  style={{color: foreground, fontSize: 14, fontWeight: '600'}}>
+                  style={inlineStyle_332_18({
+                    foreground: foreground,
+                  })}>
                   {company.alias || company.name}
                 </Text>
               </TouchableOpacity>
@@ -337,39 +315,30 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
           </View>
         </TouchableOpacity>
       </Modal>
-
       {children({foreground, surface, theme})}
-
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.22)',
-            alignItems: 'center',
-            justifyContent: isMobile ? 'flex-end' : 'flex-start',
-            paddingTop: isMobile ? 0 : 92,
-            paddingBottom: isMobile ? 14 : 0,
-            paddingHorizontal: 12,
-          }}
+          style={inlineStyle_345_10({
+            isMobile: isMobile,
+          })}
           activeOpacity={1}
           onPress={() => setAccountOpen(false)}>
           <TouchableOpacity
             activeOpacity={1}
-            style={{
-              width: isMobile ? '100%' : 700,
-              maxWidth: '100%',
-              backgroundColor: surface,
-              borderRadius: 16,
-              shadowColor: '#000',
-              shadowOpacity: 0.16,
-              shadowRadius: 12,
-              shadowOffset: {width: 0, height: 6},
-              padding: 18,
-            }}>
-            <View style={{flexDirection: isMobile ? 'column' : 'row', gap: 18}}>
-              <View style={{flex: 1, paddingRight: isMobile ? 0 : 20}}>
+            style={inlineStyle_358_12({
+              isMobile: isMobile,
+              surface: surface,
+            })}>
+            <View style={inlineStyle_369_18({
+              isMobile: isMobile,
+            })}>
+              <View style={inlineStyle_370_20({
+                isMobile: isMobile,
+              })}>
                 <Text
-                  style={{color: foreground, fontSize: 20, fontWeight: '800'}}>
+                  style={inlineStyle_372_18({
+                    foreground: foreground,
+                  })}>
                   Minha Conta
                 </Text>
 
@@ -378,14 +347,12 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     setAccountOpen(false);
                     navigation.navigate('ShopProfilePage');
                   }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 24,
-                  }}>
+                  style={inlineStyle_381_18}>
                   <Icon name="face" size={22} color={foreground} />
                   <Text
-                    style={{marginLeft: 18, color: foreground, fontSize: 16}}>
+                    style={inlineStyle_388_20({
+                      foreground: foreground,
+                    })}>
                     Meu Perfil
                   </Text>
                 </TouchableOpacity>
@@ -395,8 +362,10 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     setAccountOpen(false);
                     navigation.navigate('ShopOrdersPage');
                   }}
-                  style={{marginLeft: 40, marginTop: 20}}>
-                  <Text style={{color: foreground, fontSize: 16}}>
+                  style={inlineStyle_398_18}>
+                  <Text style={inlineStyle_399_24({
+                    foreground: foreground,
+                  })}>
                     Meus Pedidos
                   </Text>
                 </TouchableOpacity>
@@ -406,8 +375,10 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     setAccountOpen(false);
                     navigation.navigate('ShopCartPage');
                   }}
-                  style={{marginLeft: 40, marginTop: 16}}>
-                  <Text style={{color: foreground, fontSize: 16}}>
+                  style={inlineStyle_409_18}>
+                  <Text style={inlineStyle_410_24({
+                    foreground: foreground,
+                  })}>
                     Carrinho
                   </Text>
                 </TouchableOpacity>
@@ -417,8 +388,10 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     setAccountOpen(false);
                     navigation.navigate('ShopCheckoutPage');
                   }}
-                  style={{marginLeft: 40, marginTop: 16}}>
-                  <Text style={{color: foreground, fontSize: 16}}>
+                  style={inlineStyle_420_18}>
+                  <Text style={inlineStyle_421_24({
+                    foreground: foreground,
+                  })}>
                     Pagamento e Pix
                   </Text>
                 </TouchableOpacity>
@@ -428,27 +401,25 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     setAccountOpen(false);
                     navigation.navigate('ShopCardsPage');
                   }}
-                  style={{marginLeft: 40, marginTop: 16}}>
-                  <Text style={{color: foreground, fontSize: 16}}>
+                  style={inlineStyle_431_18}>
+                  <Text style={inlineStyle_432_24({
+                    foreground: foreground,
+                  })}>
                     Meus Cartões
                   </Text>
                 </TouchableOpacity>
 
                 <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 24,
-                  }}>
+                  style={inlineStyle_438_18}>
                   <Icon name="g-translate" size={22} color={foreground} />
-                  <View style={{marginLeft: 18}}>
-                    <Text style={{color: muted, fontSize: 13}}>Idioma</Text>
+                  <View style={inlineStyle_444_24}>
+                    <Text style={inlineStyle_445_26({
+                      muted: muted,
+                    })}>Idioma</Text>
                     <Text
-                      style={{
-                        color: foreground,
-                        fontSize: 15,
-                        fontWeight: '600',
-                      }}>
+                      style={inlineStyle_447_22({
+                        foreground: foreground,
+                      })}>
                       {JSON.parse(localStorage.getItem('config') || '{}')
                         ?.language || 'Pt-BR'}
                     </Text>
@@ -457,60 +428,43 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
               </View>
 
               <View
-                style={{
-                  width: isMobile ? '100%' : 1,
-                  height: isMobile ? 1 : undefined,
-                  backgroundColor: darkMode ? '#2B3A4A' : '#d7dee8',
-                }}
+                style={inlineStyle_460_16({
+                  darkMode: darkMode,
+                  isMobile: isMobile,
+                })}
               />
 
               <View
-                style={{
-                  flex: isMobile ? undefined : 1.2,
-                  alignItems: 'center',
-                }}>
+                style={inlineStyle_468_16({
+                  isMobile: isMobile,
+                })}>
                 <View
-                  style={{
-                    width: 74,
-                    height: 74,
-                    borderRadius: 37,
-                    backgroundColor: theme.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                  }}>
+                  style={inlineStyle_473_18({
+                    theme: theme,
+                  })}>
                   {avatarUrl ? (
                     <Image
                       source={{uri: avatarUrl}}
-                      style={{width: '100%', height: '100%'}}
+                      style={inlineStyle_485_22}
                       resizeMode="cover"
                     />
                   ) : (
                     <Text
-                      style={{color: '#fff', fontSize: 24, fontWeight: '700'}}>
+                      style={inlineStyle_490_22}>
                       {getInitials(displayName)}
                     </Text>
                   )}
                 </View>
 
                 <Text
-                  style={{
-                    marginTop: 14,
-                    textAlign: 'center',
-                    color: foreground,
-                    fontSize: 14,
-                    lineHeight: 20,
-                  }}>
+                  style={inlineStyle_497_18({
+                    foreground: foreground,
+                  })}>
                   {displayName}
                 </Text>
 
                 <View
-                  style={{
-                    marginTop: 18,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}>
+                  style={inlineStyle_508_18}>
                   <Icon
                     name={darkMode ? 'dark-mode' : 'light-mode'}
                     size={20}
@@ -528,14 +482,10 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                       routes: [{name: 'SignInPage'}],
                     });
                   }}
-                  style={{
-                    marginTop: 18,
-                    backgroundColor: theme.primary,
-                    paddingHorizontal: 20,
-                    paddingVertical: 11,
-                    borderRadius: 10,
-                  }}>
-                  <Text style={{color: '#fff', fontWeight: '700'}}>Sair</Text>
+                  style={inlineStyle_531_18({
+                    theme: theme,
+                  })}>
+                  <Text style={inlineStyle_538_24}>Sair</Text>
                 </TouchableOpacity>
               </View>
             </View>

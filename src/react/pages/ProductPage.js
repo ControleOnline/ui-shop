@@ -1,4 +1,5 @@
 import React, {useCallback, useState} from 'react';
+
 import {
   ActivityIndicator,
   Image,
@@ -8,22 +9,55 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/MaterialIcons';
+
 import {
   useFocusEffect,
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
+
 import {useStore} from '@store';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+
 import {
   buildFileUrl,
   formatMoney,
   normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+
+import {
+  inlineStyle_137_22,
+  inlineStyle_139_14,
+  inlineStyle_145_20,
+  inlineStyle_148_18,
+  inlineStyle_155_20,
+  inlineStyle_165_20,
+  inlineStyle_167_18,
+  inlineStyle_181_22,
+  inlineStyle_184_26,
+  inlineStyle_190_22,
+  inlineStyle_195_20,
+  inlineStyle_197_18,
+  inlineStyle_205_18,
+  inlineStyle_213_22,
+  inlineStyle_221_12,
+  inlineStyle_230_16,
+  inlineStyle_252_16,
+  inlineStyle_259_22,
+  inlineStyle_264_20,
+  inlineStyle_266_18,
+  inlineStyle_277_20,
+  inlineStyle_282_18,
+  inlineStyle_289_20,
+  inlineStyle_297_26,
+} from './ProductPage.styles';
+
+import { inlineStyle_285_20 } from './ProductPage.styles';
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
@@ -134,83 +168,75 @@ export default function ProductPage() {
       }>
       {() => (
         <>
-          <ScrollView style={{flex: 1}}>
+          <ScrollView style={inlineStyle_137_22}>
             <View
-              style={{
-                padding: 14,
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: 12,
-              }}>
-              <View style={{width: '100%'}}>
+              style={inlineStyle_139_14}>
+              <View style={inlineStyle_145_20}>
                 <TouchableOpacity
                   onPress={() => navigation.goBack()}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 10,
-                  }}>
+                  style={inlineStyle_148_18}>
                   <Icon name="arrow-back" size={20} color={theme.primary} />
                   <Text
-                    style={{
-                      marginLeft: 8,
-                      color: theme.primary,
-                      fontWeight: '700',
-                    }}>
+                    style={inlineStyle_155_20({
+                      theme: theme,
+                    })}>
                     Voltar
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{flex: 1, minWidth: isMobile ? '100%' : 380}}>
+              <View style={inlineStyle_165_20({
+                isMobile: isMobile,
+              })}>
                 <View
-                  style={{
-                    minHeight: isMobile ? 260 : 460,
-                    backgroundColor: `${theme.primary}10`,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: `${theme.primary}25`,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                  }}>
+                  style={inlineStyle_167_18({
+                    isMobile: isMobile,
+                    theme: theme,
+                  })}>
                   {imageUrl ? (
                     <Image
                       source={{uri: imageUrl}}
                       resizeMode="cover"
-                      style={{width: '100%', height: isMobile ? 280 : 460}}
+                      style={inlineStyle_181_22({
+                        isMobile: isMobile,
+                      })}
                     />
                   ) : (
-                    <Text style={{color: theme.primary, fontWeight: '800'}}>
+                    <Text style={inlineStyle_184_26({
+                      theme: theme,
+                    })}>
                       SEM IMAGEM
                     </Text>
                   )}
                 </View>
 
-                <Text style={{marginTop: 14, color: theme.muted, fontSize: 14}}>
+                <Text style={inlineStyle_190_22({
+                  theme: theme,
+                })}>
                   {product?.description}
                 </Text>
               </View>
 
-              <View style={{flex: 1, minWidth: isMobile ? '100%' : 320}}>
+              <View style={inlineStyle_195_20({
+                isMobile: isMobile,
+              })}>
                 <Text
-                  style={{
-                    fontSize: isMobile ? 28 : 36,
-                    fontWeight: '800',
-                    color: theme.text,
-                  }}>
+                  style={inlineStyle_197_18({
+                    isMobile: isMobile,
+                    theme: theme,
+                  })}>
                   {product?.product}
                 </Text>
                 <Text
-                  style={{
-                    marginTop: 14,
-                    fontSize: isMobile ? 30 : 34,
-                    fontWeight: '800',
-                    color: theme.primary,
-                  }}>
+                  style={inlineStyle_205_18({
+                    isMobile: isMobile,
+                    theme: theme,
+                  })}>
                   {formatMoney(product?.price)}
                 </Text>
-                <Text style={{marginTop: 14, fontSize: 15, color: theme.text}}>
+                <Text style={inlineStyle_213_22({
+                  theme: theme,
+                })}>
                   {product?.description}
                 </Text>
               </View>
@@ -218,23 +244,14 @@ export default function ProductPage() {
           </ScrollView>
 
           <View
-            style={{
-              backgroundColor: theme.surface,
-              borderTopWidth: 1,
-              borderColor: theme.cardBorder,
-              padding: 14,
-              paddingBottom: 92,
-            }}>
+            style={inlineStyle_221_12({
+              theme: theme,
+            })}>
             {isCheckingGroups ? (
               <View
-                style={{
-                  minHeight: 50,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: theme.cardBorder,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+                style={inlineStyle_230_16({
+                  theme: theme,
+                })}>
                 <ActivityIndicator color={theme.primary} />
               </View>
             ) : requiresCustomization ? (
@@ -249,52 +266,35 @@ export default function ProductPage() {
                     redirectToCart: true,
                   });
                 }}
-                style={{
-                  minHeight: 50,
-                  borderRadius: 12,
-                  backgroundColor: theme.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                <Text style={{color: '#fff', fontWeight: '800'}}>
+                style={inlineStyle_252_16({
+                  theme: theme,
+                })}>
+                <Text style={inlineStyle_259_22}>
                   Personalizar e adicionar
                 </Text>
               </TouchableOpacity>
             ) : (
-              <View style={{flexDirection: 'row', gap: 16}}>
+              <View style={inlineStyle_264_20}>
                 <View
-                  style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
+                  style={inlineStyle_266_18}>
                   <ShopQuantityControl
                     product={product}
                     cart={cart}
                     refreshCart={refreshCart}
                     iconColor={theme.primary}
                     defaultQuantity={1}
-                    style={{width: '100%', maxWidth: 280, borderRadius: 12}}
-                    textStyle={{fontSize: 20, fontWeight: '700'}}
+                    style={inlineStyle_277_20}
+                    textStyle={inlineStyle_285_20}
                   />
                 </View>
                 <View
-                  style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
+                  style={inlineStyle_282_18}>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('ShopCartPage')}
-                    style={{
-                      minHeight: 50,
-                      width: '100%',
-                      borderRadius: 12,
-                      backgroundColor: theme.primary,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                    <Text style={{color: '#fff', fontWeight: '800'}}>
+                    style={inlineStyle_289_20({
+                      theme: theme,
+                    })}>
+                    <Text style={inlineStyle_297_26}>
                       Ir para carrinho
                     </Text>
                   </TouchableOpacity>
