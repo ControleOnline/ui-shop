@@ -19,9 +19,11 @@ import {
 } from '@react-navigation/native';
 
 import {useStore} from '@store';
+import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 import {
   buildFileUrl,
@@ -29,6 +31,7 @@ import {
   normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import {
   inlineStyle_137_22,
@@ -80,6 +83,7 @@ export default function ProductPage() {
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
   const [isCheckingGroups, setIsCheckingGroups] = useState(false);
   const {cart, refreshCart, defaultCompany} = useShopCart();
+  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
   const theme = pickTheme(defaultCompany);
 
   useFocusEffect(
@@ -161,11 +165,43 @@ export default function ProductPage() {
     product?.type === 'custom' || hasCustomizationGroups,
   );
 
+  if (!salesPageEnabled) {
+    return (
+      <ShopShell
+        activeHomeEntry={SHOP_HOME_OPTION_SALES}
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }
+        showHomeEntryControls>
+        {() => (
+          <ScrollView style={inlineStyle_137_22}>
+            <ShopFeatureState
+              theme={theme}
+              iconName="inventory-2"
+              title="Produto indisponivel"
+              description="A pagina de vendas foi ocultada para esta empresa, entao os detalhes do produto nao ficam acessiveis."
+              primaryActionLabel={
+                franchiseLocatorEnabled ? 'Abrir localizador' : null
+              }
+              onPrimaryAction={
+                franchiseLocatorEnabled
+                  ? () => navigation.navigate('ShopFranchiseLocatorPage')
+                  : null
+              }
+            />
+          </ScrollView>
+        )}
+      </ShopShell>
+    );
+  }
+
   return (
     <ShopShell
+      activeHomeEntry={SHOP_HOME_OPTION_SALES}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
-      }>
+      }
+      showHomeEntryControls>
       {() => (
         <>
           <ScrollView style={inlineStyle_137_22}>

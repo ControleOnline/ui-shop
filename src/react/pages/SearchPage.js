@@ -4,10 +4,13 @@ import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native'
 import {useStore} from '@store';
 import ShopCategoryCard from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryCard';
 import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryMenu';
+import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopTitleBar from '@controleonline/ui-shop/src/react/components/storefront/ShopTitleBar';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme, SHOP_PRODUCT_TYPES} from '@controleonline/ui-shop/src/react/utils/shop';
+import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import {
   inlineStyle_92_12,
@@ -34,6 +37,7 @@ export default function SearchPage() {
   const categoriesStore = useStore('categories');
   const peopleStore = useStore('people');
   const {defaultCompany} = peopleStore.getters;
+  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
   const theme = pickTheme(defaultCompany);
   const [fullCategories, setFullCategories] = useState([]);
   const [searchCategories, setSearchCategories] = useState([]);
@@ -87,12 +91,45 @@ export default function SearchPage() {
   const gap = width < 640 ? 10 : 16;
   const cardWidth = (pageWidth - gap * (columns - 1)) / columns;
 
+  if (!salesPageEnabled) {
+    return (
+      <ShopShell
+        activeHomeEntry={SHOP_HOME_OPTION_SALES}
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }
+        searchValue={q}
+        showHomeEntryControls>
+        {() => (
+          <ScrollView style={inlineStyle_92_12}>
+            <ShopFeatureState
+              theme={theme}
+              iconName="search-off"
+              title="Busca de produtos indisponivel"
+              description="A pagina de vendas esta desativada, entao a busca do cardapio nao pode ser exibida."
+              primaryActionLabel={
+                franchiseLocatorEnabled ? 'Abrir localizador' : null
+              }
+              onPrimaryAction={
+                franchiseLocatorEnabled
+                  ? () => navigation.navigate('ShopFranchiseLocatorPage')
+                  : null
+              }
+            />
+          </ScrollView>
+        )}
+      </ShopShell>
+    );
+  }
+
   return (
     <ShopShell
+      activeHomeEntry={SHOP_HOME_OPTION_SALES}
       searchValue={q}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
-      }>
+      }
+      showHomeEntryControls>
       {() => (
         <>
           <ShopCategoryMenu

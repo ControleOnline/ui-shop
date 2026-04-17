@@ -3,15 +3,18 @@ import {Image, ScrollView, Text, View, useWindowDimensions} from 'react-native';
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryMenu';
+import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopTitleBar from '@controleonline/ui-shop/src/react/components/storefront/ShopTitleBar';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 import {
   buildFileUrl,
   pickTheme,
   SHOP_PRODUCT_TYPES,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import {
   inlineStyle_85_12,
@@ -36,6 +39,7 @@ export default function CategoryPage() {
   const productsStore = useStore('products');
   const peopleStore = useStore('people');
   const {defaultCompany} = peopleStore.getters;
+  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
   const theme = pickTheme(defaultCompany);
   const [category, setCategory] = useState({});
 
@@ -81,11 +85,43 @@ export default function CategoryPage() {
   const gap = width < 640 ? 10 : 16;
   const cardWidth = (pageWidth - gap * (columns - 1)) / columns;
 
+  if (!salesPageEnabled) {
+    return (
+      <ShopShell
+        activeHomeEntry={SHOP_HOME_OPTION_SALES}
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }
+        showHomeEntryControls>
+        {() => (
+          <ScrollView style={inlineStyle_85_12}>
+            <ShopFeatureState
+              theme={theme}
+              iconName="category"
+              title="Categoria indisponivel"
+              description="A vitrine de vendas foi desativada, entao esta categoria nao fica acessivel no shop."
+              primaryActionLabel={
+                franchiseLocatorEnabled ? 'Abrir localizador' : null
+              }
+              onPrimaryAction={
+                franchiseLocatorEnabled
+                  ? () => navigation.navigate('ShopFranchiseLocatorPage')
+                  : null
+              }
+            />
+          </ScrollView>
+        )}
+      </ShopShell>
+    );
+  }
+
   return (
     <ShopShell
+      activeHomeEntry={SHOP_HOME_OPTION_SALES}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
-      }>
+      }
+      showHomeEntryControls>
       {() => (
         <>
           <ShopCategoryMenu

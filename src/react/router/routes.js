@@ -1,4 +1,6 @@
 import StorefrontHome from '@controleonline/ui-shop/src/react/pages/StorefrontHome';
+import ShopFranchiseLocatorPage from '@controleonline/ui-shop/src/react/pages/ShopFranchiseLocatorPage';
+import ShopLoyaltyPage from '@controleonline/ui-shop/src/react/pages/ShopLoyaltyPage';
 import SearchPage from '@controleonline/ui-shop/src/react/pages/SearchPage';
 import CategoryPage from '@controleonline/ui-shop/src/react/pages/CategoryPage';
 import ProductPage from '@controleonline/ui-shop/src/react/pages/ProductPage';
@@ -11,6 +13,36 @@ import CardsPage from '@controleonline/ui-shop/src/react/pages/CardsPage';
 import ShopDownloadPage from '@controleonline/ui-shop/src/react/pages/ShopDownloadPage';
 
 const shopRoutes = [
+  {
+    name: 'ShopIndex',
+    path: 'shop',
+    component: StorefrontHome,
+    options: {
+      headerShown: false,
+      showBottomCart: true,
+      title: 'Pedidos de Venda',
+    },
+    initialParams: {store: 'categories'},
+  },
+  {
+    name: 'ShopFranchiseLocatorPage',
+    path: 'shop/franchises',
+    component: ShopFranchiseLocatorPage,
+    options: {
+      headerShown: false,
+      showBottomCart: true,
+      title: 'Franquias',
+    },
+  },
+  {
+    name: 'ShopLoyaltyPage',
+    path: 'shop/loyalty',
+    component: ShopLoyaltyPage,
+    options: {
+      headerShown: false,
+      title: 'Fidelidade',
+    },
+  },
   {
     name: 'ShopSearchPage',
     path: 'shop/search/:q',
@@ -105,17 +137,5 @@ const shopRoutes = [
     },
   },
 ];
-
-export const menuStorefrontRoute = {
-  name: 'ShopIndex',
-  path: 'shop',
-  component: StorefrontHome,
-  options: {
-    headerShown: false,
-    showBottomCart: true,
-    title: 'Pedidos de Venda',
-  },
-  initialParams: {store: 'categories'},
-};
 
 export default shopRoutes;

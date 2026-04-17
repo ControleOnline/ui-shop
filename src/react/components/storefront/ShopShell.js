@@ -3,7 +3,6 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Image,
   Modal,
-  ScrollView,
   Switch,
   Text,
   TextInput,
@@ -14,9 +13,11 @@ import {
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import md5 from 'md5';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
+import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/storefront/ShopHomeEntryControls';
 
 import {
   buildFileUrl,
@@ -24,6 +25,10 @@ import {
   getInitials,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+import {
+  SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
+  SHOP_HOME_OPTION_SALES,
+} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import {
   inlineStyle_118_10,
@@ -79,10 +84,17 @@ import {
   inlineStyle_538_24,
 } from './ShopShell.styles';
 
+const SALES_FLOW_ROUTE_NAMES = new Set([
+  'ShopIndex',
+  'ShopSearchPage',
+  'ShopCategoryPage',
+  'ShopProductPage',
+]);
+
 const getSession = () => {
   try {
     return JSON.parse(localStorage.getItem('session') || '{}');
-  } catch (error) {
+  } catch {
     return {};
   }
 };
@@ -95,8 +107,18 @@ const getAvatarUrl = user => {
   return `https://www.gravatar.com/avatar/${md5(String(user.email).trim().toLowerCase())}?s=200&d=identicon`;
 };
 
-export default function ShopShell({children, searchValue = '', onSearch}) {
+export default function ShopShell({
+  children,
+  searchValue = '',
+  onSearch,
+  showHomeEntryControls = false,
+  activeHomeEntry = '',
+  showSearch = true,
+  subtitle = 'Cardapio digital',
+  searchPlaceholder = 'Busque pratos, bebidas ou categorias',
+}) {
   const navigation = useNavigation();
+  const route = useRoute();
   const {width} = useWindowDimensions();
   const isMobile = width < 920;
   const shellPadding = isMobile ? 14 : 26;
@@ -104,6 +126,13 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
   const authStore = useStore('auth');
   const peopleStore = useStore('people');
   const {currentCompany, defaultCompany} = useShopCart();
+  const {
+    bottomBarEnabled,
+    hasMultipleHomeOptions,
+    homeEntries,
+    loyaltyCouponsEnabled,
+    primaryEntryRouteName,
+  } = useShopSettings();
 
   const {user} = authStore.getters;
   const authActions = authStore.actions;
@@ -170,6 +199,49 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
     () => (Array.isArray(companies) ? companies : []).filter(Boolean),
     [companies],
   );
+  const routeActiveHomeEntry = useMemo(() => {
+    if (route?.name === 'ShopFranchiseLocatorPage') {
+      return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
+    }
+
+    if (SALES_FLOW_ROUTE_NAMES.has(route?.name)) {
+      return SHOP_HOME_OPTION_SALES;
+    }
+
+    return '';
+  }, [route?.name]);
+  const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
+
+  const handleSelectHomeEntry = useCallback(
+    entry => {
+      if (!entry?.routeName || entry.routeName === route?.name) {
+        return;
+      }
+
+      navigation.navigate(entry.routeName);
+    },
+    [navigation, route?.name],
+  );
+
+  const handleNavigateHome = useCallback(() => {
+    const targetRoute =
+      primaryEntryRouteName ||
+      homeEntries.find(entry => entry.key === resolvedActiveHomeEntry)
+        ?.routeName ||
+      'ShopIndex';
+
+    if (targetRoute === route?.name) {
+      return;
+    }
+
+    navigation.navigate(targetRoute);
+  }, [
+    homeEntries,
+    navigation,
+    primaryEntryRouteName,
+    resolvedActiveHomeEntry,
+    route?.name,
+  ]);
 
   return (
     <View style={inlineStyle_118_10({
@@ -188,7 +260,7 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
             <View
               style={inlineStyle_135_14}>
               <TouchableOpacity
-                onPress={() => navigation.navigate('ShopIndex')}>
+                onPress={handleNavigateHome}>
                 {logoUrl ? (
                   <Image
                     source={{uri: logoUrl}}
@@ -241,7 +313,7 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                 <Text
                   numberOfLines={1}
                   style={inlineStyle_214_18}>
-                  Cardapio digital
+                  {subtitle}
                 </Text>
               </View>
             </View>
@@ -262,23 +334,35 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
             </View>
           </View>
 
-          <View
-            style={inlineStyle_255_12}>
-            <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
-            <TextInput
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-              onSubmitEditing={submitSearch}
-              placeholder="Busque pratos, bebidas ou categorias"
-              placeholderTextColor="rgba(255,255,255,0.75)"
-              style={inlineStyle_273_14}
+          {showSearch && (
+            <View
+              style={inlineStyle_255_12}>
+              <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
+              <TextInput
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                onSubmitEditing={submitSearch}
+                placeholder={searchPlaceholder}
+                placeholderTextColor="rgba(255,255,255,0.75)"
+                style={inlineStyle_273_14}
+              />
+              <TouchableOpacity
+                onPress={submitSearch}
+                style={inlineStyle_282_14}>
+                <Icon name="arrow-forward" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {showHomeEntryControls && hasMultipleHomeOptions && (
+            <ShopHomeEntryControls
+              entries={homeEntries}
+              activeEntryKey={resolvedActiveHomeEntry}
+              showBottomBar={bottomBarEnabled}
+              theme={theme}
+              onSelect={handleSelectHomeEntry}
             />
-            <TouchableOpacity
-              onPress={submitSearch}
-              style={inlineStyle_282_14}>
-              <Icon name="arrow-forward" size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
       </View>
       <Modal
@@ -408,6 +492,21 @@ export default function ShopShell({children, searchValue = '', onSearch}) {
                     Meus Cartões
                   </Text>
                 </TouchableOpacity>
+
+                {loyaltyCouponsEnabled && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopLoyaltyPage');
+                    }}
+                    style={inlineStyle_431_18}>
+                    <Text style={inlineStyle_432_24({
+                      foreground: foreground,
+                    })}>
+                      Fidelidade
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <View
                   style={inlineStyle_438_18}>
