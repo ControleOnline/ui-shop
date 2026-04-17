@@ -16,7 +16,7 @@ const readSessionClientId = () => {
   try {
     const session = JSON.parse(localStorage.getItem('session') || '{}');
     return normalizeId(session?.mycompany || session?.people);
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -30,7 +30,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
 
   const refreshCart = useCallback(() => {
     const appType = String(env.APP_TYPE || '').toUpperCase();
-    const isShopApp = appType === 'SHOP' || appType === 'DELIVERY';
+    const isShopApp = appType === 'SHOP';
 
     const providerId = normalizeId(defaultCompany?.id);
     const currentCompanyId = normalizeId(currentCompany?.id);
