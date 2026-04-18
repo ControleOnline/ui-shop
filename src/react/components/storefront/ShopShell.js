@@ -21,7 +21,6 @@ import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/
 
 import {
   buildFileUrl,
-  getHost,
   getInitials,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
@@ -100,9 +99,7 @@ const getSession = () => {
 };
 
 const getAvatarUrl = user => {
-  if (user?.avatar?.file?.id) return buildFileUrl(user.avatar.file.id);
-  if (user?.avatar?.url)
-    return `${user?.avatar?.domain || ''}${user.avatar.url}`;
+  if (user?.avatar) return buildFileUrl(user.avatar);
   if (!user?.email) return '';
   return `https://www.gravatar.com/avatar/${md5(String(user.email).trim().toLowerCase())}?s=200&d=identicon`;
 };
@@ -164,15 +161,9 @@ export default function ShopShell({
   const displayCompany =
     currentCompany?.alias || currentCompany?.name || 'Empresa';
 
-  const logoUrl = defaultCompany?.logo?.id
-    ? buildFileUrl(defaultCompany.logo.id)
-    : defaultCompany?.logo?.file?.id
-      ? buildFileUrl(defaultCompany.logo.file.id)
-      : defaultCompany?.logo?.domain && defaultCompany?.logo?.url
-        ? `https://${defaultCompany.logo.domain}${defaultCompany.logo.url}?app-domain=${encodeURIComponent(
-            getHost(defaultCompany),
-          )}`
-        : '';
+  const logoUrl = defaultCompany?.logo
+    ? buildFileUrl(defaultCompany.logo, defaultCompany)
+    : '';
 
   const submitSearch = useCallback(() => {
     if (onSearch) onSearch(searchTerm);

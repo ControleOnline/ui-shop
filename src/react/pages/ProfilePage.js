@@ -45,9 +45,7 @@ import {
 import { inlineStyle_85_10 } from './ProfilePage.styles';
 
 const getAvatarUrl = user => {
-  if (user?.avatar?.file?.id) return buildFileUrl(user.avatar.file.id);
-  if (user?.avatar?.url)
-    return `${user?.avatar?.domain || ''}${user.avatar.url}`;
+  if (user?.avatar) return buildFileUrl(user.avatar);
   if (!user?.email) return '';
   return `https://www.gravatar.com/avatar/${md5(String(user.email).trim().toLowerCase())}?s=200&d=identicon`;
 };

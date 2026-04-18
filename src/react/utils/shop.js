@@ -3,16 +3,15 @@ import {
   resolveAppDomain,
   resolveCompanyDomain,
 } from '@controleonline/ui-common/src/utils/appDomain';
+import { resolveFileImageUrl } from '@controleonline/ui-common/src/react/utils/fileUrl';
 
 export const SHOP_PRODUCT_TYPES = ['product', 'manufactured', 'custom', 'service'];
 
 export const getHost = company =>
   resolveCompanyDomain(company, resolveAppDomain(env.DOMAIN));
 
-export const buildFileUrl = (fileId, company = null) => {
-  if (!fileId) return '';
-  return `${String(env.API_ENTRYPOINT || '').replace(/\/$/, '')}/files/${fileId}/download?app-domain=${encodeURIComponent(getHost(company))}`;
-};
+export const buildFileUrl = (file, company = null) =>
+  resolveFileImageUrl(file, {company});
 
 export const formatMoney = value => {
   const amount = Number(value || 0);
@@ -28,7 +27,7 @@ export const getImageFromRelations = relations => {
   const first = Array.isArray(relations)
     ? relations.find(item => item?.file?.id)
     : null;
-  return first?.file?.id ? buildFileUrl(first.file.id) : '';
+  return first?.file ? buildFileUrl(first.file) : '';
 };
 
 export const pickTheme = company => {

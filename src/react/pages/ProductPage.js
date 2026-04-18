@@ -158,8 +158,8 @@ export default function ProductPage() {
     ]),
   );
 
-  const imageUrl = product?.productFiles?.[0]?.file?.id
-    ? buildFileUrl(product.productFiles[0].file.id)
+  const imageUrl = product?.productFiles?.[0]?.file
+    ? buildFileUrl(product.productFiles[0].file)
     : '';
   const requiresCustomization = Boolean(
     product?.type === 'custom' || hasCustomizationGroups,

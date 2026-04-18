@@ -77,8 +77,8 @@ export default function CategoryPage() {
 
   const allCategories = categoriesStore.getters.items || [];
   const products = productsStore.getters.items || [];
-  const heroFileId = category?.categoryFiles?.[0]?.file?.id;
-  const heroUrl = heroFileId ? buildFileUrl(heroFileId, defaultCompany) : '';
+  const heroFile = category?.categoryFiles?.[0]?.file;
+  const heroUrl = heroFile ? buildFileUrl(heroFile, defaultCompany) : '';
   const columns = width >= 1300 ? 4 : width >= 1000 ? 3 : width >= 640 ? 2 : 2;
   const effectiveWidth = layoutWidth || width;
   const pageWidth = Math.max(effectiveWidth - 28, 320);
