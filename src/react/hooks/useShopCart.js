@@ -2,6 +2,7 @@ import {useCallback} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import {env} from '@env';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 
 let cartRequestInFlight = null;
 let cartRequestKey = '';
@@ -27,19 +28,23 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartGetters = cartStore.getters;
   const peopleStore = useStore('people');
   const {currentCompany, defaultCompany} = peopleStore.getters;
+  const {requiresCompanySelection, salesCompany} = useShopSalesCompany();
 
   const refreshCart = useCallback(() => {
     const appType = String(env.APP_TYPE || '').toUpperCase();
     const isShopApp = appType === 'SHOP';
 
-    const providerId = normalizeId(defaultCompany?.id);
+    const providerId = normalizeId(salesCompany?.id || defaultCompany?.id);
     const currentCompanyId = normalizeId(currentCompany?.id);
     const sessionClientId = readSessionClientId();
     const clientId = isShopApp
       ? currentCompanyId || sessionClientId
       : currentCompanyId;
 
-    if (!providerId || !clientId) return Promise.resolve(null);
+    if (requiresCompanySelection || !providerId || !clientId) {
+      cartActions.setItem({});
+      return Promise.resolve(null);
+    }
 
     const key = `${providerId}:${clientId}`;
     const now = Date.now();
@@ -65,7 +70,14 @@ export default function useShopCart({autoRefresh = false} = {}) {
 
     cartRequestInFlight = {key, promise};
     return promise;
-  }, [cartActions, cartGetters.item, currentCompany?.id, defaultCompany?.id]);
+  }, [
+    cartActions,
+    cartGetters.item,
+    currentCompany?.id,
+    defaultCompany?.id,
+    requiresCompanySelection,
+    salesCompany?.id,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,8 +89,9 @@ export default function useShopCart({autoRefresh = false} = {}) {
   return {
     cart: cartGetters.item,
     cartGetters,
-    refreshCart,
     currentCompany,
     defaultCompany,
+    refreshCart,
+    salesCompany,
   };
 }

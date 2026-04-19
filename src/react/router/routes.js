@@ -30,7 +30,7 @@ const shopRoutes = [
     component: ShopFranchiseLocatorPage,
     options: {
       headerShown: false,
-      showBottomCart: true,
+      showBottomCart: false,
       title: 'Franquias',
     },
   },

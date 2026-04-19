@@ -1,4 +1,5 @@
-import React from 'react';
+import React, {useLayoutEffect} from 'react';
+import {useNavigation} from '@react-navigation/native';
 
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
@@ -12,6 +13,7 @@ import {
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 export default function ShopLandingPage() {
+  const navigation = useNavigation();
   const {
     defaultCompany,
     franchiseLocatorEnabled,
@@ -19,6 +21,15 @@ export default function ShopLandingPage() {
     salesPageEnabled,
   } = useShopSettings();
   const theme = pickTheme(defaultCompany);
+  const shouldRenderSales =
+    (salesPageEnabled && primaryEntry === SHOP_HOME_OPTION_SALES) ||
+    (salesPageEnabled &&
+      (!franchiseLocatorEnabled ||
+        primaryEntry !== SHOP_HOME_OPTION_FRANCHISE_LOCATOR));
+
+  useLayoutEffect(() => {
+    navigation.setParams({showBottomCart: shouldRenderSales});
+  }, [navigation, shouldRenderSales]);
 
   if (salesPageEnabled && primaryEntry === SHOP_HOME_OPTION_SALES) {
     return <StorefrontHome />;
@@ -47,7 +58,7 @@ export default function ShopLandingPage() {
           iconName="visibility-off"
           title="Nenhuma entrada do shop esta disponivel"
           description="A pagina de vendas e o localizador de franquias estao desativados para esta empresa."
-          secondaryText="Ative uma dessas entradas no manager para liberar a home do cliente."
+          secondaryText="Tente novamente em instantes."
         />
       )}
     </ShopShell>

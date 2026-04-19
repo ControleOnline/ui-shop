@@ -3,61 +3,652 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
-  ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import * as Location from 'expo-location';
+import {env} from '@env';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
-import {buildAddressOptionSummary} from '@controleonline/ui-common/src/react/utils/entityDisplay';
+import {
+  formatPhoneDisplay,
+  resolveAddressDisplayParts,
+} from '@controleonline/ui-common/src/react/utils/entityDisplay';
 import {fetchShopFranchiseDirectory} from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {
   normalizeShopEntityId,
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
-const buildAddressSearchText = (company, address) => {
-  const summary = buildAddressOptionSummary(address);
+const FALLBACK_GOOGLE_MAPS_API_KEY =
+  'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8';
+const GOOGLE_MAPS_API_KEY =
+  env.GMAPS_GOOGLE_CLIENT_ID || FALLBACK_GOOGLE_MAPS_API_KEY;
+const geocodeCache = new Map();
 
-  return [
-    company?.alias,
-    company?.name,
-    summary.primary,
-    summary.secondary,
-    address?.nickname,
-    address?.searchFor,
-    address?.openingHours,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+const getNativeWebView = () => {
+  if (Platform.OS === 'web') {
+    return null;
+  }
+
+  try {
+    return require('react-native-webview').WebView;
+  } catch {
+    return null;
+  }
+};
+
+const NativeWebView = getNativeWebView();
+
+const buildFakeAddress = ({
+  city = 'Sao Paulo',
+  district,
+  id,
+  latitude,
+  longitude,
+  nickname,
+  number,
+  openingHours,
+  searchFor,
+  state = 'SP',
+  street,
+}) => ({
+  id,
+  latitude,
+  longitude,
+  nickname,
+  number,
+  openingHours,
+  searchFor:
+    searchFor || `${street}, ${number} - ${district}, ${city} - ${state}`,
+  street: {
+    district: {
+      city: {
+        city,
+        state: {
+          state,
+          uf: state,
+        },
+      },
+      district,
+    },
+    street,
+  },
+});
+
+const FALLBACK_DIRECTORY = [
+  {
+    id: 990001,
+    alias: 'Franquia Paulista',
+    name: 'Franquia Paulista',
+    phone: [{ddd: '11', phone: '3171-5780'}],
+    shopAddresses: [
+      buildFakeAddress({
+        id: 991001,
+        nickname: 'Paulista',
+        street: 'Avenida Paulista',
+        number: '1578',
+        district: 'Bela Vista',
+        latitude: -23.561399,
+        longitude: -46.656571,
+        openingHours: 'Seg a Dom • 10h as 22h',
+      }),
+    ],
+  },
+  {
+    id: 990002,
+    alias: 'Franquia Pinheiros',
+    name: 'Franquia Pinheiros',
+    phone: [{ddd: '11', phone: '3062-2452'}],
+    shopAddresses: [
+      buildFakeAddress({
+        id: 991002,
+        nickname: 'Pinheiros',
+        street: 'Rua dos Pinheiros',
+        number: '452',
+        district: 'Pinheiros',
+        latitude: -23.567727,
+        longitude: -46.692425,
+        openingHours: 'Seg a Sab • 11h as 23h',
+      }),
+    ],
+  },
+  {
+    id: 990003,
+    alias: 'Franquia Moema',
+    name: 'Franquia Moema',
+    phone: [{ddd: '11', phone: '5044-3103'}],
+    shopAddresses: [
+      buildFakeAddress({
+        id: 991003,
+        nickname: 'Moema',
+        street: 'Avenida Ibirapuera',
+        number: '3103',
+        district: 'Moema',
+        latitude: -23.603774,
+        longitude: -46.664482,
+        openingHours: 'Seg a Dom • 10h as 21h',
+      }),
+    ],
+  },
+];
+
+const normalizeCoordinate = value => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const parsed = Number(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const extractAddressCoordinates = address => {
+  const latitudeCandidates = [
+    address?.latitude,
+    address?.lat,
+    address?.location?.latitude,
+    address?.location?.lat,
+    address?.coords?.latitude,
+    address?.coords?.lat,
+    address?.coordinate?.latitude,
+    address?.coordinate?.lat,
+  ];
+  const longitudeCandidates = [
+    address?.longitude,
+    address?.lng,
+    address?.lon,
+    address?.location?.longitude,
+    address?.location?.lng,
+    address?.coords?.longitude,
+    address?.coords?.lng,
+    address?.coordinate?.longitude,
+    address?.coordinate?.lng,
+  ];
+
+  const latitude = latitudeCandidates
+    .map(normalizeCoordinate)
+    .find(value => value !== null);
+  const longitude = longitudeCandidates
+    .map(normalizeCoordinate)
+    .find(value => value !== null);
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {latitude, longitude};
 };
 
 const buildMapQuery = (company, address) => {
-  const summary = buildAddressOptionSummary(address);
+  const parts = resolveAddressDisplayParts(address);
 
   return [
     company?.alias || company?.name,
-    summary.primary,
-    summary.secondary,
+    parts.streetLine,
+    parts.district,
+    parts.cityStateLine,
     address?.searchFor,
   ]
     .filter(Boolean)
     .join(', ');
 };
 
+const calculateDistanceInKm = (origin, destination) => {
+  if (!origin || !destination) {
+    return null;
+  }
+
+  const toRadians = degrees => (degrees * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const deltaLatitude = toRadians(destination.latitude - origin.latitude);
+  const deltaLongitude = toRadians(destination.longitude - origin.longitude);
+  const startLatitude = toRadians(origin.latitude);
+  const endLatitude = toRadians(destination.latitude);
+
+  const a =
+    Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
+    Math.cos(startLatitude) *
+      Math.cos(endLatitude) *
+      Math.sin(deltaLongitude / 2) *
+      Math.sin(deltaLongitude / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusKm * c;
+};
+
+const formatDistance = distanceInKm => {
+  if (!Number.isFinite(distanceInKm)) {
+    return '';
+  }
+
+  if (distanceInKm < 1) {
+    return `${Math.max(1, Math.round(distanceInKm * 1000))} m`;
+  }
+
+  return `${distanceInKm.toFixed(distanceInKm >= 10 ? 0 : 1).replace('.', ',')} km`;
+};
+
+const requestUserCoordinates = async () => {
+  if (
+    Platform.OS === 'web' &&
+    typeof navigator !== 'undefined' &&
+    navigator.geolocation
+  ) {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        position =>
+          resolve({
+            latitude: Number(position?.coords?.latitude),
+            longitude: Number(position?.coords?.longitude),
+          }),
+        error => reject(error),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 60 * 1000,
+          timeout: 12 * 1000,
+        },
+      );
+    });
+  }
+
+  const permission = await Location.requestForegroundPermissionsAsync();
+  if (permission?.status !== 'granted') {
+    throw new Error('location-denied');
+  }
+
+  const currentPosition = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+
+  return {
+    latitude: Number(currentPosition?.coords?.latitude),
+    longitude: Number(currentPosition?.coords?.longitude),
+  };
+};
+
+const geocodeMapQuery = async mapQuery => {
+  const normalizedQuery = String(mapQuery || '').trim();
+
+  if (!normalizedQuery || !GOOGLE_MAPS_API_KEY) {
+    return null;
+  }
+
+  const cacheKey = normalizedQuery.toLowerCase();
+  if (geocodeCache.has(cacheKey)) {
+    return geocodeCache.get(cacheKey);
+  }
+
+  const request = fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      normalizedQuery,
+    )}&key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}`,
+  )
+    .then(response => response.json())
+    .then(payload => {
+      const location = payload?.results?.[0]?.geometry?.location;
+      const latitude = normalizeCoordinate(location?.lat);
+      const longitude = normalizeCoordinate(location?.lng);
+
+      if (latitude === null || longitude === null) {
+        return null;
+      }
+
+      return {latitude, longitude};
+    })
+    .catch(() => null);
+
+  geocodeCache.set(cacheKey, request);
+  return request;
+};
+
+const buildGoogleMapsWebUrl = ({coordinates, mapQuery, origin}) => {
+  if (coordinates) {
+    const originParam =
+      origin && Number.isFinite(origin?.latitude) && Number.isFinite(origin?.longitude)
+        ? `&origin=${encodeURIComponent(
+            `${origin.latitude},${origin.longitude}`,
+          )}`
+        : '';
+
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      `${coordinates.latitude},${coordinates.longitude}`,
+    )}${originParam}&travelmode=driving`;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    mapQuery,
+  )}`;
+};
+
+const buildWazeWebUrl = ({coordinates, mapQuery}) => {
+  if (coordinates) {
+    return `https://waze.com/ul?ll=${coordinates.latitude},${coordinates.longitude}&navigate=yes`;
+  }
+
+  return `https://waze.com/ul?q=${encodeURIComponent(mapQuery)}&navigate=yes`;
+};
+
+const resolveCompanyPhone = company => {
+  const candidates = [company?.phone, company?.mobile, company?.whatsapp];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      const match = candidate.map(formatPhoneDisplay).find(Boolean);
+      if (match) {
+        return match;
+      }
+      continue;
+    }
+
+    const formatted = formatPhoneDisplay(candidate);
+    if (formatted) {
+      return formatted;
+    }
+  }
+
+  return '';
+};
+
+const safeJsonForHtml = value =>
+  JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+
+const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
+  if (!apiKey) {
+    return `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            html, body {
+              margin: 0;
+              height: 100%;
+              background: ${theme?.surface || '#ffffff'};
+              font-family: Arial, sans-serif;
+            }
+            body {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: ${theme?.text || '#0f1720'};
+            }
+          </style>
+        </head>
+        <body>Mapa indisponivel no momento.</body>
+      </html>
+    `;
+  }
+
+  const markerPayloadsJson = safeJsonForHtml(markerPayloads);
+  const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
+  const paletteJson = safeJsonForHtml({
+    primary: theme?.primary || '#0284c7',
+    surface: theme?.surface || '#ffffff',
+    text: theme?.text || '#0f1720',
+    muted: theme?.muted || '#64748b',
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
+        <style>
+          html, body, #map {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f8fafc;
+            font-family: Arial, sans-serif;
+          }
+
+          .popup {
+            min-width: 220px;
+            max-width: 280px;
+            color: #0f172a;
+          }
+
+          .popup-company {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #0369a1;
+            margin-bottom: 6px;
+          }
+
+          .popup-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+          }
+
+          .popup-line {
+            font-size: 13px;
+            line-height: 1.45;
+            color: #0f172a;
+            margin-bottom: 4px;
+          }
+
+          .popup-meta-list {
+            display: grid;
+            gap: 6px;
+            margin-top: 10px;
+          }
+
+          .popup-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 12px;
+            color: #334155;
+          }
+
+          .popup-meta-label {
+            color: #64748b;
+          }
+
+          .popup-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+          }
+
+          .popup-action {
+            flex: 1;
+            border-radius: 999px;
+            border: 1px solid #cbd5e1;
+            padding: 10px 12px;
+            text-align: center;
+            text-decoration: none;
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 700;
+            background: #ffffff;
+          }
+
+          .popup-action.primary {
+            border-color: transparent;
+            background: #0ea5e9;
+            color: #ffffff;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          window.__SHOP_MAP_MARKERS__ = ${markerPayloadsJson};
+          window.__SHOP_MAP_USER__ = ${userCoordinatesJson};
+          window.__SHOP_MAP_PALETTE__ = ${paletteJson};
+
+          function escapeHtml(value) {
+            return String(value || '')
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+          }
+
+          function buildLine(value) {
+            if (!value) {
+              return '';
+            }
+
+            return '<div class="popup-line">' + escapeHtml(value) + '</div>';
+          }
+
+          function buildMeta(label, value) {
+            if (!value) {
+              return '';
+            }
+
+            return (
+              '<div class="popup-meta">' +
+                '<span class="popup-meta-label">' + escapeHtml(label) + '</span>' +
+                '<span>' + escapeHtml(value) + '</span>' +
+              '</div>'
+            );
+          }
+
+          function buildPopupContent(item) {
+            return (
+              '<div class="popup">' +
+                '<div class="popup-company">' + escapeHtml(item.companyName) + '</div>' +
+                '<div class="popup-title">' + escapeHtml(item.title) + '</div>' +
+                buildLine(item.addressLine) +
+                buildLine(item.addressExtra) +
+                '<div class="popup-meta-list">' +
+                  buildMeta('Telefone', item.phoneLabel) +
+                  buildMeta('Distancia', item.distanceLabel) +
+                  buildMeta('Horario', item.openingHours) +
+                '</div>' +
+                '<div class="popup-actions">' +
+                  '<a class="popup-action primary" href="' + escapeHtml(item.googleMapsUrl) + '" target="_blank" rel="noopener noreferrer">Abrir no Maps</a>' +
+                  '<a class="popup-action" href="' + escapeHtml(item.wazeUrl) + '" target="_blank" rel="noopener noreferrer">Waze</a>' +
+                '</div>' +
+              '</div>'
+            );
+          }
+
+          window.__initShopMap = function () {
+            var markers = window.__SHOP_MAP_MARKERS__ || [];
+            var userCoordinates = window.__SHOP_MAP_USER__;
+            var palette = window.__SHOP_MAP_PALETTE__ || {};
+
+            if (!window.google || !markers.length) {
+              return;
+            }
+
+            var map = new window.google.maps.Map(document.getElementById('map'), {
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: false,
+              clickableIcons: false,
+              gestureHandling: 'greedy',
+              zoomControl: true,
+            });
+
+            var bounds = new window.google.maps.LatLngBounds();
+            var infoWindow = new window.google.maps.InfoWindow({maxWidth: 320});
+
+            if (
+              userCoordinates &&
+              Number.isFinite(userCoordinates.latitude) &&
+              Number.isFinite(userCoordinates.longitude)
+            ) {
+              var userPosition = {
+                lat: userCoordinates.latitude,
+                lng: userCoordinates.longitude,
+              };
+
+              new window.google.maps.Marker({
+                position: userPosition,
+                map: map,
+                title: 'Sua localizacao',
+                icon: {
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: palette.primary || '#0ea5e9',
+                  fillOpacity: 1,
+                  strokeColor: '#ffffff',
+                  strokeWeight: 3,
+                },
+                zIndex: 999,
+              });
+
+              bounds.extend(userPosition);
+            }
+
+            markers.forEach(function (item) {
+              var position = {
+                lat: item.latitude,
+                lng: item.longitude,
+              };
+
+              var marker = new window.google.maps.Marker({
+                position: position,
+                map: map,
+                title: item.title,
+                animation: window.google.maps.Animation.DROP,
+              });
+
+              bounds.extend(position);
+
+              marker.addListener('click', function () {
+                infoWindow.setContent(buildPopupContent(item));
+                infoWindow.open({
+                  anchor: marker,
+                  map: map,
+                  shouldFocus: false,
+                });
+              });
+            });
+
+            if (!bounds.isEmpty()) {
+              map.fitBounds(bounds, {
+                top: 56,
+                right: 32,
+                bottom: 56,
+                left: 32,
+              });
+
+              window.google.maps.event.addListenerOnce(map, 'idle', function () {
+                if (markers.length === 1 && map.getZoom() > 15) {
+                  map.setZoom(15);
+                }
+              });
+            }
+          };
+        </script>
+        <script
+          async
+          src="https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
+            apiKey,
+          )}&loading=async&callback=__initShopMap"
+        ></script>
+      </body>
+    </html>
+  `;
+};
+
 export default function ShopFranchiseLocatorPage() {
   const navigation = useNavigation();
-  const {width} = useWindowDimensions();
-  const isMobile = width < 1040;
+  const {height} = useWindowDimensions();
   const {
     defaultCompany,
     franchiseLocatorEnabled,
@@ -66,11 +657,14 @@ export default function ShopFranchiseLocatorPage() {
     visibleFranchiseCompanyIds,
   } = useShopSettings();
   const theme = pickTheme(defaultCompany);
+  const mapHeight = Math.max(height - (Platform.OS === 'web' ? 118 : 150), 420);
 
   const [directory, setDirectory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [query, setQuery] = useState('');
-  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [isResolvingCoordinates, setIsResolvingCoordinates] = useState(false);
+  const [userCoordinates, setUserCoordinates] = useState(null);
+  const [resolvedCoordinatesByAddressId, setResolvedCoordinatesByAddressId] =
+    useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -107,15 +701,49 @@ export default function ShopFranchiseLocatorPage() {
     }, [defaultCompany?.id, franchiseLocatorEnabled]),
   );
 
-  const hasLocatorSelection =
-    visibleFranchiseCompanyIds.length > 0 && visibleFranchiseAddressIds.length > 0;
+  useFocusEffect(
+    useCallback(() => {
+      if (!franchiseLocatorEnabled) {
+        setUserCoordinates(null);
+        return undefined;
+      }
 
-  const filteredDirectory = useMemo(() => {
-    if (!hasLocatorSelection) {
+      let isMounted = true;
+
+      requestUserCoordinates()
+        .then(coords => {
+          if (!isMounted) {
+            return;
+          }
+
+          if (
+            Number.isFinite(coords?.latitude) &&
+            Number.isFinite(coords?.longitude)
+          ) {
+            setUserCoordinates(coords);
+          } else {
+            setUserCoordinates(null);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setUserCoordinates(null);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [franchiseLocatorEnabled]),
+  );
+
+  const configuredDirectory = useMemo(() => {
+    if (
+      visibleFranchiseCompanyIds.length === 0 ||
+      visibleFranchiseAddressIds.length === 0
+    ) {
       return [];
     }
-
-    const normalizedQuery = String(query || '').trim().toLowerCase();
 
     return directory
       .map(company => {
@@ -125,355 +753,272 @@ export default function ShopFranchiseLocatorPage() {
           return null;
         }
 
-        const companyAddresses = (company?.shopAddresses || [])
-          .filter(address =>
-            visibleFranchiseAddressIds.includes(normalizeShopEntityId(address)),
-          )
-          .filter(address => {
-            if (!normalizedQuery) {
-              return true;
-            }
+        const addresses = (company?.shopAddresses || []).filter(address =>
+          visibleFranchiseAddressIds.includes(normalizeShopEntityId(address)),
+        );
 
-            const companyMatches = String(
-              company?.alias || company?.name || '',
-            )
-              .toLowerCase()
-              .includes(normalizedQuery);
-
-            if (companyMatches) {
-              return true;
-            }
-
-            return buildAddressSearchText(company, address).includes(
-              normalizedQuery,
-            );
-          });
-
-        if (companyAddresses.length === 0) {
+        if (addresses.length === 0) {
           return null;
         }
 
         return {
           ...company,
-          shopAddresses: companyAddresses,
+          shopAddresses: addresses,
         };
       })
       .filter(Boolean);
-  }, [
-    directory,
-    hasLocatorSelection,
-    query,
-    visibleFranchiseAddressIds,
-    visibleFranchiseCompanyIds,
-  ]);
+  }, [directory, visibleFranchiseAddressIds, visibleFranchiseCompanyIds]);
 
-  const selectedAddressRecord = useMemo(() => {
-    for (const company of filteredDirectory) {
-      const matchedAddress = (company?.shopAddresses || []).find(
-        address =>
-          normalizeShopEntityId(address) === normalizeShopEntityId(selectedAddressId),
-      );
+  const hasConfiguredAddresses = useMemo(
+    () =>
+      configuredDirectory.some(
+        company =>
+          Array.isArray(company?.shopAddresses) && company.shopAddresses.length > 0,
+      ),
+    [configuredDirectory],
+  );
 
-      if (matchedAddress) {
-        return {
+  const effectiveDirectory = useMemo(
+    () => (hasConfiguredAddresses ? configuredDirectory : FALLBACK_DIRECTORY),
+    [configuredDirectory, hasConfiguredAddresses],
+  );
+
+  const flattenedAddressRecords = useMemo(
+    () =>
+      effectiveDirectory.flatMap(company =>
+        (company?.shopAddresses || []).map(address => ({
+          address,
+          addressId: normalizeShopEntityId(address),
           company,
-          address: matchedAddress,
-        };
-      }
-    }
-
-    return null;
-  }, [filteredDirectory, selectedAddressId]);
+          mapQuery: buildMapQuery(company, address),
+          rawCoordinates: extractAddressCoordinates(address),
+        })),
+      ),
+    [effectiveDirectory],
+  );
 
   useEffect(() => {
-    if (selectedAddressRecord) {
-      return;
+    const unresolvedRecords = flattenedAddressRecords.filter(record => {
+      if (!record.addressId || record.rawCoordinates) {
+        return false;
+      }
+
+      return !resolvedCoordinatesByAddressId[record.addressId];
+    });
+
+    if (unresolvedRecords.length === 0) {
+      setIsResolvingCoordinates(false);
+      return undefined;
     }
 
-    const firstCompany = filteredDirectory[0];
-    const firstAddress = firstCompany?.shopAddresses?.[0];
-    setSelectedAddressId(normalizeShopEntityId(firstAddress));
-  }, [filteredDirectory, selectedAddressRecord]);
+    let cancelled = false;
+    setIsResolvingCoordinates(true);
 
-  const openSelectedAddress = useCallback(() => {
-    if (!selectedAddressRecord) {
-      return;
+    Promise.all(
+      unresolvedRecords.map(async record => {
+        const coordinates = await geocodeMapQuery(record.mapQuery);
+        return [record.addressId, coordinates];
+      }),
+    )
+      .then(entries => {
+        if (cancelled) {
+          return;
+        }
+
+        setResolvedCoordinatesByAddressId(current => {
+          const next = {...current};
+
+          entries.forEach(([addressId, coordinates]) => {
+            if (addressId && coordinates) {
+              next[addressId] = coordinates;
+            }
+          });
+
+          return next;
+        });
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsResolvingCoordinates(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [flattenedAddressRecords, resolvedCoordinatesByAddressId]);
+
+  const markerPayloads = useMemo(
+    () =>
+      effectiveDirectory
+        .flatMap(company =>
+          (company?.shopAddresses || []).map(address => {
+            const addressId = normalizeShopEntityId(address);
+            const coordinates =
+              extractAddressCoordinates(address) ||
+              resolvedCoordinatesByAddressId[addressId] ||
+              null;
+
+            if (!coordinates) {
+              return null;
+            }
+
+            const addressParts = resolveAddressDisplayParts(address);
+            const distanceLabel = formatDistance(
+              calculateDistanceInKm(userCoordinates, coordinates),
+            );
+            const addressTitle =
+              addressParts.primary ||
+              address?.nickname ||
+              company?.alias ||
+              company?.name ||
+              'Unidade';
+            const addressLine =
+              addressParts.streetLine ||
+              address?.searchFor ||
+              addressTitle;
+            const addressExtra = [
+              addressParts.district,
+              addressParts.cityStateLine,
+              addressParts.postalCode,
+            ]
+              .filter(Boolean)
+              .join(' • ');
+            const mapQuery = buildMapQuery(company, address);
+
+            return {
+              id: `${normalizeShopEntityId(company)}-${addressId}`,
+              companyName: company?.alias || company?.name || 'Franquia',
+              title: addressTitle,
+              addressLine,
+              addressExtra,
+              distanceLabel,
+              googleMapsUrl: buildGoogleMapsWebUrl({
+                coordinates,
+                mapQuery,
+                origin: userCoordinates,
+              }),
+              latitude: coordinates.latitude,
+              longitude: coordinates.longitude,
+              openingHours: address?.openingHours || '',
+              phoneLabel: resolveCompanyPhone(company),
+              wazeUrl: buildWazeWebUrl({coordinates, mapQuery}),
+            };
+          }),
+        )
+        .filter(Boolean),
+    [effectiveDirectory, resolvedCoordinatesByAddressId, userCoordinates],
+  );
+
+  const mapDocument = useMemo(
+    () =>
+      buildMapDocument({
+        apiKey: GOOGLE_MAPS_API_KEY,
+        markerPayloads,
+        theme,
+        userCoordinates,
+      }),
+    [markerPayloads, theme, userCoordinates],
+  );
+
+  const handleNativeNavigation = useCallback(request => {
+    const url = String(request?.url || '');
+
+    if (!url || url === 'about:blank') {
+      return true;
     }
 
-    const mapQuery = buildMapQuery(
-      selectedAddressRecord.company,
-      selectedAddressRecord.address,
-    );
-
-    if (!mapQuery) {
-      return;
+    if (
+      url.includes('google.com/maps') ||
+      url.includes('maps.google.com') ||
+      url.includes('waze.com/ul')
+    ) {
+      Linking.openURL(url).catch(() => {});
+      return false;
     }
 
-    Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        mapQuery,
-      )}`,
-    ).catch(() => {});
-  }, [selectedAddressRecord]);
-
-  const iframeSource = selectedAddressRecord
-    ? `https://www.google.com/maps?q=${encodeURIComponent(
-        buildMapQuery(
-          selectedAddressRecord.company,
-          selectedAddressRecord.address,
-        ),
-      )}&output=embed`
-    : '';
+    return true;
+  }, []);
 
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_FRANCHISE_LOCATOR}
-      onSearch={setQuery}
-      searchPlaceholder="Busque unidade, bairro ou cidade"
-      searchValue={query}
-      showHomeEntryControls
-      subtitle="Localizador de franquias">
-      {() => (
-        <ScrollView
-          style={styles.page}
-          contentContainerStyle={styles.pageContent}
-          showsVerticalScrollIndicator={false}>
-          <View
-            style={[
-              styles.hero,
-              {
-                backgroundColor: theme.darkCard,
-                borderColor: theme.darkBorder,
-              },
-            ]}>
-            <Text style={[styles.heroEyebrow, {color: theme.accent}]}>
-              UNIDADES DISPONIVEIS
-            </Text>
-            <Text style={[styles.heroTitle, {color: theme.onPrimary}]}>
-              Encontre a franquia mais conveniente
-            </Text>
-            <Text style={[styles.heroText, {color: 'rgba(255,255,255,0.78)'}]}>
-              Veja apenas as empresas e os enderecos liberados no manager e abra
-              a rota no mapa com um toque.
-            </Text>
-          </View>
-
-          {!franchiseLocatorEnabled ? (
+      showHomeEntryControls={false}
+      showSalesShortcuts={false}
+      showSearch={false}
+      subtitle="Mapa das unidades">
+      {() => {
+        if (!franchiseLocatorEnabled) {
+          return (
             <ShopFeatureState
               theme={theme}
               iconName="place"
-              title="Localizador de franquias desativado"
-              description="Esta entrada do shop nao esta liberada para esta empresa."
+              title="Localizador indisponivel no momento"
+              description="No momento nao foi possivel abrir o mapa das unidades."
               primaryActionLabel={
-                primaryEntryRouteName && primaryEntryRouteName !== 'ShopFranchiseLocatorPage'
+                primaryEntryRouteName &&
+                primaryEntryRouteName !== 'ShopFranchiseLocatorPage'
                   ? 'Voltar para a entrada principal'
                   : null
               }
               onPrimaryAction={
-                primaryEntryRouteName && primaryEntryRouteName !== 'ShopFranchiseLocatorPage'
+                primaryEntryRouteName &&
+                primaryEntryRouteName !== 'ShopFranchiseLocatorPage'
                   ? () => navigation.navigate(primaryEntryRouteName)
                   : null
               }
             />
-          ) : isLoading ? (
+          );
+        }
+
+        if (isLoading || isResolvingCoordinates) {
+          return (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, {color: theme.muted}]}>
-                Carregando franquias liberadas...
-              </Text>
             </View>
-          ) : !hasLocatorSelection ? (
+          );
+        }
+
+        if (markerPayloads.length === 0) {
+          return (
             <ShopFeatureState
               theme={theme}
               iconName="map"
-              title="Nenhuma franquia foi liberada"
-              description="O localizador so mostra empresas e enderecos marcados explicitamente no manager."
-              secondaryText="Selecione pelo menos uma empresa e um endereco na aba Shop das configuracoes gerais."
+              title="Mapa indisponivel no momento"
+              description="Nao foi possivel posicionar as unidades no mapa."
             />
-          ) : filteredDirectory.length === 0 ? (
-            <ShopFeatureState
-              theme={theme}
-              iconName="search-off"
-              title="Nenhum endereco encontrado"
-              description={
-                String(query || '').trim()
-                  ? 'A busca atual nao encontrou nenhuma unidade liberada.'
-                  : 'Nao ha enderecos disponiveis para as franquias selecionadas.'
-              }
-            />
-          ) : (
-            <View
-              style={[
-                styles.layout,
-                isMobile && styles.layoutMobile,
-              ]}>
-              <View style={styles.listColumn}>
-                {filteredDirectory.map(company => (
-                  <View
-                    key={company.id}
-                    style={[
-                      styles.companyCard,
-                      {
-                        backgroundColor: theme.surface,
-                        borderColor: theme.cardBorder,
-                      },
-                    ]}>
-                    <View style={styles.companyHeader}>
-                      <View
-                        style={[
-                          styles.companyBadge,
-                          {backgroundColor: `${theme.primary}14`},
-                        ]}>
-                        <Icon name="storefront" size={18} color={theme.primary} />
-                      </View>
-                      <View style={styles.companyCopy}>
-                        <Text style={[styles.companyTitle, {color: theme.text}]}>
-                          {company.alias || company.name}
-                        </Text>
-                        <Text style={[styles.companyMeta, {color: theme.muted}]}>
-                          {(company.shopAddresses || []).length} endereco(s)
-                          liberado(s)
-                        </Text>
-                      </View>
-                    </View>
+          );
+        }
 
-                    {(company.shopAddresses || []).map(address => {
-                      const addressId = normalizeShopEntityId(address);
-                      const summary = buildAddressOptionSummary(address);
-                      const selected =
-                        normalizeShopEntityId(selectedAddressId) === addressId;
-
-                      return (
-                        <TouchableOpacity
-                          key={`${company.id}-${addressId}`}
-                          activeOpacity={0.9}
-                          onPress={() => setSelectedAddressId(addressId)}
-                          style={[
-                            styles.addressCard,
-                            {
-                              backgroundColor: selected
-                                ? '#EFF6FF'
-                                : theme.background,
-                              borderColor: selected
-                                ? '#93C5FD'
-                                : theme.cardBorder,
-                            },
-                          ]}>
-                          <Icon
-                            name={selected ? 'place' : 'place-outline'}
-                            size={18}
-                            color={selected ? theme.primary : theme.muted}
-                          />
-                          <View style={styles.addressCopy}>
-                            <Text
-                              style={[
-                                styles.addressTitle,
-                                {color: theme.text},
-                              ]}>
-                              {summary.primary || address.nickname || 'Endereco'}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.addressMeta,
-                                {color: theme.muted},
-                              ]}>
-                              {summary.secondary ||
-                                address.searchFor ||
-                                'Toque para ver no mapa'}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                ))}
-              </View>
-
-              <View
-                style={[
-                  styles.mapCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
-                ]}>
-                {selectedAddressRecord ? (
-                  <>
-                    <Text style={[styles.mapTitle, {color: theme.text}]}>
-                      {selectedAddressRecord.company?.alias ||
-                        selectedAddressRecord.company?.name}
-                    </Text>
-                    <Text style={[styles.mapMeta, {color: theme.muted}]}>
-                      {buildAddressOptionSummary(selectedAddressRecord.address)
-                        .primary || 'Endereco selecionado'}
-                    </Text>
-                    <Text style={[styles.mapMeta, {color: theme.muted}]}>
-                      {buildAddressOptionSummary(selectedAddressRecord.address)
-                        .secondary || 'Sem complemento adicional'}
-                    </Text>
-
-                    {Platform.OS === 'web' && iframeSource ? (
-                      <iframe
-                        src={iframeSource}
-                        title="Mapa da franquia"
-                        style={{
-                          width: '100%',
-                          height: 320,
-                          border: '0',
-                          borderRadius: '18px',
-                          marginTop: '14px',
-                        }}
-                      />
-                    ) : (
-                      <View
-                        style={[
-                          styles.nativeMapPlaceholder,
-                          {
-                            backgroundColor: theme.background,
-                            borderColor: theme.cardBorder,
-                          },
-                        ]}>
-                        <Icon name="map" size={36} color={theme.primary} />
-                        <Text
-                          style={[
-                            styles.nativeMapText,
-                            {color: theme.muted},
-                          ]}>
-                          O mapa detalhado aparece na web. No app, use o botao
-                          abaixo para abrir a rota no Google Maps.
-                        </Text>
-                      </View>
-                    )}
-
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      onPress={openSelectedAddress}
-                      style={[
-                        styles.mapButton,
-                        {backgroundColor: theme.primary},
-                      ]}>
-                      <Text
-                        style={[
-                          styles.mapButtonText,
-                          {color: theme.onPrimary},
-                        ]}>
-                        Abrir no mapa
-                      </Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <ShopFeatureState
-                    theme={theme}
-                    iconName="map"
-                    title="Selecione uma unidade"
-                    description="Escolha um endereco liberado ao lado para visualizar o mapa."
-                  />
-                )}
-              </View>
+        return (
+          <View style={styles.page}>
+            <View style={[styles.mapViewport, {height: mapHeight}]}>
+              {Platform.OS === 'web' ? (
+                <iframe
+                  srcDoc={mapDocument}
+                  title="Mapa das franquias"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                  style={styles.mapFrame}
+                />
+              ) : NativeWebView ? (
+                <NativeWebView
+                  originWhitelist={['*']}
+                  source={{html: mapDocument}}
+                  onShouldStartLoadWithRequest={handleNativeNavigation}
+                  style={styles.mapNativeFrame}
+                />
+              ) : (
+                <ShopFeatureState
+                  theme={theme}
+                  iconName="map"
+                  title="Mapa indisponivel no dispositivo"
+                  description="Nao foi possivel abrir o mapa neste ambiente."
+                />
+              )}
             </View>
-          )}
-        </ScrollView>
-      )}
+          </View>
+        );
+      }}
     </ShopShell>
   );
 }
@@ -482,147 +1027,23 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  pageContent: {
-    paddingBottom: 140,
-  },
-  hero: {
-    marginHorizontal: 14,
-    marginTop: 14,
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-  },
-  heroEyebrow: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-  heroText: {
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 8,
-  },
   loadingState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 36,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  layout: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-  },
-  layoutMobile: {
-    flexDirection: 'column',
-  },
-  listColumn: {
-    flex: 1.05,
-    gap: 14,
-  },
-  companyCard: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 14,
-  },
-  companyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  companyBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  companyCopy: {
     flex: 1,
-  },
-  companyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  companyMeta: {
-    fontSize: 12,
-    marginTop: 3,
-  },
-  addressCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  addressCopy: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  addressTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  addressMeta: {
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 3,
-  },
-  mapCard: {
-    flex: 1,
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 16,
-    minHeight: 360,
-  },
-  mapTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  mapMeta: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  nativeMapPlaceholder: {
-    marginTop: 14,
-    minHeight: 220,
-    borderRadius: 20,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
   },
-  nativeMapText: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginTop: 10,
+  mapViewport: {
+    width: '100%',
+    flex: 1,
+    backgroundColor: '#E5EEF5',
   },
-  mapButton: {
-    minHeight: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
+  mapFrame: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 0,
   },
-  mapButtonText: {
-    fontSize: 14,
-    fontWeight: '800',
+  mapNativeFrame: {
+    flex: 1,
+    backgroundColor: '#E5EEF5',
   },
 });

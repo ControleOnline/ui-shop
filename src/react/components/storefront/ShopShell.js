@@ -41,7 +41,6 @@ import {
   inlineStyle_175_20,
   inlineStyle_177_18,
   inlineStyle_180_20,
-  inlineStyle_191_22,
   inlineStyle_214_18,
   inlineStyle_224_18,
   inlineStyle_228_18,
@@ -49,10 +48,6 @@ import {
   inlineStyle_255_12,
   inlineStyle_273_14,
   inlineStyle_282_14,
-  inlineStyle_303_10,
-  inlineStyle_305_12,
-  inlineStyle_329_16,
-  inlineStyle_332_18,
   inlineStyle_345_10,
   inlineStyle_358_12,
   inlineStyle_369_18,
@@ -109,6 +104,7 @@ export default function ShopShell({
   searchValue = '',
   onSearch,
   showHomeEntryControls = false,
+  showSalesShortcuts = true,
   activeHomeEntry = '',
   showSearch = true,
   subtitle = 'Cardapio digital',
@@ -121,8 +117,7 @@ export default function ShopShell({
   const shellPadding = isMobile ? 14 : 26;
 
   const authStore = useStore('auth');
-  const peopleStore = useStore('people');
-  const {currentCompany, defaultCompany} = useShopCart();
+  const {defaultCompany, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     hasMultipleHomeOptions,
@@ -133,14 +128,11 @@ export default function ShopShell({
 
   const {user} = authStore.getters;
   const authActions = authStore.actions;
-  const peopleActions = peopleStore.actions;
-  const {companies = []} = peopleStore.getters;
 
   const theme = pickTheme(defaultCompany);
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [companyOpen, setCompanyOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(
     JSON.parse(localStorage.getItem('config') || '{}')?.themeMode === 'dark',
   );
@@ -159,7 +151,12 @@ export default function ShopShell({
       'Usuario',
   ).trim();
   const displayCompany =
-    currentCompany?.alias || currentCompany?.name || 'Empresa';
+    salesCompany?.alias ||
+    salesCompany?.name ||
+    defaultCompany?.alias ||
+    defaultCompany?.name ||
+    'Empresa';
+  const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
 
   const logoUrl = defaultCompany?.logo
     ? buildFileUrl(defaultCompany.logo, defaultCompany)
@@ -186,10 +183,6 @@ export default function ShopShell({
   const foreground = darkMode ? '#F8FAFC' : theme.text;
   const muted = darkMode ? '#93A4B7' : theme.muted;
 
-  const companyList = useMemo(
-    () => (Array.isArray(companies) ? companies : []).filter(Boolean),
-    [companies],
-  );
   const routeActiveHomeEntry = useMemo(() => {
     if (route?.name === 'ShopFranchiseLocatorPage') {
       return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
@@ -283,23 +276,8 @@ export default function ShopShell({
                     style={inlineStyle_180_20({
                       isMobile: isMobile,
                     })}>
-                    {displayCompany}
+                    {purchaseCompanyLabel}
                   </Text>
-                  {companyList.length > 1 && (
-                    <TouchableOpacity
-                      onPress={() => setCompanyOpen(open => !open)}
-                      style={inlineStyle_191_22}>
-                      <Icon
-                        name={
-                          companyOpen
-                            ? 'keyboard-arrow-up'
-                            : 'keyboard-arrow-down'
-                        }
-                        size={18}
-                        color="#fff"
-                      />
-                    </TouchableOpacity>
-                  )}
                 </View>
                 <Text
                   numberOfLines={1}
@@ -356,40 +334,6 @@ export default function ShopShell({
           )}
         </View>
       </View>
-      <Modal
-        visible={companyOpen && companyList.length > 1}
-        transparent
-        animationType="fade">
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setCompanyOpen(false)}
-          style={inlineStyle_303_10}>
-          <View
-            style={inlineStyle_305_12({
-              isMobile: isMobile,
-              shellPadding: shellPadding,
-              surface: surface,
-            })}>
-            {companyList.map(company => (
-              <TouchableOpacity
-                key={company.id}
-                onPress={() => {
-                  peopleActions.setCurrentCompany(company);
-                  setCompanyOpen(false);
-                }}
-                style={inlineStyle_329_16}>
-                <Text
-                  numberOfLines={1}
-                  style={inlineStyle_332_18({
-                    foreground: foreground,
-                  })}>
-                  {company.alias || company.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
       {children({foreground, surface, theme})}
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
@@ -445,44 +389,50 @@ export default function ShopShell({
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => {
-                    setAccountOpen(false);
-                    navigation.navigate('ShopCartPage');
-                  }}
-                  style={inlineStyle_409_18}>
-                  <Text style={inlineStyle_410_24({
-                    foreground: foreground,
-                  })}>
-                    Carrinho
-                  </Text>
-                </TouchableOpacity>
+                {showSalesShortcuts && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopCartPage');
+                    }}
+                    style={inlineStyle_409_18}>
+                    <Text style={inlineStyle_410_24({
+                      foreground: foreground,
+                    })}>
+                      Carrinho
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity
-                  onPress={() => {
-                    setAccountOpen(false);
-                    navigation.navigate('ShopCheckoutPage');
-                  }}
-                  style={inlineStyle_420_18}>
-                  <Text style={inlineStyle_421_24({
-                    foreground: foreground,
-                  })}>
-                    Pagamento e Pix
-                  </Text>
-                </TouchableOpacity>
+                {showSalesShortcuts && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopCheckoutPage');
+                    }}
+                    style={inlineStyle_420_18}>
+                    <Text style={inlineStyle_421_24({
+                      foreground: foreground,
+                    })}>
+                      Pagamento e Pix
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity
-                  onPress={() => {
-                    setAccountOpen(false);
-                    navigation.navigate('ShopCardsPage');
-                  }}
-                  style={inlineStyle_431_18}>
-                  <Text style={inlineStyle_432_24({
-                    foreground: foreground,
-                  })}>
-                    Meus Cartões
-                  </Text>
-                </TouchableOpacity>
+                {showSalesShortcuts && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopCardsPage');
+                    }}
+                    style={inlineStyle_431_18}>
+                    <Text style={inlineStyle_432_24({
+                      foreground: foreground,
+                    })}>
+                      Meus Cartões
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 {loyaltyCouponsEnabled && (
                   <TouchableOpacity

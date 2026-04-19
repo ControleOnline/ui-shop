@@ -4,8 +4,10 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopCategoryCard from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryCard';
 import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryMenu';
+import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -35,15 +37,21 @@ export default function StorefrontHome() {
   const [layoutWidth, setLayoutWidth] = useState(width);
   const categoriesStore = useStore('categories');
   const {actions: categoryActions, getters: categoryGetters} = categoriesStore;
-  const peopleStore = useStore('people');
-  const {defaultCompany} = peopleStore.getters;
+  const {defaultCompany} = useShopSettings();
+  const {
+    isLoading: isLoadingSalesCompanies,
+    requiresCompanySelection,
+    salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
+  } = useShopSalesCompany();
   const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
   const categories = categoryGetters.items || [];
   const theme = pickTheme(defaultCompany);
 
   useFocusEffect(
     useCallback(() => {
-      if (!defaultCompany?.id) {
+      if (!salesCompany?.id || requiresCompanySelection) {
         categoryActions.setItems([]);
         return;
       }
@@ -53,9 +61,9 @@ export default function StorefrontHome() {
         categoryFiles: {file: {fileType: 'image'}},
         order: {name: 'ASC'},
         context: 'products',
-        company: defaultCompany.id,
+        company: salesCompany.id,
       });
-    }, [categoryActions, defaultCompany?.id]),
+    }, [categoryActions, requiresCompanySelection, salesCompany?.id]),
   );
 
   const topCategories = useMemo(
@@ -119,10 +127,19 @@ export default function StorefrontHome() {
       showHomeEntryControls>
       {() => (
         <>
+          {requiresCompanySelection ? (
+            <ShopSalesCompanySelector
+              companies={salesCompanyOptions}
+              isLoading={isLoadingSalesCompanies}
+              onSelect={selectSalesCompany}
+              theme={theme}
+            />
+          ) : (
+            <>
           <ShopCategoryMenu
             categories={categories}
             onSelect={goToCategory}
-            company={defaultCompany}
+            company={salesCompany || defaultCompany}
           />
           <ScrollView
             style={inlineStyle_78_12}
@@ -163,7 +180,7 @@ export default function StorefrontHome() {
                 })}>
                   <ShopCategoryCard
                     category={category}
-                    company={defaultCompany}
+                    company={salesCompany || defaultCompany}
                     onPress={() => goToCategory(category)}
                   />
                 </View>
@@ -182,6 +199,8 @@ export default function StorefrontHome() {
               )}
             </View>
           </ScrollView>
+            </>
+          )}
         </>
       )}
     </ShopShell>
