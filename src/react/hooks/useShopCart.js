@@ -92,6 +92,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
     currentCompany,
     defaultCompany,
     refreshCart,
+    requiresCompanySelection,
     salesCompany,
   };
 }

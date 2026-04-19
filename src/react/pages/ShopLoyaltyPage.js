@@ -12,6 +12,7 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {useStore} from '@store';
+import {SHOP_HOME_OPTION_LOYALTY} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 const resolveProductLabel = product =>
   String(product?.product || product?.name || '').trim() ||
@@ -101,7 +102,13 @@ export default function ShopLoyaltyPage() {
       : 0;
 
   return (
-    <ShopShell showSearch={false} subtitle="Programa de fidelidade">
+    <ShopShell
+      activeHomeEntry={SHOP_HOME_OPTION_LOYALTY}
+      showBottomCart={false}
+      showHomeEntryControls={false}
+      showSalesShortcuts={false}
+      showSearch={false}
+      subtitle="Programa de fidelidade">
       {() => (
         <ScrollView
           style={styles.page}

@@ -69,6 +69,7 @@ export default function ShopSalesCompanySelector({
               onPress={() => onSelect?.(company)}
               style={[
                 styles.card,
+                isMobile && styles.cardMobile,
                 {
                   backgroundColor: theme.surface,
                   borderColor: isSelected ? theme.primary : theme.cardBorder,
@@ -179,6 +180,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     padding: 16,
+  },
+  cardMobile: {
+    width: '100%',
   },
   cardHeader: {
     flexDirection: 'row',

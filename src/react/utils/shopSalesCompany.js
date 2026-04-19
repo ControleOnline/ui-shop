@@ -5,6 +5,7 @@ import {
 import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 const SHOP_SALES_COMPANY_STORAGE_PREFIX = 'shop-sales-company';
+const shopSalesCompanyListeners = new Set();
 
 const getStorageKey = defaultCompanyId => {
   const normalizedDefaultCompanyId = normalizeShopEntityId(defaultCompanyId);
@@ -39,6 +40,14 @@ const buildSnapshot = company => {
   };
 };
 
+const notifyShopSalesCompanyListeners = payload => {
+  shopSalesCompanyListeners.forEach(listener => {
+    try {
+      listener(payload);
+    } catch {}
+  });
+};
+
 export const readStoredShopSalesCompany = defaultCompanyId => {
   const storageKey = getStorageKey(defaultCompanyId);
 
@@ -68,10 +77,18 @@ export const persistShopSalesCompany = (defaultCompanyId, company) => {
 
   if (!snapshot) {
     localStorage.removeItem(storageKey);
+    notifyShopSalesCompanyListeners({
+      company: null,
+      defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
+    });
     return;
   }
 
   localStorage.setItem(storageKey, JSON.stringify(snapshot));
+  notifyShopSalesCompanyListeners({
+    company: snapshot,
+    defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
+  });
 };
 
 export const clearStoredShopSalesCompany = defaultCompanyId => {
@@ -82,6 +99,22 @@ export const clearStoredShopSalesCompany = defaultCompanyId => {
   }
 
   localStorage.removeItem(storageKey);
+  notifyShopSalesCompanyListeners({
+    company: null,
+    defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
+  });
+};
+
+export const subscribeShopSalesCompany = listener => {
+  if (typeof listener !== 'function') {
+    return () => {};
+  }
+
+  shopSalesCompanyListeners.add(listener);
+
+  return () => {
+    shopSalesCompanyListeners.delete(listener);
+  };
 };
 
 export const resolveShopSalesCompanyPhone = company => {

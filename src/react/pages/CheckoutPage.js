@@ -131,9 +131,13 @@ const pickReusableInvoice = invoices =>
 
 export default function CheckoutPage() {
   const navigation = useNavigation();
-  const {cart, defaultCompany, currentCompany, refreshCart} = useShopCart({
-    autoRefresh: true,
-  });
+  const {
+    cart,
+    currentCompany,
+    defaultCompany,
+    refreshCart,
+    salesCompany,
+  } = useShopCart({autoRefresh: true});
   const theme = pickTheme(defaultCompany);
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
@@ -222,9 +226,9 @@ export default function CheckoutPage() {
         statusResponse,
         invoicesResponse,
       ] = await Promise.all([
-        defaultCompany?.id
+        (salesCompany?.id || defaultCompany?.id)
           ? walletPaymentTypeActions.getItems({
-              company: defaultCompany.id,
+              company: salesCompany?.id || defaultCompany.id,
               itemsPerPage: 200,
             })
           : Promise.resolve([]),
@@ -273,6 +277,7 @@ export default function CheckoutPage() {
     defaultCompany?.id,
     invoiceActions,
     refreshCart,
+    salesCompany?.id,
     statusActions,
     walletPaymentTypeActions,
   ]);
@@ -316,8 +321,10 @@ export default function CheckoutPage() {
         order: cart?.['@id'] || `/orders/${cart?.id}`,
         price: Number(cart?.price || 0),
         payer: currentCompany?.id ? `/people/${currentCompany.id}` : undefined,
-        receiver: defaultCompany?.id
-          ? `/people/${defaultCompany.id}`
+        receiver: salesCompany?.id
+          ? `/people/${salesCompany.id}`
+          : defaultCompany?.id
+            ? `/people/${defaultCompany.id}`
           : undefined,
         destinationWallet: selectedPaymentType.wallet?.['@id'],
         paymentType: selectedPaymentType.paymentType?.['@id'],
@@ -349,6 +356,7 @@ export default function CheckoutPage() {
       pendingAmount,
       pendingStatus,
       pickPaymentTypeForGateway,
+      salesCompany?.id,
     ],
   );
 

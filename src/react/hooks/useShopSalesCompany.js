@@ -9,6 +9,7 @@ import {
   clearStoredShopSalesCompany,
   persistShopSalesCompany,
   readStoredShopSalesCompany,
+  subscribeShopSalesCompany,
 } from '@controleonline/ui-shop/src/react/utils/shopSalesCompany';
 
 const directoryCache = new Map();
@@ -55,6 +56,7 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     visibleFranchiseCompanyIds,
   } = useShopSettings();
   const defaultCompanyId = normalizeShopEntityId(defaultCompany);
+  const hasConfiguredSalesCompanies = visibleFranchiseCompanyIds.length > 0;
 
   const [directory, setDirectory] = useState([]);
   const [isLoading, setIsLoading] = useState(loadOptions);
@@ -66,13 +68,27 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     setStoredSelection(readStoredShopSalesCompany(defaultCompanyId));
   }, [defaultCompanyId]);
 
+  useEffect(
+    () =>
+      subscribeShopSalesCompany(payload => {
+        if (
+          normalizeShopEntityId(payload?.defaultCompanyId) !== defaultCompanyId
+        ) {
+          return;
+        }
+
+        setStoredSelection(payload?.company || null);
+      }),
+    [defaultCompanyId],
+  );
+
   useFocusEffect(
     useCallback(() => {
       if (
         !loadOptions ||
         !salesPageEnabled ||
         !defaultCompanyId ||
-        visibleFranchiseCompanyIds.length === 0
+        !hasConfiguredSalesCompanies
       ) {
         setDirectory([]);
         setIsLoading(false);
@@ -104,14 +120,14 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
       };
     }, [
       defaultCompanyId,
+      hasConfiguredSalesCompanies,
       loadOptions,
       salesPageEnabled,
-      visibleFranchiseCompanyIds.length,
     ]),
   );
 
   const selectionOptions = useMemo(() => {
-    if (visibleFranchiseCompanyIds.length === 0) {
+    if (!hasConfiguredSalesCompanies) {
       return [];
     }
 
@@ -151,12 +167,27 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     matchedSelection ||
     (selectionOptions.length === 1 ? selectionOptions[0] : null) ||
     fallbackStoredSelection ||
-    (selectionOptions.length === 0 ? defaultCompany : null);
+    (!hasConfiguredSalesCompanies || (!isLoading && selectionOptions.length === 0)
+      ? defaultCompany
+      : null);
   const requiresCompanySelection =
-    loadOptions && selectionOptions.length > 1 && !matchedSelection;
+    loadOptions &&
+    ((hasConfiguredSalesCompanies && isLoading) ||
+      selectionOptions.length > 1) &&
+    !matchedSelection;
 
   useEffect(() => {
     if (!loadOptions || !defaultCompanyId) {
+      return;
+    }
+
+    if (!hasConfiguredSalesCompanies) {
+      clearStoredShopSalesCompany(defaultCompanyId);
+      setStoredSelection(current => (current ? null : current));
+      return;
+    }
+
+    if (isLoading) {
       return;
     }
 
@@ -184,6 +215,8 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     }
   }, [
     defaultCompanyId,
+    hasConfiguredSalesCompanies,
+    isLoading,
     loadOptions,
     matchedSelection,
     selectionOptions,

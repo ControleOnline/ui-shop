@@ -3,10 +3,12 @@ import {Image, ScrollView, Text, View, useWindowDimensions} from 'react-native';
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryMenu';
+import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopTitleBar from '@controleonline/ui-shop/src/react/components/storefront/ShopTitleBar';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 import {
@@ -37,15 +39,21 @@ export default function CategoryPage() {
   const categoryId = String(route.params?.id || '');
   const categoriesStore = useStore('categories');
   const productsStore = useStore('products');
-  const peopleStore = useStore('people');
-  const {defaultCompany} = peopleStore.getters;
-  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
+  const {defaultCompany, franchiseLocatorEnabled, salesPageEnabled} =
+    useShopSettings();
+  const {
+    isLoading: isLoadingSalesCompanies,
+    requiresCompanySelection,
+    salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
+  } = useShopSalesCompany();
   const theme = pickTheme(defaultCompany);
   const [category, setCategory] = useState({});
 
   useFocusEffect(
     useCallback(() => {
-      if (!defaultCompany?.id) {
+      if (!salesCompany?.id || requiresCompanySelection) {
         categoriesStore.actions.setItems([]);
         productsStore.actions.setItems([]);
         setCategory({});
@@ -59,7 +67,7 @@ export default function CategoryPage() {
         categoryFiles: {file: {fileType: 'image'}},
         order: {name: 'ASC'},
         context: 'products',
-        company: defaultCompany?.id,
+        company: salesCompany?.id,
       });
       categoriesStore.actions.get(categoryId).then(setCategory);
       productsStore.actions.getItems({
@@ -70,15 +78,23 @@ export default function CategoryPage() {
         type: SHOP_PRODUCT_TYPES,
         itemsPerPage: 500,
         'order[product]': 'ASC',
-        company: defaultCompany?.id,
+        company: salesCompany?.id,
       });
-    }, [categoriesStore.actions, categoryId, defaultCompany?.id, productsStore.actions]),
+    }, [
+      categoriesStore.actions,
+      categoryId,
+      productsStore.actions,
+      requiresCompanySelection,
+      salesCompany?.id,
+    ]),
   );
 
   const allCategories = categoriesStore.getters.items || [];
   const products = productsStore.getters.items || [];
   const heroFile = category?.categoryFiles?.[0]?.file;
-  const heroUrl = heroFile ? buildFileUrl(heroFile, defaultCompany) : '';
+  const heroUrl = heroFile
+    ? buildFileUrl(heroFile, salesCompany || defaultCompany)
+    : '';
   const columns = width >= 1300 ? 4 : width >= 1000 ? 3 : width >= 640 ? 2 : 2;
   const effectiveWidth = layoutWidth || width;
   const pageWidth = Math.max(effectiveWidth - 28, 320);
@@ -118,18 +134,30 @@ export default function CategoryPage() {
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
+      showBottomCart={!requiresCompanySelection}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }
       showHomeEntryControls>
       {() => (
         <>
+          {requiresCompanySelection ? (
+            <ShopSalesCompanySelector
+              companies={salesCompanyOptions}
+              isLoading={isLoadingSalesCompanies}
+              onSelect={selectSalesCompany}
+              theme={theme}
+              title="Escolha a unidade para ver a categoria"
+              description="Selecione primeiro a empresa que vai atender seu pedido."
+            />
+          ) : (
+            <>
           <ShopCategoryMenu
             categories={allCategories}
             onSelect={selected =>
               navigation.navigate('ShopCategoryPage', {id: String(selected.id)})
             }
-            company={defaultCompany}
+            company={salesCompany || defaultCompany}
           />
           <ScrollView
             style={inlineStyle_85_12}
@@ -169,7 +197,10 @@ export default function CategoryPage() {
               </Text>
             </View>
 
-            <ShopTitleBar title="Produtos" company={defaultCompany} />
+            <ShopTitleBar
+              title="Produtos"
+              company={salesCompany || defaultCompany}
+            />
             <View
               style={inlineStyle_130_14({
                 gap: gap,
@@ -195,6 +226,8 @@ export default function CategoryPage() {
               )}
             </View>
           </ScrollView>
+            </>
+          )}
         </>
       )}
     </ShopShell>

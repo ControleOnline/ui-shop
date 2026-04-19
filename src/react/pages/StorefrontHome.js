@@ -37,7 +37,8 @@ export default function StorefrontHome() {
   const [layoutWidth, setLayoutWidth] = useState(width);
   const categoriesStore = useStore('categories');
   const {actions: categoryActions, getters: categoryGetters} = categoriesStore;
-  const {defaultCompany} = useShopSettings();
+  const {defaultCompany, franchiseLocatorEnabled, salesPageEnabled} =
+    useShopSettings();
   const {
     isLoading: isLoadingSalesCompanies,
     requiresCompanySelection,
@@ -45,7 +46,6 @@ export default function StorefrontHome() {
     salesCompanyOptions,
     selectSalesCompany,
   } = useShopSalesCompany();
-  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
   const categories = categoryGetters.items || [];
   const theme = pickTheme(defaultCompany);
 
@@ -118,6 +118,7 @@ export default function StorefrontHome() {
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
+      showBottomCart={!requiresCompanySelection}
       searchValue=""
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {
@@ -136,69 +137,69 @@ export default function StorefrontHome() {
             />
           ) : (
             <>
-          <ShopCategoryMenu
-            categories={categories}
-            onSelect={goToCategory}
-            company={salesCompany || defaultCompany}
-          />
-          <ScrollView
-            style={inlineStyle_78_12}
-            onLayout={event => {
-              const nextWidth = event?.nativeEvent?.layout?.width;
-              if (!nextWidth) return;
-              setLayoutWidth(current =>
-                Math.abs(current - nextWidth) < 1 ? current : nextWidth,
-              );
-            }}>
-            <View
-              style={inlineStyle_87_14({
-                theme: theme,
-              })}>
-              <Text style={inlineStyle_95_20({
-                theme: theme,
-              })}>
-                CARDAPIO DIGITAL
-              </Text>
-              <Text style={inlineStyle_98_20({
-                theme: theme,
-              })}>
-                Escolha sua categoria
-              </Text>
-              <Text style={inlineStyle_101_20({
-                theme: theme,
-              })}>
-                Navegue pelos pratos e monte seu pedido em poucos toques.
-              </Text>
-            </View>
-            <View
-              style={inlineStyle_106_14({
-                gap: gap,
-              })}>
-              {topCategories.map(category => (
-                <View key={category.id} style={inlineStyle_114_40({
-                  cardWidth: cardWidth,
-                })}>
-                  <ShopCategoryCard
-                    category={category}
-                    company={salesCompany || defaultCompany}
-                    onPress={() => goToCategory(category)}
-                  />
-                </View>
-              ))}
-              {topCategories.length === 0 && (
+              <ShopCategoryMenu
+                categories={categories}
+                onSelect={goToCategory}
+                company={salesCompany || defaultCompany}
+              />
+              <ScrollView
+                style={inlineStyle_78_12}
+                onLayout={event => {
+                  const nextWidth = event?.nativeEvent?.layout?.width;
+                  if (!nextWidth) return;
+                  setLayoutWidth(current =>
+                    Math.abs(current - nextWidth) < 1 ? current : nextWidth,
+                  );
+                }}>
                 <View
-                  style={inlineStyle_124_18({
+                  style={inlineStyle_87_14({
                     theme: theme,
                   })}>
-                  <Text style={inlineStyle_134_24({
+                  <Text style={inlineStyle_95_20({
                     theme: theme,
                   })}>
-                    Nenhuma categoria encontrada
+                    CARDAPIO DIGITAL
+                  </Text>
+                  <Text style={inlineStyle_98_20({
+                    theme: theme,
+                  })}>
+                    Escolha sua categoria
+                  </Text>
+                  <Text style={inlineStyle_101_20({
+                    theme: theme,
+                  })}>
+                    Navegue pelos pratos e monte seu pedido em poucos toques.
                   </Text>
                 </View>
-              )}
-            </View>
-          </ScrollView>
+                <View
+                  style={inlineStyle_106_14({
+                    gap: gap,
+                  })}>
+                  {topCategories.map(category => (
+                    <View key={category.id} style={inlineStyle_114_40({
+                      cardWidth: cardWidth,
+                    })}>
+                      <ShopCategoryCard
+                        category={category}
+                        company={salesCompany || defaultCompany}
+                        onPress={() => goToCategory(category)}
+                      />
+                    </View>
+                  ))}
+                  {topCategories.length === 0 && (
+                    <View
+                      style={inlineStyle_124_18({
+                        theme: theme,
+                      })}>
+                      <Text style={inlineStyle_134_24({
+                        theme: theme,
+                      })}>
+                        Nenhuma categoria encontrada
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
             </>
           )}
         </>

@@ -943,6 +943,7 @@ export default function ShopFranchiseLocatorPage() {
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_FRANCHISE_LOCATOR}
+      showBottomCart={false}
       showHomeEntryControls={false}
       showSalesShortcuts={false}
       showSearch={false}

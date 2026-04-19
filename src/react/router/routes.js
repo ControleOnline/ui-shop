@@ -40,6 +40,7 @@ const shopRoutes = [
     component: ShopLoyaltyPage,
     options: {
       headerShown: false,
+      showBottomCart: false,
       title: 'Fidelidade',
     },
   },

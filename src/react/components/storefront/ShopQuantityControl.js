@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 
 const productGroupRequirementCache = new Map();
 
@@ -45,8 +46,7 @@ export default function ShopQuantityControl({
   const orderProductsStore = useStore('order_products');
   const {actions: orderProductActions} = orderProductsStore;
   const productGroupStore = useStore('product_group');
-  const peopleStore = useStore('people');
-  const {defaultCompany, currentCompany} = peopleStore.getters;
+  const {salesCompany} = useShopSalesCompany();
   const [quantity, setQuantity] = useState(defaultQuantity);
   const timeoutRef = useRef(null);
 
@@ -125,7 +125,7 @@ export default function ShopQuantityControl({
       return false;
     }
 
-    const providerId = defaultCompany?.id || currentCompany?.id || '';
+    const providerId = salesCompany?.id || '';
     const inlineHasGroups =
       Array.isArray(product?.productGroups) && product.productGroups.length > 0;
     if ((!providerId && inlineHasGroups) || product?.type === 'custom') {
@@ -158,12 +158,11 @@ export default function ShopQuantityControl({
     productGroupRequirementCache.set(cacheKey, hasGroups);
     return hasGroups;
   }, [
-    currentCompany?.id,
-    defaultCompany?.id,
     orderProduct,
     orderProductId,
     product,
     productGroupStore.actions,
+    salesCompany?.id,
   ]);
 
   const increase = useCallback(async () => {

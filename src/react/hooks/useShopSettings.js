@@ -6,6 +6,7 @@ import {
   normalizeShopEntityId,
   resolveShopSettings,
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
+  SHOP_HOME_OPTION_LOYALTY,
   SHOP_HOME_OPTION_SALES,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
@@ -62,7 +63,7 @@ export default function useShopSettings() {
     if (settings.salesPageEnabled) {
       entries.push({
         key: SHOP_HOME_OPTION_SALES,
-        label: 'Pagina de vendas',
+        label: 'Compras',
         description: 'Cardapio, categorias e produtos',
         iconName: 'storefront',
         routeName: 'ShopIndex',
@@ -79,8 +80,22 @@ export default function useShopSettings() {
       });
     }
 
+    if (settings.loyaltyCouponsEnabled) {
+      entries.push({
+        key: SHOP_HOME_OPTION_LOYALTY,
+        label: 'Fidelidade',
+        description: 'Cartao fidelidade e brindes',
+        iconName: 'loyalty',
+        routeName: 'ShopLoyaltyPage',
+      });
+    }
+
     return entries;
-  }, [settings.franchiseLocatorEnabled, settings.salesPageEnabled]);
+  }, [
+    settings.franchiseLocatorEnabled,
+    settings.loyaltyCouponsEnabled,
+    settings.salesPageEnabled,
+  ]);
 
   const primaryEntryRouteName =
     homeEntries.find(entry => entry.key === settings.primaryEntry)?.routeName ||

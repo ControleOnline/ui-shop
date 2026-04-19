@@ -19,10 +19,12 @@ import {
 } from '@react-navigation/native';
 
 import {useStore} from '@store';
+import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 import {
@@ -84,11 +86,24 @@ export default function ProductPage() {
   const [isCheckingGroups, setIsCheckingGroups] = useState(false);
   const {cart, refreshCart, defaultCompany} = useShopCart();
   const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
+  const {
+    isLoading: isLoadingSalesCompanies,
+    requiresCompanySelection,
+    salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
+  } = useShopSalesCompany();
   const theme = pickTheme(defaultCompany);
 
   useFocusEffect(
     useCallback(() => {
-      if (!productId) return;
+      if (!productId || requiresCompanySelection || !salesCompany?.id) {
+        categoriesStore.actions.setItems([]);
+        setProduct({});
+        setHasCustomizationGroups(false);
+        setIsCheckingGroups(false);
+        return;
+      }
       setIsCheckingGroups(true);
       productsStore.actions
         .get(productId)
@@ -100,7 +115,7 @@ export default function ProductPage() {
           const nextProductId = normalizeId(
             nextProduct?.id || nextProduct?.['@id'],
           );
-          const providerId = defaultCompany?.id || '';
+          const providerId = salesCompany?.id || '';
           const inlineHasGroups =
             Array.isArray(nextProduct?.productGroups) &&
             nextProduct.productGroups.length > 0;
@@ -137,29 +152,30 @@ export default function ProductPage() {
         .finally(() => {
           setIsCheckingGroups(false);
         });
-      if (defaultCompany?.id) {
+      if (salesCompany?.id) {
         categoriesStore.actions.getItems({
           itemsPerPage: 500,
           exists: {categoryFiles: 'true'},
           categoryFiles: {file: {fileType: 'image'}},
           order: {name: 'ASC'},
           context: 'products',
-          company: defaultCompany.id,
+          company: salesCompany.id,
         });
       } else {
         categoriesStore.actions.setItems([]);
       }
     }, [
       categoriesStore.actions,
-      defaultCompany?.id,
       productGroupStore.actions,
       productId,
       productsStore.actions,
+      requiresCompanySelection,
+      salesCompany?.id,
     ]),
   );
 
   const imageUrl = product?.productFiles?.[0]?.file
-    ? buildFileUrl(product.productFiles[0].file)
+    ? buildFileUrl(product.productFiles[0].file, salesCompany || defaultCompany)
     : '';
   const requiresCustomization = Boolean(
     product?.type === 'custom' || hasCustomizationGroups,
@@ -198,146 +214,160 @@ export default function ProductPage() {
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
+      showBottomCart={!requiresCompanySelection}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
       }
       showHomeEntryControls>
       {() => (
         <>
-          <ScrollView style={inlineStyle_137_22}>
-            <View
-              style={inlineStyle_139_14}>
-              <View style={inlineStyle_145_20}>
-                <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={inlineStyle_148_18}>
-                  <Icon name="arrow-back" size={20} color={theme.primary} />
-                  <Text
-                    style={inlineStyle_155_20({
-                      theme: theme,
-                    })}>
-                    Voltar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={inlineStyle_165_20({
-                isMobile: isMobile,
-              })}>
+          {requiresCompanySelection ? (
+            <ShopSalesCompanySelector
+              companies={salesCompanyOptions}
+              isLoading={isLoadingSalesCompanies}
+              onSelect={selectSalesCompany}
+              theme={theme}
+              title="Escolha a unidade para ver o produto"
+              description="Selecione primeiro a empresa que vai atender seu pedido."
+            />
+          ) : (
+            <>
+              <ScrollView style={inlineStyle_137_22}>
                 <View
-                  style={inlineStyle_167_18({
+                  style={inlineStyle_139_14}>
+                  <View style={inlineStyle_145_20}>
+                    <TouchableOpacity
+                      onPress={() => navigation.goBack()}
+                      style={inlineStyle_148_18}>
+                      <Icon name="arrow-back" size={20} color={theme.primary} />
+                      <Text
+                        style={inlineStyle_155_20({
+                          theme: theme,
+                        })}>
+                        Voltar
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={inlineStyle_165_20({
                     isMobile: isMobile,
-                    theme: theme,
                   })}>
-                  {imageUrl ? (
-                    <Image
-                      source={{uri: imageUrl}}
-                      resizeMode="cover"
-                      style={inlineStyle_181_22({
+                    <View
+                      style={inlineStyle_167_18({
                         isMobile: isMobile,
-                      })}
-                    />
-                  ) : (
-                    <Text style={inlineStyle_184_26({
+                        theme: theme,
+                      })}>
+                      {imageUrl ? (
+                        <Image
+                          source={{uri: imageUrl}}
+                          resizeMode="cover"
+                          style={inlineStyle_181_22({
+                            isMobile: isMobile,
+                          })}
+                        />
+                      ) : (
+                        <Text style={inlineStyle_184_26({
+                          theme: theme,
+                        })}>
+                          SEM IMAGEM
+                        </Text>
+                      )}
+                    </View>
+
+                    <Text style={inlineStyle_190_22({
                       theme: theme,
                     })}>
-                      SEM IMAGEM
+                      {product?.description}
                     </Text>
-                  )}
-                </View>
+                  </View>
 
-                <Text style={inlineStyle_190_22({
-                  theme: theme,
-                })}>
-                  {product?.description}
-                </Text>
-              </View>
-
-              <View style={inlineStyle_195_20({
-                isMobile: isMobile,
-              })}>
-                <Text
-                  style={inlineStyle_197_18({
+                  <View style={inlineStyle_195_20({
                     isMobile: isMobile,
-                    theme: theme,
                   })}>
-                  {product?.product}
-                </Text>
-                <Text
-                  style={inlineStyle_205_18({
-                    isMobile: isMobile,
-                    theme: theme,
-                  })}>
-                  {formatMoney(product?.price)}
-                </Text>
-                <Text style={inlineStyle_213_22({
-                  theme: theme,
-                })}>
-                  {product?.description}
-                </Text>
-              </View>
-            </View>
-          </ScrollView>
-
-          <View
-            style={inlineStyle_221_12({
-              theme: theme,
-            })}>
-            {isCheckingGroups ? (
-              <View
-                style={inlineStyle_230_16({
-                  theme: theme,
-                })}>
-                <ActivityIndicator color={theme.primary} />
-              </View>
-            ) : requiresCustomization ? (
-              <TouchableOpacity
-                onPress={async () => {
-                  try {
-                    await refreshCart?.();
-                  } catch {}
-                  navigation.navigate('CustomizeScreen', {
-                    product,
-                    productId: normalizeId(product?.id || product?.['@id']),
-                    redirectToCart: true,
-                  });
-                }}
-                style={inlineStyle_252_16({
-                  theme: theme,
-                })}>
-                <Text style={inlineStyle_259_22}>
-                  Personalizar e adicionar
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={inlineStyle_264_20}>
-                <View
-                  style={inlineStyle_266_18}>
-                  <ShopQuantityControl
-                    product={product}
-                    cart={cart}
-                    refreshCart={refreshCart}
-                    iconColor={theme.primary}
-                    defaultQuantity={1}
-                    style={inlineStyle_277_20}
-                    textStyle={inlineStyle_285_20}
-                  />
-                </View>
-                <View
-                  style={inlineStyle_282_18}>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('ShopCartPage')}
-                    style={inlineStyle_289_20({
+                    <Text
+                      style={inlineStyle_197_18({
+                        isMobile: isMobile,
+                        theme: theme,
+                      })}>
+                      {product?.product}
+                    </Text>
+                    <Text
+                      style={inlineStyle_205_18({
+                        isMobile: isMobile,
+                        theme: theme,
+                      })}>
+                      {formatMoney(product?.price)}
+                    </Text>
+                    <Text style={inlineStyle_213_22({
                       theme: theme,
                     })}>
-                    <Text style={inlineStyle_297_26}>
-                      Ir para carrinho
+                      {product?.description}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+
+              <View
+                style={inlineStyle_221_12({
+                  theme: theme,
+                })}>
+                {isCheckingGroups ? (
+                  <View
+                    style={inlineStyle_230_16({
+                      theme: theme,
+                    })}>
+                    <ActivityIndicator color={theme.primary} />
+                  </View>
+                ) : requiresCustomization ? (
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        await refreshCart?.();
+                      } catch {}
+                      navigation.navigate('CustomizeScreen', {
+                        product,
+                        productId: normalizeId(product?.id || product?.['@id']),
+                        redirectToCart: true,
+                      });
+                    }}
+                    style={inlineStyle_252_16({
+                      theme: theme,
+                    })}>
+                    <Text style={inlineStyle_259_22}>
+                      Personalizar e adicionar
                     </Text>
                   </TouchableOpacity>
-                </View>
+                ) : (
+                  <View style={inlineStyle_264_20}>
+                    <View
+                      style={inlineStyle_266_18}>
+                      <ShopQuantityControl
+                        product={product}
+                        cart={cart}
+                        refreshCart={refreshCart}
+                        iconColor={theme.primary}
+                        defaultQuantity={1}
+                        style={inlineStyle_277_20}
+                        textStyle={inlineStyle_285_20}
+                      />
+                    </View>
+                    <View
+                      style={inlineStyle_282_18}>
+                      <TouchableOpacity
+                        onPress={() => navigation.navigate('ShopCartPage')}
+                        style={inlineStyle_289_20({
+                          theme: theme,
+                        })}>
+                        <Text style={inlineStyle_297_26}>
+                          Ir para carrinho
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
+            </>
+          )}
         </>
       )}
     </ShopShell>

@@ -1,4 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   Image,
@@ -26,6 +32,7 @@ import {
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
+  SHOP_HOME_OPTION_LOYALTY,
   SHOP_HOME_OPTION_SALES,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
@@ -105,6 +112,7 @@ export default function ShopShell({
   onSearch,
   showHomeEntryControls = false,
   showSalesShortcuts = true,
+  showBottomCart = null,
   activeHomeEntry = '',
   showSearch = true,
   subtitle = 'Cardapio digital',
@@ -117,7 +125,7 @@ export default function ShopShell({
   const shellPadding = isMobile ? 14 : 26;
 
   const authStore = useStore('auth');
-  const {defaultCompany, salesCompany} = useShopCart();
+  const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     hasMultipleHomeOptions,
@@ -141,9 +149,20 @@ export default function ShopShell({
     setSearchTerm(searchValue);
   }, [searchValue]);
 
+  useLayoutEffect(() => {
+    if (typeof showBottomCart !== 'boolean') {
+      return;
+    }
+
+    navigation.setParams({showBottomCart});
+  }, [navigation, showBottomCart]);
+
   const session = getSession();
   const accountUser = user && Object.keys(user).length > 0 ? user : session;
   const avatarUrl = getAvatarUrl(accountUser);
+  const isSalesContext =
+    activeHomeEntry === SHOP_HOME_OPTION_SALES ||
+    SALES_FLOW_ROUTE_NAMES.has(route?.name);
   const displayName = String(
     accountUser?.realname ||
       accountUser?.name ||
@@ -151,11 +170,13 @@ export default function ShopShell({
       'Usuario',
   ).trim();
   const displayCompany =
-    salesCompany?.alias ||
-    salesCompany?.name ||
-    defaultCompany?.alias ||
-    defaultCompany?.name ||
-    'Empresa';
+    requiresCompanySelection && isSalesContext
+      ? 'selecione uma unidade'
+      : salesCompany?.alias ||
+        salesCompany?.name ||
+        defaultCompany?.alias ||
+        defaultCompany?.name ||
+        'Empresa';
   const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
 
   const logoUrl = defaultCompany?.logo
@@ -188,6 +209,10 @@ export default function ShopShell({
       return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
     }
 
+    if (route?.name === 'ShopLoyaltyPage') {
+      return SHOP_HOME_OPTION_LOYALTY;
+    }
+
     if (SALES_FLOW_ROUTE_NAMES.has(route?.name)) {
       return SHOP_HOME_OPTION_SALES;
     }
@@ -195,6 +220,14 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
+  const shouldShowHomeEntryBottomBar =
+    bottomBarEnabled && hasMultipleHomeOptions;
+  const shouldShowHomeEntryTopControl =
+    showHomeEntryControls &&
+    hasMultipleHomeOptions &&
+    !shouldShowHomeEntryBottomBar;
+  const homeEntryBottomOffset =
+    typeof showBottomCart === 'boolean' && showBottomCart ? 88 : 14;
 
   const handleSelectHomeEntry = useCallback(
     entry => {
@@ -323,11 +356,13 @@ export default function ShopShell({
             </View>
           )}
 
-          {showHomeEntryControls && hasMultipleHomeOptions && (
+          {(shouldShowHomeEntryTopControl || shouldShowHomeEntryBottomBar) && (
             <ShopHomeEntryControls
               entries={homeEntries}
               activeEntryKey={resolvedActiveHomeEntry}
-              showBottomBar={bottomBarEnabled}
+              bottomOffset={homeEntryBottomOffset}
+              showBottomBar={shouldShowHomeEntryBottomBar}
+              showTopControl={shouldShowHomeEntryTopControl}
               theme={theme}
               onSelect={handleSelectHomeEntry}
             />

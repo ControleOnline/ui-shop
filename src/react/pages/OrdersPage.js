@@ -37,19 +37,27 @@ export default function OrdersPage() {
   const ordersStore = useStore('orders');
   const peopleStore = useStore('people');
   const {currentCompany, defaultCompany} = peopleStore.getters;
-  const {defaultCompany: shellCompany} = useShopCart();
+  const {defaultCompany: shellCompany, salesCompany} = useShopCart();
   const theme = pickTheme(shellCompany);
 
   useFocusEffect(
     useCallback(() => {
-      if (!currentCompany?.id || !defaultCompany?.id) return;
+      if (!currentCompany?.id || !(salesCompany?.id || defaultCompany?.id)) {
+        return;
+      }
+
       ordersStore.actions.getItems({
         client: currentCompany.id,
-        provider: defaultCompany.id,
+        provider: salesCompany?.id || defaultCompany.id,
         page: 1,
         itemsPerPage: 24,
       });
-    }, [currentCompany?.id, defaultCompany?.id, ordersStore.actions]),
+    }, [
+      currentCompany?.id,
+      defaultCompany?.id,
+      ordersStore.actions,
+      salesCompany?.id,
+    ]),
   );
 
   const orders = ordersStore.getters.items || [];

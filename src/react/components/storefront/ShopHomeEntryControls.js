@@ -11,7 +11,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 export default function ShopHomeEntryControls({
   entries = [],
   activeEntryKey = '',
+  showTopControl = true,
   showBottomBar = false,
+  bottomOffset = 88,
   theme,
   onSelect,
 }) {
@@ -30,83 +32,90 @@ export default function ShopHomeEntryControls({
     setMenuOpen(false);
   }, [activeEntryKey]);
 
-  if (!Array.isArray(entries) || entries.length <= 1 || !activeEntry) {
+  if (
+    !Array.isArray(entries) ||
+    entries.length <= 1 ||
+    !activeEntry ||
+    (!showTopControl && !showBottomBar)
+  ) {
     return null;
   }
 
   return (
     <>
-      <View style={styles.topWrap}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => setMenuOpen(current => !current)}
-          style={[
-            styles.trigger,
-            {
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              borderColor: 'rgba(255,255,255,0.18)',
-            },
-          ]}>
-          <View style={styles.triggerIconWrap}>
-            <Icon name={activeEntry.iconName} size={18} color="#FFFFFF" />
-          </View>
-          <View style={styles.triggerCopy}>
-            <Text style={styles.triggerEyebrow}>Entrada atual</Text>
-            <Text style={styles.triggerLabel}>{activeEntry.label}</Text>
-          </View>
-          <Icon
-            name={menuOpen ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-            size={20}
-            color="#FFFFFF"
-          />
-        </TouchableOpacity>
-
-        {menuOpen && (
-          <View
+      {showTopControl && (
+        <View style={styles.topWrap}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setMenuOpen(current => !current)}
             style={[
-              styles.dropdown,
+              styles.trigger,
               {
-                backgroundColor: theme.surface,
-                borderColor: theme.cardBorder,
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                borderColor: 'rgba(255,255,255,0.18)',
               },
             ]}>
-            {entries.map(entry => {
-              const selected = entry.key === activeEntry.key;
+            <View style={styles.triggerIconWrap}>
+              <Icon name={activeEntry.iconName} size={18} color="#FFFFFF" />
+            </View>
+            <View style={styles.triggerCopy}>
+              <Text style={styles.triggerEyebrow}>Entrada atual</Text>
+              <Text style={styles.triggerLabel}>{activeEntry.label}</Text>
+            </View>
+            <Icon
+              name={menuOpen ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+              size={20}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
 
-              return (
-                <TouchableOpacity
-                  key={entry.key}
-                  activeOpacity={0.88}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    onSelect?.(entry);
-                  }}
-                  style={[
-                    styles.dropdownItem,
-                    selected && {
-                      backgroundColor: '#F0FDFA',
-                      borderColor: '#99F6E4',
-                    },
-                  ]}>
-                  <Icon
-                    name={selected ? 'check-circle' : entry.iconName}
-                    size={20}
-                    color={selected ? '#0F766E' : theme.primary}
-                  />
-                  <View style={styles.dropdownCopy}>
-                    <Text style={[styles.dropdownLabel, {color: theme.text}]}>
-                      {entry.label}
-                    </Text>
-                    <Text style={[styles.dropdownMeta, {color: theme.muted}]}>
-                      {entry.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </View>
+          {menuOpen && (
+            <View
+              style={[
+                styles.dropdown,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                },
+              ]}>
+              {entries.map(entry => {
+                const selected = entry.key === activeEntry.key;
+
+                return (
+                  <TouchableOpacity
+                    key={entry.key}
+                    activeOpacity={0.88}
+                    onPress={() => {
+                      setMenuOpen(false);
+                      onSelect?.(entry);
+                    }}
+                    style={[
+                      styles.dropdownItem,
+                      selected && {
+                        backgroundColor: '#F0FDFA',
+                        borderColor: '#99F6E4',
+                      },
+                    ]}>
+                    <Icon
+                      name={selected ? 'check-circle' : entry.iconName}
+                      size={20}
+                      color={selected ? '#0F766E' : theme.primary}
+                    />
+                    <View style={styles.dropdownCopy}>
+                      <Text style={[styles.dropdownLabel, {color: theme.text}]}>
+                        {entry.label}
+                      </Text>
+                      <Text style={[styles.dropdownMeta, {color: theme.muted}]}>
+                        {entry.description}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
 
       {showBottomBar && (
         <View
@@ -115,7 +124,7 @@ export default function ShopHomeEntryControls({
             {
               backgroundColor: theme.surface,
               borderColor: theme.cardBorder,
-              bottom: insets.bottom + 88,
+              bottom: insets.bottom + bottomOffset,
             },
           ]}>
           {entries.map(entry => {

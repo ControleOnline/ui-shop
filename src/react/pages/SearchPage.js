@@ -4,10 +4,12 @@ import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native'
 import {useStore} from '@store';
 import ShopCategoryCard from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryCard';
 import ShopCategoryMenu from '@controleonline/ui-shop/src/react/components/storefront/ShopCategoryMenu';
+import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopTitleBar from '@controleonline/ui-shop/src/react/components/storefront/ShopTitleBar';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme, SHOP_PRODUCT_TYPES} from '@controleonline/ui-shop/src/react/utils/shop';
 import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -35,9 +37,15 @@ export default function SearchPage() {
   const q = decodeURIComponent(String(route.params?.q || ''));
   const productsStore = useStore('products');
   const categoriesStore = useStore('categories');
-  const peopleStore = useStore('people');
-  const {defaultCompany} = peopleStore.getters;
-  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
+  const {defaultCompany, franchiseLocatorEnabled, salesPageEnabled} =
+    useShopSettings();
+  const {
+    isLoading: isLoadingSalesCompanies,
+    requiresCompanySelection,
+    salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
+  } = useShopSalesCompany();
   const theme = pickTheme(defaultCompany);
   const [fullCategories, setFullCategories] = useState([]);
   const [searchCategories, setSearchCategories] = useState([]);
@@ -45,7 +53,7 @@ export default function SearchPage() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!defaultCompany?.id) {
+      if (!salesCompany?.id || requiresCompanySelection) {
         setFullCategories([]);
         setSearchCategories([]);
         setSearchProducts([]);
@@ -58,14 +66,14 @@ export default function SearchPage() {
         categoryFiles: {file: {fileType: 'image'}},
         order: {name: 'ASC'},
         context: 'products',
-        company: defaultCompany?.id,
+        company: salesCompany?.id,
       }).then(data => setFullCategories(data || []));
 
       productsStore.actions.getItems({
         itemsPerPage: 32,
         exists: {productFiles: 'true'},
         productFiles: {file: {fileType: 'image'}},
-        company: defaultCompany?.id,
+        company: salesCompany?.id,
         active: 1,
         type: SHOP_PRODUCT_TYPES,
         'order[product]': 'ASC',
@@ -78,10 +86,16 @@ export default function SearchPage() {
         categoryFiles: {file: {fileType: 'image'}},
         'order[name]': 'ASC',
         context: 'products',
-        company: defaultCompany?.id,
+        company: salesCompany?.id,
         name: q,
       }).then(data => setSearchCategories(data || []));
-    }, [categoriesStore.actions, defaultCompany?.id, productsStore.actions, q]),
+    }, [
+      categoriesStore.actions,
+      productsStore.actions,
+      q,
+      requiresCompanySelection,
+      salesCompany?.id,
+    ]),
   );
 
   const categories = fullCategories;
@@ -125,6 +139,7 @@ export default function SearchPage() {
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
+      showBottomCart={!requiresCompanySelection}
       searchValue={q}
       onSearch={query =>
         navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
@@ -132,14 +147,28 @@ export default function SearchPage() {
       showHomeEntryControls>
       {() => (
         <>
+          {requiresCompanySelection ? (
+            <ShopSalesCompanySelector
+              companies={salesCompanyOptions}
+              isLoading={isLoadingSalesCompanies}
+              onSelect={selectSalesCompany}
+              theme={theme}
+              title="Escolha a unidade para buscar"
+              description="Selecione primeiro a empresa que vai atender seu pedido."
+            />
+          ) : (
+            <>
           <ShopCategoryMenu
             categories={categories}
             onSelect={category =>
               navigation.navigate('ShopCategoryPage', {id: String(category.id)})
             }
-            company={defaultCompany}
+            company={salesCompany || defaultCompany}
           />
-          <ShopTitleBar title="Resultados" company={defaultCompany} />
+          <ShopTitleBar
+            title="Resultados"
+            company={salesCompany || defaultCompany}
+          />
           <ScrollView
             style={inlineStyle_92_12}
             onLayout={event => {
@@ -184,7 +213,7 @@ export default function SearchPage() {
                     })}>
                       <ShopCategoryCard
                         category={category}
-                        company={defaultCompany}
+                        company={salesCompany || defaultCompany}
                         onPress={() =>
                           navigation.navigate('ShopCategoryPage', {id: String(category.id)})
                         }
@@ -212,6 +241,8 @@ export default function SearchPage() {
               )}
             </View>
           </ScrollView>
+            </>
+          )}
         </>
       )}
     </ShopShell>
