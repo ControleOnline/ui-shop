@@ -246,7 +246,6 @@ const fitMapToBounds = ({google, map, markerCount, userCoordinates}) => {
 export default function ShopGoogleMap({
   apiKey,
   markerPayloads = [],
-  theme,
   userCoordinates = null,
 }) {
   const containerRef = useRef(null);
@@ -301,14 +300,6 @@ export default function ShopGoogleMap({
             },
             map,
             title: 'Sua localizacao',
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: theme?.primary || '#0ea5e9',
-              fillOpacity: 1,
-              strokeColor: '#ffffff',
-              strokeWeight: 3,
-            },
             zIndex: 999,
           });
         }
@@ -353,7 +344,7 @@ export default function ShopGoogleMap({
     return () => {
       cancelled = true;
     };
-  }, [apiKey, markerPayloads, theme?.primary, userCoordinates]);
+  }, [apiKey, markerPayloads, userCoordinates]);
 
   if (Platform.OS !== 'web') {
     return null;

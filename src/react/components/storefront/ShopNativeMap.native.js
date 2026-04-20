@@ -97,6 +97,9 @@ export default function ShopNativeMap({
   userCoordinates = null,
 }) {
   const mapRef = useRef(null);
+  const hasUserCoordinates =
+    Number.isFinite(userCoordinates?.latitude) &&
+    Number.isFinite(userCoordinates?.longitude);
   const mapCoordinates = useMemo(() => {
     const coordinates = markerPayloads
       .map(item => ({
@@ -107,10 +110,7 @@ export default function ShopNativeMap({
         item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude),
       );
 
-    if (
-      Number.isFinite(userCoordinates?.latitude) &&
-      Number.isFinite(userCoordinates?.longitude)
-    ) {
+    if (hasUserCoordinates) {
       coordinates.push({
         latitude: Number(userCoordinates.latitude),
         longitude: Number(userCoordinates.longitude),
@@ -118,7 +118,7 @@ export default function ShopNativeMap({
     }
 
     return coordinates;
-  }, [markerPayloads, userCoordinates]);
+  }, [hasUserCoordinates, markerPayloads, userCoordinates]);
 
   const initialRegion = useMemo(
     () => buildRegion(mapCoordinates),
@@ -163,11 +163,22 @@ export default function ShopNativeMap({
       ref={mapRef}
       style={styles.mapViewport}
       initialRegion={initialRegion}
-      showsUserLocation={Boolean(userCoordinates)}
-      showsMyLocationButton={Boolean(userCoordinates)}
+      showsUserLocation={false}
+      showsMyLocationButton={false}
       showsCompass
       rotateEnabled
       toolbarEnabled={false}>
+      {hasUserCoordinates ? (
+        <Marker
+          key="shop-user-location"
+          coordinate={{
+            latitude: Number(userCoordinates.latitude),
+            longitude: Number(userCoordinates.longitude),
+          }}
+          title="Sua localizacao"
+          description="Posicao atual do cliente"
+        />
+      ) : null}
       {markerPayloads.map(item => (
         <Marker
           key={item.id}

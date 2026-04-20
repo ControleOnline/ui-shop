@@ -389,12 +389,6 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
 
   const markerPayloadsJson = safeJsonForHtml(markerPayloads);
   const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
-  const paletteJson = safeJsonForHtml({
-    primary: theme?.primary || '#0284c7',
-    surface: theme?.surface || '#ffffff',
-    text: theme?.text || '#0f1720',
-    muted: theme?.muted || '#64748b',
-  });
 
   return `
     <!DOCTYPE html>
@@ -492,7 +486,6 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
         <script>
           window.__SHOP_MAP_MARKERS__ = ${markerPayloadsJson};
           window.__SHOP_MAP_USER__ = ${userCoordinatesJson};
-          window.__SHOP_MAP_PALETTE__ = ${paletteJson};
 
           function escapeHtml(value) {
             return String(value || '')
@@ -547,7 +540,6 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
           window.__initShopMap = function () {
             var markers = window.__SHOP_MAP_MARKERS__ || [];
             var userCoordinates = window.__SHOP_MAP_USER__;
-            var palette = window.__SHOP_MAP_PALETTE__ || {};
 
             if (!window.google || !markers.length) {
               return;
@@ -579,14 +571,6 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
                 position: userPosition,
                 map: map,
                 title: 'Sua localizacao',
-                icon: {
-                  path: window.google.maps.SymbolPath.CIRCLE,
-                  scale: 8,
-                  fillColor: palette.primary || '#0ea5e9',
-                  fillOpacity: 1,
-                  strokeColor: '#ffffff',
-                  strokeWeight: 3,
-                },
                 zIndex: 999,
               });
 
@@ -1029,7 +1013,6 @@ export default function ShopFranchiseLocatorPage() {
                 <ShopGoogleMap
                   apiKey={googleMapsApiKey}
                   markerPayloads={markerPayloads}
-                  theme={theme}
                   userCoordinates={userCoordinates}
                 />
               ) : HAS_NATIVE_MAP_SUPPORT ? (
