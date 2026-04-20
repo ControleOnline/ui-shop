@@ -28,12 +28,12 @@ import {
   inlineStyle_161_12,
 } from './ShopProductCard.styles';
 
-import { inlineStyle_143_12 } from './ShopProductCard.styles';
+import {inlineStyle_143_12} from './ShopProductCard.styles';
 
-export default function ShopProductCard({product, compact = false}) {
+export default function ShopProductCard({product, compact = false, company = null}) {
   const navigation = useNavigation();
   const {cart, refreshCart, defaultCompany} = useShopCart();
-  const theme = pickTheme(defaultCompany);
+  const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;

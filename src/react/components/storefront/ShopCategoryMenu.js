@@ -1,10 +1,20 @@
 import React, {useMemo} from 'react';
 import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
-import { inlineStyle_14_6, inlineStyle_29_12, inlineStyle_38_14 } from './ShopCategoryMenu.styles';
-import { inlineStyle_21_8 } from './ShopCategoryMenu.styles';
+import {
+  categoryMenuContainerStyle,
+  categoryMenuChipStyle,
+  categoryMenuChipTextStyle,
+  categoryMenuContentStyle,
+} from './ShopCategoryMenu.styles';
 
-export default function ShopCategoryMenu({categories = [], onSelect, company}) {
+// Keep a quick horizontal category navigator visible across all `Compras` routes.
+export default function ShopCategoryMenu({
+  activeCategoryId = '',
+  categories = [],
+  onSelect,
+  company,
+}) {
   const theme = pickTheme(company);
   const topLevel = useMemo(
     () => categories.filter(category => !category?.parent),
@@ -13,23 +23,29 @@ export default function ShopCategoryMenu({categories = [], onSelect, company}) {
 
   return (
     <View
-      style={inlineStyle_14_6({
+      style={categoryMenuContainerStyle({
         theme: theme,
       })}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={inlineStyle_21_8}>
+        contentContainerStyle={categoryMenuContentStyle}>
         {topLevel.map(category => (
           <TouchableOpacity
             key={category.id}
             onPress={() => onSelect?.(category)}
             activeOpacity={0.9}
-            style={inlineStyle_29_12({
+            style={categoryMenuChipStyle({
+              isActive:
+                String(activeCategoryId || '') ===
+                String(category?.id || category?.['@id'] || ''),
               theme: theme,
             })}>
             <Text
-              style={inlineStyle_38_14({
+              style={categoryMenuChipTextStyle({
+                isActive:
+                  String(activeCategoryId || '') ===
+                  String(category?.id || category?.['@id'] || ''),
                 theme: theme,
               })}>
               {category.name}

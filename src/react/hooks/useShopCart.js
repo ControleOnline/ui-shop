@@ -28,7 +28,14 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartGetters = cartStore.getters;
   const peopleStore = useStore('people');
   const {currentCompany, defaultCompany} = peopleStore.getters;
-  const {requiresCompanySelection, salesCompany} = useShopSalesCompany();
+  const {
+    clearSalesCompanySelection,
+    isLoading: isLoadingSalesCompanies,
+    requiresCompanySelection,
+    salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
+  } = useShopSalesCompany();
 
   const refreshCart = useCallback(() => {
     const appType = String(env.APP_TYPE || '').toUpperCase();
@@ -89,10 +96,14 @@ export default function useShopCart({autoRefresh = false} = {}) {
   return {
     cart: cartGetters.item,
     cartGetters,
+    clearSalesCompanySelection,
     currentCompany,
     defaultCompany,
+    isLoadingSalesCompanies,
     refreshCart,
     requiresCompanySelection,
     salesCompany,
+    salesCompanyOptions,
+    selectSalesCompany,
   };
 }
