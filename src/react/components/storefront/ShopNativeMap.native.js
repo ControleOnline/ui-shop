@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Image, Linking, Text, View} from 'react-native';
 
 import styles from './ShopNativeMap.styles';
@@ -16,6 +16,7 @@ const NativeMapView = nativeMapComponents?.default || null;
 const Marker = nativeMapComponents?.Marker || null;
 const Callout = nativeMapComponents?.Callout || null;
 const CalloutSubview = nativeMapComponents?.CalloutSubview || null;
+const Polyline = nativeMapComponents?.Polyline || null;
 export const HAS_NATIVE_MAP_SUPPORT = Boolean(
   NativeMapView && Marker && Callout,
 );
@@ -25,6 +26,77 @@ const DEFAULT_REGION = {
   longitude: -46.633308,
   latitudeDelta: 0.24,
   longitudeDelta: 0.24,
+};
+
+const decodePolyline = encoded => {
+  if (!encoded) {
+    return [];
+  }
+
+  const coordinates = [];
+  let index = 0;
+  let latitude = 0;
+  let longitude = 0;
+
+  while (index < encoded.length) {
+    let shift = 0;
+    let result = 0;
+    let byte = null;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+
+    latitude += result & 1 ? ~(result >> 1) : result >> 1;
+
+    shift = 0;
+    result = 0;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+
+    longitude += result & 1 ? ~(result >> 1) : result >> 1;
+
+    coordinates.push({
+      latitude: latitude / 1e5,
+      longitude: longitude / 1e5,
+    });
+  }
+
+  return coordinates;
+};
+
+const fetchRouteCoordinates = async ({apiKey, origin, destination}) => {
+  if (
+    !apiKey ||
+    !Number.isFinite(origin?.latitude) ||
+    !Number.isFinite(origin?.longitude) ||
+    !Number.isFinite(destination?.latitude) ||
+    !Number.isFinite(destination?.longitude)
+  ) {
+    return [];
+  }
+
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
+      `${origin.latitude},${origin.longitude}`,
+    )}&destination=${encodeURIComponent(
+      `${destination.latitude},${destination.longitude}`,
+    )}&mode=driving&key=${encodeURIComponent(apiKey)}`,
+  );
+  const payload = await response.json();
+  const encodedPoints = payload?.routes?.[0]?.overview_polyline?.points;
+
+  if (payload?.status !== 'OK' || !encodedPoints) {
+    return [];
+  }
+
+  return decodePolyline(encodedPoints);
 };
 
 const buildRegion = coordinates => {
@@ -93,14 +165,17 @@ const CalloutAction = ({label, onPress, primary = false}) => {
 };
 
 export default function ShopNativeMap({
+  apiKey = '',
   markerPayloads = [],
   userCoordinates = null,
 }) {
   const mapRef = useRef(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState(null);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
   const hasUserCoordinates =
     Number.isFinite(userCoordinates?.latitude) &&
     Number.isFinite(userCoordinates?.longitude);
-  const mapCoordinates = useMemo(() => {
+  const baseMapCoordinates = useMemo(() => {
     const coordinates = markerPayloads
       .map(item => ({
         latitude: Number(item?.latitude),
@@ -119,14 +194,100 @@ export default function ShopNativeMap({
 
     return coordinates;
   }, [hasUserCoordinates, markerPayloads, userCoordinates]);
+  const selectedMarker = useMemo(
+    () => markerPayloads.find(item => item.id === selectedMarkerId) || null,
+    [markerPayloads, selectedMarkerId],
+  );
+  const focusCoordinates = useMemo(() => {
+    if (routeCoordinates.length > 1) {
+      return routeCoordinates;
+    }
+
+    if (
+      hasUserCoordinates &&
+      Number.isFinite(selectedMarker?.latitude) &&
+      Number.isFinite(selectedMarker?.longitude)
+    ) {
+      return [
+        {
+          latitude: Number(userCoordinates.latitude),
+          longitude: Number(userCoordinates.longitude),
+        },
+        {
+          latitude: Number(selectedMarker.latitude),
+          longitude: Number(selectedMarker.longitude),
+        },
+      ];
+    }
+
+    return baseMapCoordinates;
+  }, [
+    baseMapCoordinates,
+    hasUserCoordinates,
+    routeCoordinates,
+    selectedMarker?.latitude,
+    selectedMarker?.longitude,
+    userCoordinates,
+  ]);
 
   const initialRegion = useMemo(
-    () => buildRegion(mapCoordinates),
-    [mapCoordinates],
+    () => buildRegion(focusCoordinates),
+    [focusCoordinates],
   );
 
   useEffect(() => {
-    if (!mapRef.current || mapCoordinates.length === 0) {
+    if (!selectedMarkerId) {
+      return;
+    }
+
+    if (!selectedMarker) {
+      setSelectedMarkerId(null);
+    }
+  }, [selectedMarker, selectedMarkerId]);
+
+  useEffect(() => {
+    if (!hasUserCoordinates || !selectedMarker || !apiKey || !Polyline) {
+      setRouteCoordinates([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    fetchRouteCoordinates({
+      apiKey,
+      origin: {
+        latitude: Number(userCoordinates.latitude),
+        longitude: Number(userCoordinates.longitude),
+      },
+      destination: {
+        latitude: Number(selectedMarker.latitude),
+        longitude: Number(selectedMarker.longitude),
+      },
+    })
+      .then(coordinates => {
+        if (!cancelled) {
+          setRouteCoordinates(Array.isArray(coordinates) ? coordinates : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRouteCoordinates([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    Polyline,
+    apiKey,
+    hasUserCoordinates,
+    selectedMarker,
+    userCoordinates,
+  ]);
+
+  useEffect(() => {
+    if (!mapRef.current || focusCoordinates.length === 0) {
       return undefined;
     }
 
@@ -135,12 +296,12 @@ export default function ShopNativeMap({
         return;
       }
 
-      if (mapCoordinates.length === 1) {
-        mapRef.current.animateToRegion(buildRegion(mapCoordinates), 250);
+      if (focusCoordinates.length === 1) {
+        mapRef.current.animateToRegion(buildRegion(focusCoordinates), 250);
         return;
       }
 
-      mapRef.current.fitToCoordinates(mapCoordinates, {
+      mapRef.current.fitToCoordinates(focusCoordinates, {
         animated: true,
         edgePadding: {
           top: 56,
@@ -152,7 +313,7 @@ export default function ShopNativeMap({
     }, 60);
 
     return () => clearTimeout(timeoutId);
-  }, [mapCoordinates]);
+  }, [focusCoordinates]);
 
   if (!HAS_NATIVE_MAP_SUPPORT) {
     return null;
@@ -177,6 +338,17 @@ export default function ShopNativeMap({
           }}
           title="Sua localizacao"
           description="Posicao atual do cliente"
+          onPress={() => {
+            setSelectedMarkerId(null);
+            setRouteCoordinates([]);
+          }}
+        />
+      ) : null}
+      {Polyline && routeCoordinates.length > 1 ? (
+        <Polyline
+          coordinates={routeCoordinates}
+          strokeColor="#0EA5E9"
+          strokeWidth={5}
         />
       ) : null}
       {markerPayloads.map(item => (
@@ -187,7 +359,8 @@ export default function ShopNativeMap({
             longitude: Number(item.longitude),
           }}
           title={item.title}
-          description={item.addressLine}>
+          description={item.addressLine}
+          onPress={() => setSelectedMarkerId(item.id)}>
           {item.markerIconUrl ? (
             <View style={styles.markerWrap}>
               <Image

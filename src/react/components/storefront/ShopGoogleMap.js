@@ -281,6 +281,25 @@ export default function ShopGoogleMap({
         });
 
         const infoWindow = new google.maps.InfoWindow({maxWidth: 320});
+        const hasUserCoordinates =
+          Number.isFinite(userCoordinates?.latitude) &&
+          Number.isFinite(userCoordinates?.longitude);
+        const directionsService = hasUserCoordinates
+          ? new google.maps.DirectionsService()
+          : null;
+        const directionsRenderer = directionsService
+          ? new google.maps.DirectionsRenderer({
+              map,
+              suppressMarkers: true,
+              preserveViewport: false,
+              polylineOptions: {
+                strokeColor: '#0ea5e9',
+                strokeOpacity: 0.92,
+                strokeWeight: 5,
+              },
+            })
+          : null;
+        let activeRouteRequestId = 0;
         const {bounds, finalize} = fitMapToBounds({
           google,
           map,
@@ -334,6 +353,40 @@ export default function ShopGoogleMap({
               map,
               shouldFocus: false,
             });
+
+            if (!directionsService || !directionsRenderer) {
+              return;
+            }
+
+            const routeRequestId = activeRouteRequestId + 1;
+            activeRouteRequestId = routeRequestId;
+
+            directionsService.route(
+              {
+                origin: {
+                  lat: userCoordinates.latitude,
+                  lng: userCoordinates.longitude,
+                },
+                destination: position,
+                travelMode: google.maps.TravelMode.DRIVING,
+              },
+              (response, status) => {
+                if (
+                  cancelled ||
+                  !directionsRenderer ||
+                  routeRequestId !== activeRouteRequestId
+                ) {
+                  return;
+                }
+
+                if (status === 'OK' && response) {
+                  directionsRenderer.setDirections(response);
+                  return;
+                }
+
+                directionsRenderer.set('directions', null);
+              },
+            );
           });
         });
 

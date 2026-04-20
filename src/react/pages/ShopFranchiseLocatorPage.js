@@ -389,6 +389,7 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
 
   const markerPayloadsJson = safeJsonForHtml(markerPayloads);
   const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
+  const routeColor = theme?.primary || '#0ea5e9';
 
   return `
     <!DOCTYPE html>
@@ -556,6 +557,26 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
 
             var bounds = new window.google.maps.LatLngBounds();
             var infoWindow = new window.google.maps.InfoWindow({maxWidth: 320});
+            var hasUserCoordinates =
+              userCoordinates &&
+              Number.isFinite(userCoordinates.latitude) &&
+              Number.isFinite(userCoordinates.longitude);
+            var directionsService = hasUserCoordinates
+              ? new window.google.maps.DirectionsService()
+              : null;
+            var directionsRenderer = directionsService
+              ? new window.google.maps.DirectionsRenderer({
+                  map: map,
+                  suppressMarkers: true,
+                  preserveViewport: false,
+                  polylineOptions: {
+                    strokeColor: '${routeColor}',
+                    strokeOpacity: 0.92,
+                    strokeWeight: 5,
+                  },
+                })
+              : null;
+            var activeRouteRequestId = 0;
 
             if (
               userCoordinates &&
@@ -605,6 +626,36 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
                   map: map,
                   shouldFocus: false,
                 });
+
+                if (!directionsService || !directionsRenderer) {
+                  return;
+                }
+
+                var routeRequestId = activeRouteRequestId + 1;
+                activeRouteRequestId = routeRequestId;
+
+                directionsService.route(
+                  {
+                    origin: {
+                      lat: userCoordinates.latitude,
+                      lng: userCoordinates.longitude,
+                    },
+                    destination: position,
+                    travelMode: window.google.maps.TravelMode.DRIVING,
+                  },
+                  function (response, status) {
+                    if (routeRequestId !== activeRouteRequestId) {
+                      return;
+                    }
+
+                    if (status === 'OK' && response) {
+                      directionsRenderer.setDirections(response);
+                      return;
+                    }
+
+                    directionsRenderer.set('directions', null);
+                  },
+                );
               });
             });
 
@@ -1017,6 +1068,7 @@ export default function ShopFranchiseLocatorPage() {
                 />
               ) : HAS_NATIVE_MAP_SUPPORT ? (
                 <ShopNativeMap
+                  apiKey={googleMapsApiKey}
                   markerPayloads={markerPayloads}
                   userCoordinates={userCoordinates}
                 />
