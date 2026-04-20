@@ -356,13 +356,12 @@ export default function ShopShell({
             </View>
           )}
 
-          {(shouldShowHomeEntryTopControl || shouldShowHomeEntryBottomBar) && (
+          {shouldShowHomeEntryTopControl && (
             <ShopHomeEntryControls
               entries={homeEntries}
               activeEntryKey={resolvedActiveHomeEntry}
-              bottomOffset={homeEntryBottomOffset}
-              showBottomBar={shouldShowHomeEntryBottomBar}
-              showTopControl={shouldShowHomeEntryTopControl}
+              showBottomBar={false}
+              showTopControl
               theme={theme}
               onSelect={handleSelectHomeEntry}
             />
@@ -370,6 +369,17 @@ export default function ShopShell({
         </View>
       </View>
       {children({foreground, surface, theme})}
+      {shouldShowHomeEntryBottomBar && (
+        <ShopHomeEntryControls
+          entries={homeEntries}
+          activeEntryKey={resolvedActiveHomeEntry}
+          bottomOffset={homeEntryBottomOffset}
+          showBottomBar
+          showTopControl={false}
+          theme={theme}
+          onSelect={handleSelectHomeEntry}
+        />
+      )}
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({

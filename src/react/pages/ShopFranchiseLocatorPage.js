@@ -8,10 +8,13 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import * as Location from 'expo-location';
-import {env} from '@env';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
+import ShopGoogleMap from '@controleonline/ui-shop/src/react/components/storefront/ShopGoogleMap';
+import ShopNativeMap, {
+  HAS_NATIVE_MAP_SUPPORT,
+} from '@controleonline/ui-shop/src/react/components/storefront/ShopNativeMap';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
@@ -25,10 +28,6 @@ import {
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
-const FALLBACK_GOOGLE_MAPS_API_KEY =
-  'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8';
-const GOOGLE_MAPS_API_KEY =
-  env.GMAPS_GOOGLE_CLIENT_ID || FALLBACK_GOOGLE_MAPS_API_KEY;
 const geocodeCache = new Map();
 
 const getNativeWebView = () => {
@@ -271,14 +270,14 @@ const requestUserCoordinates = async () => {
   };
 };
 
-const geocodeMapQuery = async mapQuery => {
+const geocodeMapQuery = async ({apiKey, mapQuery}) => {
   const normalizedQuery = String(mapQuery || '').trim();
 
-  if (!normalizedQuery || !GOOGLE_MAPS_API_KEY) {
+  if (!normalizedQuery || !apiKey) {
     return null;
   }
 
-  const cacheKey = normalizedQuery.toLowerCase();
+  const cacheKey = `${String(apiKey).trim()}::${normalizedQuery.toLowerCase()}`;
   if (geocodeCache.has(cacheKey)) {
     return geocodeCache.get(cacheKey);
   }
@@ -286,7 +285,7 @@ const geocodeMapQuery = async mapQuery => {
   const request = fetch(
     `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
       normalizedQuery,
-    )}&key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}`,
+    )}&key=${encodeURIComponent(apiKey)}`,
   )
     .then(response => response.json())
     .then(payload => {
@@ -605,6 +604,12 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
                 map: map,
                 title: item.title,
                 animation: window.google.maps.Animation.DROP,
+                icon: item.markerIconUrl
+                  ? {
+                      url: item.markerIconUrl,
+                      scaledSize: new window.google.maps.Size(42, 42),
+                    }
+                  : undefined,
               });
 
               bounds.extend(position);
@@ -652,6 +657,8 @@ export default function ShopFranchiseLocatorPage() {
   const {
     defaultCompany,
     franchiseLocatorEnabled,
+    franchisePinIconUrl,
+    googleMapsApiKey,
     primaryEntryRouteName,
     visibleFranchiseAddressIds,
     visibleFranchiseCompanyIds,
@@ -816,7 +823,10 @@ export default function ShopFranchiseLocatorPage() {
 
     Promise.all(
       unresolvedRecords.map(async record => {
-        const coordinates = await geocodeMapQuery(record.mapQuery);
+        const coordinates = await geocodeMapQuery({
+          apiKey: googleMapsApiKey,
+          mapQuery: record.mapQuery,
+        });
         return [record.addressId, coordinates];
       }),
     )
@@ -846,7 +856,11 @@ export default function ShopFranchiseLocatorPage() {
     return () => {
       cancelled = true;
     };
-  }, [flattenedAddressRecords, resolvedCoordinatesByAddressId]);
+  }, [
+    flattenedAddressRecords,
+    googleMapsApiKey,
+    resolvedCoordinatesByAddressId,
+  ]);
 
   const markerPayloads = useMemo(
     () =>
@@ -900,6 +914,7 @@ export default function ShopFranchiseLocatorPage() {
               }),
               latitude: coordinates.latitude,
               longitude: coordinates.longitude,
+              markerIconUrl: franchisePinIconUrl,
               openingHours: address?.openingHours || '',
               phoneLabel: resolveCompanyPhone(company),
               wazeUrl: buildWazeWebUrl({coordinates, mapQuery}),
@@ -907,18 +922,23 @@ export default function ShopFranchiseLocatorPage() {
           }),
         )
         .filter(Boolean),
-    [effectiveDirectory, resolvedCoordinatesByAddressId, userCoordinates],
+    [
+      effectiveDirectory,
+      franchisePinIconUrl,
+      resolvedCoordinatesByAddressId,
+      userCoordinates,
+    ],
   );
 
   const mapDocument = useMemo(
     () =>
       buildMapDocument({
-        apiKey: GOOGLE_MAPS_API_KEY,
+        apiKey: googleMapsApiKey,
         markerPayloads,
         theme,
         userCoordinates,
       }),
-    [markerPayloads, theme, userCoordinates],
+    [googleMapsApiKey, markerPayloads, theme, userCoordinates],
   );
 
   const handleNativeNavigation = useCallback(request => {
@@ -991,15 +1011,31 @@ export default function ShopFranchiseLocatorPage() {
           );
         }
 
+        if (Platform.OS === 'web' && !googleMapsApiKey) {
+          return (
+            <ShopFeatureState
+              theme={theme}
+              iconName="map"
+              title="Mapa indisponivel no momento"
+              description="No momento nao foi possivel carregar o mapa das unidades."
+            />
+          );
+        }
+
         return (
           <View style={styles.page}>
             <View style={[styles.mapViewport, {height: mapHeight}]}>
               {Platform.OS === 'web' ? (
-                <iframe
-                  srcDoc={mapDocument}
-                  title="Mapa das franquias"
-                  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-                  style={styles.mapFrame}
+                <ShopGoogleMap
+                  apiKey={googleMapsApiKey}
+                  markerPayloads={markerPayloads}
+                  theme={theme}
+                  userCoordinates={userCoordinates}
+                />
+              ) : HAS_NATIVE_MAP_SUPPORT ? (
+                <ShopNativeMap
+                  markerPayloads={markerPayloads}
+                  userCoordinates={userCoordinates}
                 />
               ) : NativeWebView ? (
                 <NativeWebView
@@ -1037,11 +1073,6 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     backgroundColor: '#E5EEF5',
-  },
-  mapFrame: {
-    width: '100%',
-    height: '100%',
-    borderWidth: 0,
   },
   mapNativeFrame: {
     flex: 1,
