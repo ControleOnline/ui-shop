@@ -7,6 +7,80 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  methodCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 8,
+  },
+  methodCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  methodCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  methodCardMeta: {
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  methodCardHint: {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.42)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  modalItem: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+  },
+  modalItemActive: {
+    borderWidth: 1.5,
+  },
+  modalItemTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  modalItemMeta: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  modalCloseButton: {
+    minHeight: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  modalCloseText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
 });
 
 export default styles;
@@ -400,5 +474,4 @@ export const inlineStyle_371_12 = {
   padding: 14,
   paddingBottom: 120,
 };
-
 
