@@ -61,6 +61,21 @@ const styles = StyleSheet.create({
   modalItemActive: {
     borderWidth: 1.5,
   },
+  modalChoicesRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalChoice: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  modalChoiceActive: {
+    borderWidth: 1.5,
+    backgroundColor: '#EFF6FF',
+  },
   modalItemTitle: {
     fontSize: 14,
     fontWeight: '800',
@@ -69,6 +84,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     lineHeight: 18,
+  },
+  modalInput: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   modalCloseButton: {
     minHeight: 46,
@@ -80,6 +107,22 @@ const styles = StyleSheet.create({
   modalCloseText: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  confirmButton: {
+    minHeight: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  confirmButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
 });
 
@@ -474,4 +517,3 @@ export const inlineStyle_371_12 = {
   padding: 14,
   paddingBottom: 120,
 };
-

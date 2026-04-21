@@ -1,10 +1,11 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
   Modal,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -15,6 +16,21 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
+import {
+  buildWalletIdsForGateway,
+  filterDeviceConfigsByCompany,
+  getPaymentGatewayLabel,
+  isOrderChargeOnDeliveryEnabled,
+  resolveRemotePaymentDeviceOptions,
+} from '@controleonline/ui-common/src/react/utils/paymentDevices';
+import {
+  detectPaymentOptionKind,
+  getPaymentOptionId,
+  getPaymentOptionLabel,
+  getPaymentOptionWalletId,
+  isCashPaymentOption,
+  isIntegratedPaymentOption,
+} from '@controleonline/ui-common/src/react/utils/paymentOptions';
 import styles from './CheckoutPage.styles';
 
 import {
@@ -58,13 +74,14 @@ import {
   inlineStyle_578_22,
 } from './CheckoutPage.styles';
 
-import { inlineStyle_371_12 } from './CheckoutPage.styles';
+import {inlineStyle_371_12} from './CheckoutPage.styles';
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.member)) return response.member;
-  if (Array.isArray(response?.['hydra:member']))
+  if (Array.isArray(response?.['hydra:member'])) {
     return response['hydra:member'];
+  }
   return [];
 };
 
@@ -72,25 +89,6 @@ const normalizeText = value =>
   String(value || '')
     .trim()
     .toLowerCase();
-
-const detectGatewayByPaymentType = payment => {
-  const text = normalizeText(
-    `${payment?.paymentType?.paymentType || ''} ${payment?.paymentCode || ''}`,
-  );
-
-  if (text.includes('pix')) return 'pix';
-  if (
-    text.includes('cart') ||
-    text.includes('credito') ||
-    text.includes('credit') ||
-    text.includes('debito') ||
-    text.includes('debit')
-  ) {
-    return 'card';
-  }
-
-  return 'other';
-};
 
 const normalizeEntityId = value => {
   if (!value) {
@@ -104,29 +102,22 @@ const normalizeEntityId = value => {
   return String(value).replace(/\D+/g, '').trim();
 };
 
-const getPaymentTypeId = payment =>
-  normalizeEntityId(
-    payment?.paymentType?.['@id'] ||
-      payment?.paymentType?.id ||
-      payment?.paymentType ||
-      payment?.id,
-  );
+const parseInvoiceOtherInformations = value => {
+  if (!value) {
+    return {};
+  }
 
-const getPaymentTypeLabel = payment =>
-  String(
-    payment?.paymentType?.paymentType ||
-      payment?.paymentType?.name ||
-      payment?.paymentCode ||
-      'Pagamento',
-  ).trim() || 'Pagamento';
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
 
-const getPaymentTypeWalletLabel = payment =>
-  String(
-    payment?.wallet?.wallet ||
-      payment?.wallet?.name ||
-      payment?.wallet?.alias ||
-      '',
-  ).trim();
+  return typeof value === 'object' ? value : {};
+};
 
 const pickPendingStatus = statuses => {
   const all = Array.isArray(statuses) ? statuses : [];
@@ -161,7 +152,10 @@ const getInvoiceStatusKeys = invoice => ({
 
 const isCanceledInvoice = invoice => {
   const {realStatus, status} = getInvoiceStatusKeys(invoice);
-  return ['canceled', 'cancelled'].includes(realStatus) || ['canceled', 'cancelled'].includes(status);
+  return (
+    ['canceled', 'cancelled'].includes(realStatus) ||
+    ['canceled', 'cancelled'].includes(status)
+  );
 };
 
 const isPaidInvoice = invoice => {
@@ -169,8 +163,33 @@ const isPaidInvoice = invoice => {
   return realStatus === 'closed' || ['closed', 'paid'].includes(status);
 };
 
-const findReusableInvoiceForPaymentType = (invoices, selectedPaymentType) => {
-  const paymentTypeId = getPaymentTypeId(selectedPaymentType);
+const matchesDeliveryMetadata = (invoice, metadata) => {
+  if (!metadata) {
+    return true;
+  }
+
+  const otherInformations = parseInvoiceOtherInformations(
+    invoice?.otherInformations,
+  );
+
+  return (
+    normalizeText(otherInformations?.channel) ===
+      normalizeText(metadata.channel) &&
+    normalizeText(otherInformations?.paymentMode) ===
+      normalizeText(metadata.paymentMode) &&
+    normalizeEntityId(otherInformations?.targetDeviceId) ===
+      normalizeEntityId(metadata.targetDeviceId) &&
+    Number(otherInformations?.changeFor || 0) === Number(metadata.changeFor || 0)
+  );
+};
+
+const findReusableInvoiceForPaymentType = (
+  invoices,
+  selectedPaymentType,
+  {deliveryMetadata = null} = {},
+) => {
+  const paymentTypeId = getPaymentOptionId(selectedPaymentType);
+  const walletId = getPaymentOptionWalletId(selectedPaymentType);
 
   if (!paymentTypeId) {
     return null;
@@ -178,11 +197,19 @@ const findReusableInvoiceForPaymentType = (invoices, selectedPaymentType) => {
 
   return (
     sortInvoicesByDateDesc(invoices).find(invoice => {
-      return (
-        !isCanceledInvoice(invoice) &&
-        !isPaidInvoice(invoice) &&
-        getPaymentTypeId(invoice) === paymentTypeId
-      );
+      if (isCanceledInvoice(invoice) || isPaidInvoice(invoice)) {
+        return false;
+      }
+
+      if (getPaymentOptionId(invoice) !== paymentTypeId) {
+        return false;
+      }
+
+      if (walletId && getPaymentOptionWalletId(invoice) !== walletId) {
+        return false;
+      }
+
+      return matchesDeliveryMetadata(invoice, deliveryMetadata);
     }) || null
   );
 };
@@ -196,7 +223,10 @@ export default function CheckoutPage() {
     refreshCart,
     salesCompany,
   } = useShopCart({autoRefresh: true});
-  const {chargeOnDeliveryEnabled} = useShopSettings();
+  const {
+    chargeOnDeliveryEnabled: shopChargeOnDeliveryEnabled,
+    companyConfigs: settingsCompanyConfigs,
+  } = useShopSettings();
   const theme = pickTheme(defaultCompany);
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
@@ -209,8 +239,12 @@ export default function CheckoutPage() {
   const statusActions = statusStore.actions;
   const asaasStore = useStore('asaas');
   const asaasActions = asaasStore.actions;
+  const deviceConfigStore = useStore('device_config');
+  const deviceConfigActions = deviceConfigStore.actions;
 
   const [paymentTypes, setPaymentTypes] = useState([]);
+  const [deliveryPaymentTypes, setDeliveryPaymentTypes] = useState([]);
+  const [companyDeviceConfigs, setCompanyDeviceConfigs] = useState([]);
   const [cards, setCards] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -218,15 +252,47 @@ export default function CheckoutPage() {
   const [pixData, setPixData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [manualPaymentModalVisible, setManualPaymentModalVisible] =
+  const [loadingRemoteDevices, setLoadingRemoteDevices] = useState(false);
+  const [deliveryDeviceModalVisible, setDeliveryDeviceModalVisible] =
     useState(false);
+  const [deliveryModeModalVisible, setDeliveryModeModalVisible] =
+    useState(false);
+  const [deliveryChangeModalVisible, setDeliveryChangeModalVisible] =
+    useState(false);
+  const [deliveryChangeRequested, setDeliveryChangeRequested] = useState(false);
+  const [deliveryChangeValue, setDeliveryChangeValue] = useState('');
+  const [selectedDeliveryPaymentType, setSelectedDeliveryPaymentType] =
+    useState(null);
+  const [selectedDeliveryDeviceId, setSelectedDeliveryDeviceId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  const sellerCompany = salesCompany || defaultCompany || null;
+  const sellerCompanyId = sellerCompany?.id || null;
+  const effectiveCompanyConfigs = useMemo(() => {
+    if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
+      return salesCompany.configs;
+    }
+
+    if (
+      settingsCompanyConfigs &&
+      typeof settingsCompanyConfigs === 'object' &&
+      !Array.isArray(settingsCompanyConfigs)
+    ) {
+      return settingsCompanyConfigs;
+    }
+
+    return {};
+  }, [salesCompany?.configs, settingsCompanyConfigs]);
+  const chargeOnDeliveryEnabled = useMemo(
+    () =>
+      shopChargeOnDeliveryEnabled ||
+      isOrderChargeOnDeliveryEnabled(effectiveCompanyConfigs),
+    [effectiveCompanyConfigs, shopChargeOnDeliveryEnabled],
+  );
+
   const hasCart = Boolean(cart?.id);
-  const cartItems = Array.isArray(cart?.orderProducts)
-    ? cart.orderProducts
-    : [];
+  const cartItems = Array.isArray(cart?.orderProducts) ? cart.orderProducts : [];
   const itemsCount = cartItems.reduce(
     (sum, item) => sum + Number(item?.quantity || 0),
     0,
@@ -250,22 +316,119 @@ export default function CheckoutPage() {
 
   const cardPaymentTypes = useMemo(
     () =>
-      paymentTypes.filter(item => detectGatewayByPaymentType(item) === 'card'),
+      paymentTypes.filter(
+        item =>
+          detectPaymentOptionKind(item) === 'card' &&
+          isIntegratedPaymentOption(item),
+      ),
     [paymentTypes],
   );
   const pixPaymentTypes = useMemo(
     () =>
-      paymentTypes.filter(item => detectGatewayByPaymentType(item) === 'pix'),
+      paymentTypes.filter(
+        item =>
+          detectPaymentOptionKind(item) === 'pix' &&
+          isIntegratedPaymentOption(item),
+      ),
     [paymentTypes],
   );
-  const manualPaymentTypes = useMemo(
+  const paymentMethodChips = useMemo(() => {
+    const chips = [];
+
+    if (pixPaymentTypes.length > 0) {
+      chips.push({
+        key: 'pix',
+        label:
+          pixPaymentTypes.length === 1
+            ? getPaymentOptionLabel(pixPaymentTypes[0])
+            : 'Pix online',
+      });
+    }
+
+    if (cardPaymentTypes.length > 0) {
+      chips.push({
+        key: 'card',
+        label:
+          cardPaymentTypes.length === 1
+            ? getPaymentOptionLabel(cardPaymentTypes[0])
+            : 'Cartao online',
+      });
+    }
+
+    if (chargeOnDeliveryEnabled) {
+      chips.push({
+        key: 'delivery',
+        label: 'Cobrar na entrega',
+      });
+    }
+
+    return chips;
+  }, [cardPaymentTypes, chargeOnDeliveryEnabled, pixPaymentTypes]);
+
+  const remotePaymentDevices = useMemo(
     () =>
-      paymentTypes.filter(item => detectGatewayByPaymentType(item) === 'other'),
-    [paymentTypes],
+      resolveRemotePaymentDeviceOptions({
+        deviceConfig: null,
+        deviceConfigs: companyDeviceConfigs,
+        companyConfigs: effectiveCompanyConfigs,
+      }),
+    [companyDeviceConfigs, effectiveCompanyConfigs],
   );
-  const deliveryPaymentLabels = useMemo(
-    () => manualPaymentTypes.map(getPaymentTypeLabel).filter(Boolean),
-    [manualPaymentTypes],
+  const selectedDeliveryDevice = useMemo(
+    () =>
+      remotePaymentDevices.find(
+        deviceOption => deviceOption.deviceId === selectedDeliveryDeviceId,
+      ) ||
+      remotePaymentDevices[0] ||
+      null,
+    [remotePaymentDevices, selectedDeliveryDeviceId],
+  );
+  const deliveryCashPayment = useMemo(
+    () => deliveryPaymentTypes.find(isCashPaymentOption) || null,
+    [deliveryPaymentTypes],
+  );
+  const deliveryMachinePayment = useMemo(
+    () =>
+      deliveryPaymentTypes.find(
+        item =>
+          isIntegratedPaymentOption(item) && !isCashPaymentOption(item),
+      ) || null,
+    [deliveryPaymentTypes],
+  );
+  const deliveryModeOptions = useMemo(() => {
+    const options = [];
+
+    if (deliveryMachinePayment) {
+      options.push({
+        key: 'machine',
+        label: `Maquininha ${getPaymentGatewayLabel(
+          selectedDeliveryDevice?.gateway,
+        )}`,
+        description:
+          'Registrar a cobranca pendente para o equipamento escolhido na entrega.',
+        paymentType: deliveryMachinePayment,
+      });
+    }
+
+    if (deliveryCashPayment) {
+      options.push({
+        key: 'cash',
+        label: 'Dinheiro',
+        description:
+          'Registrar a cobranca em dinheiro e informar se precisa levar troco.',
+        paymentType: deliveryCashPayment,
+      });
+    }
+
+    return options;
+  }, [
+    deliveryCashPayment,
+    deliveryMachinePayment,
+    selectedDeliveryDevice?.gateway,
+  ]);
+  const deliveryModeLabels = useMemo(
+    () => deliveryModeOptions.map(item => item.label).filter(Boolean),
+    [deliveryModeOptions],
   );
 
   const pickPaymentTypeForGateway = useCallback(
@@ -273,15 +436,14 @@ export default function CheckoutPage() {
       if (gateway === 'card' && cardPaymentTypes.length > 0) {
         return cardPaymentTypes[0];
       }
+
       if (gateway === 'pix' && pixPaymentTypes.length > 0) {
         return pixPaymentTypes[0];
       }
-      if (gateway === 'other' && manualPaymentTypes.length > 0) {
-        return manualPaymentTypes[0];
-      }
+
       return paymentTypes[0] || null;
     },
-    [cardPaymentTypes, manualPaymentTypes, paymentTypes, pixPaymentTypes],
+    [cardPaymentTypes, paymentTypes, pixPaymentTypes],
   );
 
   const loadData = useCallback(async () => {
@@ -290,7 +452,8 @@ export default function CheckoutPage() {
     setMessage('');
 
     try {
-      await refreshCart();
+      const refreshedCart = await refreshCart();
+      const resolvedCart = refreshedCart?.id ? refreshedCart : cart;
 
       const [
         paymentTypeResponse,
@@ -298,9 +461,9 @@ export default function CheckoutPage() {
         statusResponse,
         invoicesResponse,
       ] = await Promise.all([
-        (salesCompany?.id || defaultCompany?.id)
+        sellerCompanyId
           ? walletPaymentTypeActions.getItems({
-              company: salesCompany?.id || defaultCompany.id,
+              company: sellerCompanyId,
               itemsPerPage: 200,
             })
           : Promise.resolve([]),
@@ -309,10 +472,10 @@ export default function CheckoutPage() {
           context: 'invoice',
           itemsPerPage: 200,
         }),
-        cart?.id
+        resolvedCart?.id
           ? invoiceActions.getItems({
-              orderId: cart.id,
-              'order.order': `/orders/${cart.id}`,
+              orderId: resolvedCart.id,
+              'order.order': `/orders/${resolvedCart.id}`,
               itemsPerPage: 50,
             })
           : Promise.resolve([]),
@@ -344,11 +507,10 @@ export default function CheckoutPage() {
     }
   }, [
     cardActions,
-    cart?.id,
-    defaultCompany?.id,
+    cart,
     invoiceActions,
     refreshCart,
-    salesCompany?.id,
+    sellerCompanyId,
     statusActions,
     walletPaymentTypeActions,
   ]);
@@ -359,8 +521,117 @@ export default function CheckoutPage() {
     }, [loadData]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!sellerCompanyId || !chargeOnDeliveryEnabled) {
+        setCompanyDeviceConfigs([]);
+        setLoadingRemoteDevices(false);
+        return undefined;
+      }
+
+      let isMounted = true;
+      setLoadingRemoteDevices(true);
+
+      deviceConfigActions
+        .getItems({
+          people: `/people/${sellerCompanyId}`,
+          itemsPerPage: 200,
+        })
+        .then(data => {
+          if (!isMounted) {
+            return;
+          }
+
+          setCompanyDeviceConfigs(
+            filterDeviceConfigsByCompany(data, sellerCompanyId),
+          );
+        })
+        .catch(() => {
+          if (isMounted) {
+            setCompanyDeviceConfigs([]);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingRemoteDevices(false);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [chargeOnDeliveryEnabled, deviceConfigActions, sellerCompanyId]),
+  );
+
+  useEffect(() => {
+    if (!remotePaymentDevices.length) {
+      setSelectedDeliveryDeviceId('');
+      return;
+    }
+
+    setSelectedDeliveryDeviceId(current =>
+      remotePaymentDevices.some(deviceOption => deviceOption.deviceId === current)
+        ? current
+        : remotePaymentDevices[0].deviceId,
+    );
+  }, [remotePaymentDevices]);
+
+  useEffect(() => {
+    if (
+      !sellerCompanyId ||
+      !chargeOnDeliveryEnabled ||
+      !selectedDeliveryDevice?.gateway
+    ) {
+      setDeliveryPaymentTypes([]);
+      return undefined;
+    }
+
+    const walletIds = buildWalletIdsForGateway({
+      gateway: selectedDeliveryDevice.gateway,
+      companyConfigs: effectiveCompanyConfigs,
+      includeCashWallet: true,
+    });
+
+    if (!walletIds.length) {
+      setDeliveryPaymentTypes([]);
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    walletPaymentTypeActions
+      .getItems({
+        company: sellerCompanyId,
+        wallet: walletIds,
+        itemsPerPage: 200,
+      })
+      .then(response => {
+        if (isMounted) {
+          setDeliveryPaymentTypes(extractItems(response));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDeliveryPaymentTypes([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    chargeOnDeliveryEnabled,
+    effectiveCompanyConfigs,
+    selectedDeliveryDevice?.gateway,
+    sellerCompanyId,
+    walletPaymentTypeActions,
+  ]);
+
   const ensureInvoiceForPaymentType = useCallback(
-    async selectedPaymentType => {
+    async (
+      selectedPaymentType,
+      {additionalInfo = null, price = pendingAmount, reuseExisting = true} = {},
+    ) => {
       if (!hasCart) {
         throw new Error('Carrinho não encontrado para checkout.');
       }
@@ -369,10 +640,12 @@ export default function CheckoutPage() {
         throw new Error('Este pedido ja foi pago.');
       }
 
-      const reusableInvoice = findReusableInvoiceForPaymentType(
-        invoices,
-        selectedPaymentType,
-      );
+      const reusableInvoice = reuseExisting
+        ? findReusableInvoiceForPaymentType(invoices, selectedPaymentType, {
+            deliveryMetadata:
+              additionalInfo?.channel === 'delivery' ? additionalInfo : null,
+          })
+        : null;
 
       if (reusableInvoice?.id) {
         return reusableInvoice;
@@ -390,19 +663,19 @@ export default function CheckoutPage() {
       const payload = {
         dueDate: Formatter.getCurrentDate(),
         order: cart?.['@id'] || `/orders/${cart?.id}`,
-        price: Number(cart?.price || 0),
+        price: Number(price || 0),
         payer: currentCompany?.id ? `/people/${currentCompany.id}` : undefined,
-        receiver: salesCompany?.id
-          ? `/people/${salesCompany.id}`
-          : defaultCompany?.id
-            ? `/people/${defaultCompany.id}`
-          : undefined,
+        receiver: sellerCompanyId ? `/people/${sellerCompanyId}` : undefined,
         destinationWallet: selectedPaymentType.wallet?.['@id'],
         paymentType: selectedPaymentType.paymentType?.['@id'],
       };
 
       if (pendingStatus?.['@id']) {
         payload.status = pendingStatus['@id'];
+      }
+
+      if (additionalInfo && typeof additionalInfo === 'object') {
+        payload.otherInformations = additionalInfo;
       }
 
       const createdInvoice = await invoiceActions.save(payload);
@@ -417,15 +690,13 @@ export default function CheckoutPage() {
     [
       cart?.['@id'],
       cart?.id,
-      cart?.price,
       currentCompany?.id,
-      defaultCompany?.id,
       hasCart,
       invoiceActions,
       invoices,
       pendingAmount,
       pendingStatus,
-      salesCompany?.id,
+      sellerCompanyId,
     ],
   );
 
@@ -435,6 +706,95 @@ export default function CheckoutPage() {
       return ensureInvoiceForPaymentType(selectedPaymentType);
     },
     [ensureInvoiceForPaymentType, pickPaymentTypeForGateway],
+  );
+
+  const buildDeliveryPaymentMetadata = useCallback(
+    ({selectedPaymentType, changeFor = 0}) => ({
+      channel: 'delivery',
+      paymentLabel: isCashPaymentOption(selectedPaymentType)
+        ? 'Dinheiro'
+        : `Maquininha ${getPaymentGatewayLabel(selectedDeliveryDevice?.gateway)}`,
+      paymentMode: isCashPaymentOption(selectedPaymentType) ? 'cash' : 'machine',
+      needsChange: Number(changeFor || 0) > 0,
+      changeFor: Number(changeFor || 0) > 0 ? Number(changeFor) : null,
+      targetDeviceId: selectedDeliveryDevice?.deviceId || null,
+      targetDeviceLabel: selectedDeliveryDevice?.alias || null,
+      targetGateway: selectedDeliveryDevice?.gateway || null,
+    }),
+    [selectedDeliveryDevice],
+  );
+
+  const finalizeDeliveryRegistration = useCallback(
+    async (selectedPaymentType, {changeFor = 0} = {}) => {
+      setError('');
+      setMessage('');
+      setPixData(null);
+      setIsProcessing(true);
+
+      try {
+        await ensureInvoiceForPaymentType(selectedPaymentType, {
+          additionalInfo: buildDeliveryPaymentMetadata({
+            selectedPaymentType,
+            changeFor,
+          }),
+        });
+
+        const orderId = String(cart?.id || '');
+        if (orderId) {
+          navigation.navigate('ShopOrderDetailsPage', {id: orderId});
+          return;
+        }
+
+        setMessage(
+          `Pedido registrado para cobrar na entrega via ${
+            isCashPaymentOption(selectedPaymentType)
+              ? 'dinheiro'
+              : `maquininha ${getPaymentGatewayLabel(
+                  selectedDeliveryDevice?.gateway,
+                )}`
+          }.`,
+        );
+      } catch (e) {
+        setError(
+          e?.message ||
+            'Nao foi possivel registrar a cobranca para pagamento na entrega.',
+        );
+      } finally {
+        setIsProcessing(false);
+        setSelectedDeliveryPaymentType(null);
+      }
+    },
+    [
+      buildDeliveryPaymentMetadata,
+      cart?.id,
+      ensureInvoiceForPaymentType,
+      navigation,
+      selectedDeliveryDevice?.gateway,
+    ],
+  );
+
+  const startDeliveryPayment = useCallback(
+    async selectedPaymentType => {
+      if (!selectedPaymentType) {
+        setError(
+          'Nao foi possivel identificar o meio de pagamento da entrega.',
+        );
+        return;
+      }
+
+      setDeliveryModeModalVisible(false);
+      setSelectedDeliveryPaymentType(selectedPaymentType);
+
+      if (isCashPaymentOption(selectedPaymentType)) {
+        setDeliveryChangeRequested(false);
+        setDeliveryChangeValue('');
+        setDeliveryChangeModalVisible(true);
+        return;
+      }
+
+      await finalizeDeliveryRegistration(selectedPaymentType);
+    },
+    [finalizeDeliveryRegistration],
   );
 
   const handlePayWithCard = useCallback(async () => {
@@ -498,36 +858,6 @@ export default function CheckoutPage() {
     setMessage('Copie manualmente o código Pix exibido.');
   }, [pixData?.payload]);
 
-  const handleConfirmChargeOnDelivery = useCallback(
-    async selectedPaymentType => {
-      setError('');
-      setMessage('');
-      setPixData(null);
-
-      setIsProcessing(true);
-      try {
-        await ensureInvoiceForPaymentType(selectedPaymentType);
-        const orderId = String(cart?.id || '');
-        if (orderId) {
-          navigation.navigate('ShopOrderDetailsPage', {id: orderId});
-          return;
-        }
-
-        setMessage(
-          `Pedido registrado para cobrar na entrega via ${getPaymentTypeLabel(selectedPaymentType)}.`,
-        );
-      } catch (e) {
-        setError(
-          e?.message ||
-            'Nao foi possivel registrar a cobranca para pagamento na entrega.',
-        );
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [cart?.id, ensureInvoiceForPaymentType, navigation],
-  );
-
   const handleChargeOnDelivery = useCallback(async () => {
     setError('');
     setMessage('');
@@ -537,36 +867,84 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (manualPaymentTypes.length === 0) {
+    if (!selectedDeliveryDevice?.deviceId) {
       setError(
-        'A loja ainda nao configurou um meio manual para cobrar na entrega.',
+        'Selecione qual equipamento fara a cobranca na entrega antes de continuar.',
       );
       return;
     }
 
-    if (manualPaymentTypes.length === 1) {
-      await handleConfirmChargeOnDelivery(manualPaymentTypes[0]);
+    if (deliveryModeOptions.length === 0) {
+      setError(
+        'O equipamento escolhido nao tem maquininha nem dinheiro configurados para a entrega.',
+      );
       return;
     }
 
-    setManualPaymentModalVisible(true);
+    if (deliveryModeOptions.length === 1) {
+      await startDeliveryPayment(deliveryModeOptions[0].paymentType);
+      return;
+    }
+
+    setDeliveryModeModalVisible(true);
   }, [
     chargeOnDeliveryEnabled,
-    handleConfirmChargeOnDelivery,
-    manualPaymentTypes,
+    deliveryModeOptions,
+    selectedDeliveryDevice?.deviceId,
+    startDeliveryPayment,
   ]);
 
-  const handleSelectDeliveryPayment = useCallback(
-    async selectedPaymentType => {
-      setManualPaymentModalVisible(false);
-      await handleConfirmChargeOnDelivery(selectedPaymentType);
+  const handleSelectDeliveryMode = useCallback(
+    async option => {
+      await startDeliveryPayment(option?.paymentType || null);
     },
-    [handleConfirmChargeOnDelivery],
+    [startDeliveryPayment],
   );
+
+  const handleDeliveryChangeInputChange = useCallback(text => {
+    const numericValue = text.replace(/\D/g, '');
+    if (!numericValue) {
+      setDeliveryChangeValue('');
+      return;
+    }
+
+    setDeliveryChangeValue(Formatter.formatMoney(Number(numericValue) / 100));
+  }, []);
+
+  const handleConfirmDeliveryChange = useCallback(async () => {
+    if (!selectedDeliveryPaymentType) {
+      setError(
+        'Nao foi possivel identificar o pagamento em dinheiro para registrar a entrega.',
+      );
+      return;
+    }
+
+    const changeFor = deliveryChangeRequested
+      ? Number(String(deliveryChangeValue || '').replace(/\D/g, '')) / 100
+      : 0;
+
+    if (deliveryChangeRequested && changeFor <= 0) {
+      setError('Informe o valor do troco para continuar.');
+      return;
+    }
+
+    setDeliveryChangeModalVisible(false);
+    await finalizeDeliveryRegistration(selectedDeliveryPaymentType, {
+      changeFor,
+    });
+  }, [
+    deliveryChangeRequested,
+    deliveryChangeValue,
+    finalizeDeliveryRegistration,
+    selectedDeliveryPaymentType,
+  ]);
 
   const checkoutBlocked = isLoading || isProcessing || !hasCart || !itemsCount;
   const deliveryCheckoutBlocked =
-    checkoutBlocked || pendingAmount <= 0.009 || manualPaymentTypes.length === 0;
+    checkoutBlocked ||
+    pendingAmount <= 0.009 ||
+    !selectedDeliveryDevice?.deviceId ||
+    deliveryModeOptions.length === 0;
   const checkoutActions = useMemo(
     () => [
       pixPaymentTypes.length > 0
@@ -594,10 +972,24 @@ export default function CheckoutPage() {
             onPress: handlePayWithCard,
           }
         : null,
+      chargeOnDeliveryEnabled
+        ? {
+            key: 'delivery',
+            label: 'Cobrar na entrega',
+            icon: 'local-shipping',
+            variant: 'success',
+            loading: isProcessing,
+            disabled: deliveryCheckoutBlocked,
+            onPress: handleChargeOnDelivery,
+          }
+        : null,
     ],
     [
       cardPaymentTypes.length,
+      chargeOnDeliveryEnabled,
       checkoutBlocked,
+      deliveryCheckoutBlocked,
+      handleChargeOnDelivery,
       handleGeneratePix,
       handlePayWithCard,
       isProcessing,
@@ -636,9 +1028,10 @@ export default function CheckoutPage() {
                 })}>
                 Pedido #{cart?.id || '--'}
               </Text>
-              <Text style={inlineStyle_351_20({
-                theme: theme,
-              })}>
+              <Text
+                style={inlineStyle_351_20({
+                  theme: theme,
+                })}>
                 {itemsCount} item(ns)
               </Text>
               <Text
@@ -657,48 +1050,49 @@ export default function CheckoutPage() {
                 style={inlineStyle_375_16({
                   theme: theme,
                 })}>
-                Método financeiro
+                Barra de pagamento
               </Text>
 
               {isLoading ? (
                 <View style={inlineStyle_380_22}>
                   <ActivityIndicator color={theme.primary} />
                 </View>
-              ) : paymentTypes.length > 0 ? (
-                <View
-                  style={inlineStyle_385_18}>
-                  {paymentTypes.map(item => {
-                    const gateway = detectGatewayByPaymentType(item);
-                    const label = item?.paymentType?.paymentType || 'Pagamento';
+              ) : paymentMethodChips.length > 0 ? (
+                <View style={inlineStyle_385_18}>
+                  {paymentMethodChips.map(item => {
+                    const isPix = item.key === 'pix';
+                    const isCard = item.key === 'card';
+                    const backgroundColor = isPix
+                      ? `${theme.success}16`
+                      : isCard
+                        ? `${theme.primary}14`
+                        : `${theme.cardBorder}40`;
+
                     return (
                       <View
-                        key={item?.id || label}
+                        key={item.key}
                         style={[
                           styles.methodChip,
                           {
                             borderColor: theme.cardBorder,
-                            backgroundColor:
-                              gateway === 'pix'
-                                ? `${theme.success}16`
-                                : gateway === 'card'
-                                  ? `${theme.primary}14`
-                                  : `${theme.cardBorder}40`,
+                            backgroundColor,
                           },
                         ]}>
                         <Text
                           style={inlineStyle_410_26({
                             theme: theme,
                           })}>
-                          {label}
+                          {item.label}
                         </Text>
                       </View>
                     );
                   })}
                 </View>
               ) : (
-                <Text style={inlineStyle_422_22({
-                  theme: theme,
-                })}>
+                <Text
+                  style={inlineStyle_422_22({
+                    theme: theme,
+                  })}>
                   Nenhuma forma de pagamento disponível para esta empresa.
                 </Text>
               )}
@@ -721,14 +1115,12 @@ export default function CheckoutPage() {
                     style={[
                       styles.methodChip,
                       {
-                        borderColor:
-                          manualPaymentTypes.length > 0
-                            ? theme.primary
-                            : theme.cardBorder,
-                        backgroundColor:
-                          manualPaymentTypes.length > 0
-                            ? `${theme.primary}14`
-                            : `${theme.cardBorder}30`,
+                        borderColor: selectedDeliveryDevice?.deviceId
+                          ? theme.primary
+                          : theme.cardBorder,
+                        backgroundColor: selectedDeliveryDevice?.deviceId
+                          ? `${theme.primary}14`
+                          : `${theme.cardBorder}30`,
                       },
                     ]}>
                     <Text
@@ -737,72 +1129,84 @@ export default function CheckoutPage() {
                           theme: theme,
                         }),
                         {
-                          color:
-                            manualPaymentTypes.length > 0
-                              ? theme.primary
-                              : theme.muted,
+                          color: selectedDeliveryDevice?.deviceId
+                            ? theme.primary
+                            : theme.muted,
                         },
                       ]}>
-                      {manualPaymentTypes.length > 0
-                        ? `${manualPaymentTypes.length} meio(s)`
-                        : 'Indisponivel'}
+                      {selectedDeliveryDevice?.deviceId
+                        ? 'Equipamento definido'
+                        : 'Sem equipamento'}
                     </Text>
                   </View>
                 </View>
+
                 <Text
                   style={[
                     styles.methodCardMeta,
                     {color: theme.muted},
                   ]}>
-                  O pedido fica registrado para cobranca manual na entrega, usando as carteiras da loja.
-                </Text>
-                <Text
-                  style={[
-                    styles.methodCardHint,
-                    {color: theme.text},
-                  ]}>
-                  {manualPaymentTypes.length > 0
-                    ? `Meios manuais disponiveis: ${deliveryPaymentLabels.join(', ')}.`
-                    : 'Cadastre ao menos um meio manual da empresa para liberar essa opcao no checkout.'}
+                  Escolha qual equipamento da entrega vai cobrar o pedido para
+                  a barra liberar apenas maquininha e dinheiro válidos.
                 </Text>
 
-                <TouchableOpacity
-                  onPress={handleChargeOnDelivery}
-                  disabled={deliveryCheckoutBlocked}
-                  style={[
-                    styles.modalCloseButton,
-                    {
-                      marginTop: 12,
-                      backgroundColor: deliveryCheckoutBlocked
-                        ? theme.surface
-                        : theme.primary,
-                      borderColor: deliveryCheckoutBlocked
-                        ? theme.cardBorder
-                        : theme.primary,
-                    },
-                  ]}>
-                  {isProcessing ? (
-                    <ActivityIndicator
-                      color={
-                        deliveryCheckoutBlocked
-                          ? theme.primary
-                          : theme.onPrimary || '#FFFFFF'
-                      }
-                    />
-                  ) : (
+                {loadingRemoteDevices ? (
+                  <View style={styles.loadingRow}>
+                    <ActivityIndicator color={theme.primary} />
+                    <Text style={[styles.methodCardHint, {color: theme.text}]}>
+                      Carregando equipamentos da entrega...
+                    </Text>
+                  </View>
+                ) : selectedDeliveryDevice ? (
+                  <>
                     <Text
                       style={[
-                        styles.modalCloseText,
-                        {
-                          color: deliveryCheckoutBlocked
-                            ? theme.text
-                            : theme.onPrimary || '#FFFFFF',
-                        },
+                        styles.methodCardHint,
+                        {color: theme.text},
                       ]}>
-                      Cobrar na entrega
+                      Entrega usando {selectedDeliveryDevice.alias} (
+                      {getPaymentGatewayLabel(selectedDeliveryDevice.gateway)}).
                     </Text>
-                  )}
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.methodCardHint,
+                        {color: theme.text},
+                      ]}>
+                      {deliveryModeLabels.length > 0
+                        ? `Opcoes liberadas: ${deliveryModeLabels.join(', ')}.`
+                        : 'Esse equipamento ainda nao libera maquininha nem dinheiro para a entrega.'}
+                    </Text>
+                    {remotePaymentDevices.length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => setDeliveryDeviceModalVisible(true)}
+                        style={[
+                          styles.modalCloseButton,
+                          {
+                            marginTop: 12,
+                            backgroundColor: theme.primary,
+                            borderColor: theme.primary,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.modalCloseText,
+                            {color: theme.onPrimary || '#FFFFFF'},
+                          ]}>
+                          Selecionar equipamento
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                ) : (
+                  <Text
+                    style={[
+                      styles.methodCardHint,
+                      {color: theme.text},
+                    ]}>
+                    Configure devices remotos de pagamento na empresa para usar
+                    o pagamento na entrega.
+                  </Text>
+                )}
               </View>
             )}
 
@@ -810,8 +1214,7 @@ export default function CheckoutPage() {
               style={inlineStyle_429_14({
                 theme: theme,
               })}>
-              <View
-                style={inlineStyle_438_16}>
+              <View style={inlineStyle_438_16}>
                 <Text
                   style={inlineStyle_445_18({
                     theme: theme,
@@ -820,18 +1223,20 @@ export default function CheckoutPage() {
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('ShopCardsPage')}>
-                  <Text style={inlineStyle_450_24({
-                    theme: theme,
-                  })}>
+                  <Text
+                    style={inlineStyle_450_24({
+                      theme: theme,
+                    })}>
                     Gerenciar
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {cards.length === 0 ? (
-                <Text style={inlineStyle_457_22({
-                  theme: theme,
-                })}>
+                <Text
+                  style={inlineStyle_457_22({
+                    theme: theme,
+                  })}>
                   Nenhum cartão salvo. Cadastre um cartão para pagar com
                   crédito.
                 </Text>
@@ -846,9 +1251,10 @@ export default function CheckoutPage() {
                         isSelected: isSelected,
                         theme: theme,
                       })}>
-                      <Text style={inlineStyle_480_28({
-                        theme: theme,
-                      })}>
+                      <Text
+                        style={inlineStyle_480_28({
+                          theme: theme,
+                        })}>
                         {(card?.type || 'Crédito').toUpperCase()}
                       </Text>
                       <Text
@@ -894,9 +1300,10 @@ export default function CheckoutPage() {
                   style={inlineStyle_526_18({
                     theme: theme,
                   })}>
-                  <Text style={inlineStyle_534_24({
-                    theme: theme,
-                  })}>
+                  <Text
+                    style={inlineStyle_534_24({
+                      theme: theme,
+                    })}>
                     {pixData.payload}
                   </Text>
                 </View>
@@ -905,9 +1312,10 @@ export default function CheckoutPage() {
                   style={inlineStyle_540_18({
                     theme: theme,
                   })}>
-                  <Text style={inlineStyle_549_24({
-                    theme: theme,
-                  })}>
+                  <Text
+                    style={inlineStyle_549_24({
+                      theme: theme,
+                    })}>
                     Copiar código Pix
                   </Text>
                 </TouchableOpacity>
@@ -919,9 +1327,10 @@ export default function CheckoutPage() {
                 style={inlineStyle_558_16({
                   theme: theme,
                 })}>
-                <Text style={inlineStyle_564_22({
-                  theme: theme,
-                })}>
+                <Text
+                  style={inlineStyle_564_22({
+                    theme: theme,
+                  })}>
                   {error}
                 </Text>
               </View>
@@ -932,9 +1341,10 @@ export default function CheckoutPage() {
                 style={inlineStyle_572_16({
                   theme: theme,
                 })}>
-                <Text style={inlineStyle_578_22({
-                  theme: theme,
-                })}>
+                <Text
+                  style={inlineStyle_578_22({
+                    theme: theme,
+                  })}>
                   {message}
                 </Text>
               </View>
@@ -944,8 +1354,8 @@ export default function CheckoutPage() {
           <Modal
             animationType="fade"
             transparent={true}
-            visible={manualPaymentModalVisible}
-            onRequestClose={() => setManualPaymentModalVisible(false)}>
+            visible={deliveryDeviceModalVisible}
+            onRequestClose={() => setDeliveryDeviceModalVisible(false)}>
             <View style={styles.modalBackdrop}>
               <View
                 style={[
@@ -960,49 +1370,53 @@ export default function CheckoutPage() {
                     styles.modalTitle,
                     {color: theme.text},
                   ]}>
-                  Cobrar na entrega
+                  Equipamento da entrega
                 </Text>
                 <Text
                   style={[
                     styles.modalSubtitle,
                     {color: theme.muted},
                   ]}>
-                  Escolha qual meio manual da loja deve registrar a cobranca deste pedido na entrega.
+                  Escolha qual equipamento deve definir as opcoes de pagamento
+                  exibidas na barra da entrega.
                 </Text>
 
-                {manualPaymentTypes.map(paymentType => {
-                  const paymentLabel = getPaymentTypeLabel(paymentType);
-                  const walletLabel = getPaymentTypeWalletLabel(paymentType);
+                {remotePaymentDevices.map(deviceOption => {
+                  const active =
+                    deviceOption.deviceId === selectedDeliveryDevice?.deviceId;
 
                   return (
                     <TouchableOpacity
-                      key={getPaymentTypeId(paymentType) || paymentLabel}
+                      key={deviceOption.deviceId}
                       style={[
                         styles.modalItem,
+                        active && styles.modalItemActive,
                         {
-                          borderColor: theme.cardBorder,
+                          borderColor: active
+                            ? theme.primary
+                            : theme.cardBorder,
                           backgroundColor: theme.background,
                         },
                       ]}
                       activeOpacity={0.85}
-                      onPress={() =>
-                        handleSelectDeliveryPayment(paymentType)
-                      }>
+                      onPress={() => {
+                        setSelectedDeliveryDeviceId(deviceOption.deviceId);
+                        setDeliveryDeviceModalVisible(false);
+                      }}>
                       <Text
                         style={[
                           styles.modalItemTitle,
                           {color: theme.text},
                         ]}>
-                        {paymentLabel}
+                        {deviceOption.alias}
                       </Text>
                       <Text
                         style={[
                           styles.modalItemMeta,
                           {color: theme.muted},
                         ]}>
-                        {walletLabel
-                          ? `${walletLabel} • toque para continuar`
-                          : 'Toque para continuar'}
+                        {getPaymentGatewayLabel(deviceOption.gateway)} •{' '}
+                        {deviceOption.deviceId}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -1016,7 +1430,7 @@ export default function CheckoutPage() {
                       borderColor: theme.cardBorder,
                     },
                   ]}
-                  onPress={() => setManualPaymentModalVisible(false)}>
+                  onPress={() => setDeliveryDeviceModalVisible(false)}>
                   <Text
                     style={[
                       styles.modalCloseText,
@@ -1025,6 +1439,234 @@ export default function CheckoutPage() {
                     Fechar
                   </Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={deliveryModeModalVisible}
+            onRequestClose={() => setDeliveryModeModalVisible(false)}>
+            <View style={styles.modalBackdrop}>
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    {color: theme.text},
+                  ]}>
+                  Pagamento na entrega
+                </Text>
+                <Text
+                  style={[
+                    styles.modalSubtitle,
+                    {color: theme.muted},
+                  ]}>
+                  Escolha se o pagamento na entrega sera feito na maquininha do
+                  equipamento selecionado ou em dinheiro.
+                </Text>
+
+                {deliveryModeOptions.map(option => (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.modalItem,
+                      {
+                        borderColor: theme.cardBorder,
+                        backgroundColor: theme.background,
+                      },
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => handleSelectDeliveryMode(option)}>
+                    <Text
+                      style={[
+                        styles.modalItemTitle,
+                        {color: theme.text},
+                      ]}>
+                      {option.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.modalItemMeta,
+                        {color: theme.muted},
+                      ]}>
+                      {option.description}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalCloseButton,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                    },
+                  ]}
+                  onPress={() => setDeliveryModeModalVisible(false)}>
+                  <Text
+                    style={[
+                      styles.modalCloseText,
+                      {color: theme.text},
+                    ]}>
+                    Fechar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={deliveryChangeModalVisible}
+            onRequestClose={() => setDeliveryChangeModalVisible(false)}>
+            <View style={styles.modalBackdrop}>
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    {color: theme.text},
+                  ]}>
+                  Dinheiro na entrega
+                </Text>
+                <Text
+                  style={[
+                    styles.modalSubtitle,
+                    {color: theme.muted},
+                  ]}>
+                  Informe se o cliente vai pagar em dinheiro exato ou se o
+                  entregador precisa levar troco.
+                </Text>
+
+                <View style={styles.modalChoicesRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalChoice,
+                      !deliveryChangeRequested && styles.modalChoiceActive,
+                      {
+                        borderColor:
+                          !deliveryChangeRequested
+                            ? theme.primary
+                            : theme.cardBorder,
+                      },
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      setDeliveryChangeRequested(false);
+                      setDeliveryChangeValue('');
+                    }}>
+                    <Text
+                      style={[
+                        styles.modalItemTitle,
+                        {color: theme.text},
+                      ]}>
+                      Sem troco
+                    </Text>
+                    <Text
+                      style={[
+                        styles.modalItemMeta,
+                        {color: theme.muted},
+                      ]}>
+                      Registrar dinheiro exato.
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.modalChoice,
+                      deliveryChangeRequested && styles.modalChoiceActive,
+                      {
+                        borderColor: deliveryChangeRequested
+                          ? theme.primary
+                          : theme.cardBorder,
+                      },
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => setDeliveryChangeRequested(true)}>
+                    <Text
+                      style={[
+                        styles.modalItemTitle,
+                        {color: theme.text},
+                      ]}>
+                      Precisa troco
+                    </Text>
+                    <Text
+                      style={[
+                        styles.modalItemMeta,
+                        {color: theme.muted},
+                      ]}>
+                      Informar para quanto.
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {deliveryChangeRequested ? (
+                  <TextInput
+                    style={[
+                      styles.modalInput,
+                      {
+                        borderColor: theme.cardBorder,
+                        color: theme.text,
+                      },
+                    ]}
+                    keyboardType="numeric"
+                    placeholder="Troco para quanto?"
+                    placeholderTextColor={theme.muted}
+                    value={deliveryChangeValue}
+                    onChangeText={handleDeliveryChangeInputChange}
+                  />
+                ) : null}
+
+                <View style={styles.modalActionsRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalCloseButton,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.surface,
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}
+                    onPress={() => setDeliveryChangeModalVisible(false)}>
+                    <Text
+                      style={[
+                        styles.modalCloseText,
+                        {color: theme.text},
+                      ]}>
+                      Cancelar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.confirmButton,
+                      {backgroundColor: theme.primary},
+                    ]}
+                    onPress={handleConfirmDeliveryChange}>
+                    <Text
+                      style={[
+                        styles.confirmButtonText,
+                        {color: theme.onPrimary || '#FFFFFF'},
+                      ]}>
+                      Confirmar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </Modal>
