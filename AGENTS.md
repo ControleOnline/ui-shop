@@ -11,6 +11,7 @@
 - O pagamento online atual do shop usa Asaas.
 - O pagamento na entrega depende das configuracoes da empresa e dos devices remotos liberados.
 - Se a entrega permitir dinheiro, o fluxo deve pedir a informacao de troco.
+- O `SHOP` nao conclui pagamento em dinheiro. Ele apenas registra a escolha do cliente para cobrar na entrega e deixa a confirmacao final para um funcionario em `PDV` ou `MANAGER`.
 
 ## Quando usar
 - Prompts sobre storefront, loja, catalogo, carrinho, checkout do cliente, pedidos do cliente, cartoes e experiencia do shop.
