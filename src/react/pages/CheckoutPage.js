@@ -19,7 +19,6 @@ import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSett
 import {
   buildWalletIdsForGateway,
   filterDeviceConfigsByCompany,
-  getPaymentGatewayLabel,
   isOrderChargeOnDeliveryEnabled,
   resolveRemotePaymentDeviceOptions,
 } from '@controleonline/ui-common/src/react/utils/paymentDevices';
@@ -188,9 +187,7 @@ const matchesDeliveryMetadata = (invoice, metadata) => {
       normalizeEntityId(otherInformations?.targetDeviceId) ===
         normalizeEntityId(metadata.targetDeviceId)) &&
     Number(otherInformations?.changeFor || 0) ===
-      Number(metadata.changeFor || 0) &&
-    Number(otherInformations?.receivedAmount || 0) ===
-      Number(metadata.receivedAmount || 0)
+      Number(metadata.changeFor || 0)
   );
 };
 
@@ -268,7 +265,7 @@ export default function CheckoutPage() {
     useState(false);
   const [deliveryChangeModalVisible, setDeliveryChangeModalVisible] =
     useState(false);
-  const [cashReceivedValue, setCashReceivedValue] = useState('');
+  const [deliveryChangeForValue, setDeliveryChangeForValue] = useState('');
   const [selectedDeliveryPaymentType, setSelectedDeliveryPaymentType] =
     useState(null);
   const [error, setError] = useState('');
@@ -320,13 +317,17 @@ export default function CheckoutPage() {
     () => Math.max(cartTotal - paidAmount, 0),
     [cartTotal, paidAmount],
   );
+  const changeForAmount = useMemo(
+    () => parseMoneyInputValue(deliveryChangeForValue),
+    [deliveryChangeForValue],
+  );
   const cashPaymentDetails = useMemo(
     () =>
       resolveCashPaymentDetails({
-        receivedAmount: parseMoneyInputValue(cashReceivedValue),
+        receivedAmount: changeForAmount,
         totalAmount: pendingAmount,
       }),
-    [cashReceivedValue, pendingAmount],
+    [changeForAmount, pendingAmount],
   );
 
   const cardPaymentTypes = useMemo(
@@ -696,7 +697,7 @@ export default function CheckoutPage() {
   );
 
   const buildDeliveryPaymentMetadata = useCallback(
-    ({selectedPaymentType, receivedAmount = 0, changeAmount = 0}) => ({
+    ({selectedPaymentType, changeFor = 0, changeAmount = 0}) => ({
       channel: 'delivery',
       paymentLabel: isCashPaymentOption(selectedPaymentType)
         ? 'Dinheiro'
@@ -704,8 +705,7 @@ export default function CheckoutPage() {
       paymentMode: isCashPaymentOption(selectedPaymentType) ? 'cash' : 'machine',
       needsChange: Number(changeAmount || 0) > 0.009,
       changeFor:
-        Number(changeAmount || 0) > 0.009 ? Number(receivedAmount || 0) : null,
-      receivedAmount: Number(receivedAmount || 0) > 0 ? Number(receivedAmount) : null,
+        Number(changeFor || 0) > 0 ? Number(changeFor) : null,
       changeAmount: Number(changeAmount || 0) > 0 ? Number(changeAmount) : 0,
       targetDeviceId: null,
       targetDeviceLabel: null,
@@ -715,7 +715,7 @@ export default function CheckoutPage() {
   );
 
   const finalizeDeliveryRegistration = useCallback(
-    async (selectedPaymentType, {receivedAmount = 0, changeAmount = 0} = {}) => {
+    async (selectedPaymentType, {changeFor = 0, changeAmount = 0} = {}) => {
       setError('');
       setMessage('');
       setPixData(null);
@@ -725,7 +725,7 @@ export default function CheckoutPage() {
         await ensureInvoiceForPaymentType(selectedPaymentType, {
           additionalInfo: buildDeliveryPaymentMetadata({
             selectedPaymentType,
-            receivedAmount,
+            changeFor,
             changeAmount,
           }),
         });
@@ -775,7 +775,7 @@ export default function CheckoutPage() {
       setSelectedDeliveryPaymentType(selectedPaymentType);
 
       if (isCashPaymentOption(selectedPaymentType)) {
-        setCashReceivedValue(formatMoneyInputValue(pendingAmount));
+        setDeliveryChangeForValue(formatMoneyInputValue(pendingAmount));
         setDeliveryChangeModalVisible(true);
         return;
       }
@@ -882,7 +882,7 @@ export default function CheckoutPage() {
   );
 
   const handleDeliveryChangeInputChange = useCallback(text => {
-    setCashReceivedValue(normalizeMoneyInputText(text));
+    setDeliveryChangeForValue(normalizeMoneyInputText(text));
   }, []);
 
   const handleConfirmDeliveryChange = useCallback(async () => {
@@ -894,20 +894,20 @@ export default function CheckoutPage() {
     }
 
     if (cashPaymentDetails.receivedAmount <= 0.009) {
-      setError('Informe o valor recebido para continuar.');
+      setError('Informe para quanto precisa de troco.');
       return;
     }
 
     if (cashPaymentDetails.missingAmount > 0.009) {
       setError(
-        'O valor recebido nao pode ser menor que o total do pedido na entrega.',
+        'O valor informado para troco nao pode ser menor que o total do pedido.',
       );
       return;
     }
 
     setDeliveryChangeModalVisible(false);
     await finalizeDeliveryRegistration(selectedDeliveryPaymentType, {
-      receivedAmount: cashPaymentDetails.receivedAmount,
+      changeFor: cashPaymentDetails.receivedAmount,
       changeAmount: cashPaymentDetails.changeAmount,
     });
   }, [
@@ -1091,10 +1091,10 @@ export default function CheckoutPage() {
                     style={[
                       styles.methodChip,
                       {
-                        borderColor: selectedDeliveryDevice?.deviceId
+                        borderColor: deliveryModeLabels.length > 0
                           ? theme.primary
                           : theme.cardBorder,
-                        backgroundColor: selectedDeliveryDevice?.deviceId
+                        backgroundColor: deliveryModeLabels.length > 0
                           ? `${theme.primary}14`
                           : `${theme.cardBorder}30`,
                       },
@@ -1105,14 +1105,14 @@ export default function CheckoutPage() {
                           theme: theme,
                         }),
                         {
-                          color: selectedDeliveryDevice?.deviceId
+                          color: deliveryModeLabels.length > 0
                             ? theme.primary
                             : theme.muted,
                         },
                       ]}>
-                      {selectedDeliveryDevice?.deviceId
-                        ? 'Equipamento definido'
-                        : 'Sem equipamento'}
+                      {deliveryModeLabels.length > 0
+                        ? `${deliveryModeLabels.length} opcao(oes)`
+                        : 'Indisponivel'}
                     </Text>
                   </View>
                 </View>
@@ -1122,56 +1122,35 @@ export default function CheckoutPage() {
                     styles.methodCardMeta,
                     {color: theme.muted},
                   ]}>
-                  Escolha qual equipamento da entrega vai cobrar o pedido para
-                  a barra liberar apenas maquininha e dinheiro válidos.
+                  No Shop, o cliente apenas informa se vai pagar agora ou na
+                  entrega. Se for na entrega, ele escolhe maquininha ou
+                  dinheiro.
                 </Text>
 
                 {loadingRemoteDevices ? (
                   <View style={styles.loadingRow}>
                     <ActivityIndicator color={theme.primary} />
                     <Text style={[styles.methodCardHint, {color: theme.text}]}>
-                      Carregando equipamentos da entrega...
+                      Carregando opcoes de pagamento na entrega...
                     </Text>
                   </View>
-                ) : selectedDeliveryDevice ? (
+                ) : deliveryModeLabels.length > 0 ? (
                   <>
                     <Text
                       style={[
                         styles.methodCardHint,
                         {color: theme.text},
                       ]}>
-                      Entrega usando {selectedDeliveryDevice.alias} (
-                      {getPaymentGatewayLabel(selectedDeliveryDevice.gateway)}).
+                      O cliente escolhe se quer pagar com maquininha ou em
+                      dinheiro quando o motoboy chegar.
                     </Text>
                     <Text
                       style={[
                         styles.methodCardHint,
                         {color: theme.text},
                       ]}>
-                      {deliveryModeLabels.length > 0
-                        ? `Opcoes liberadas: ${deliveryModeLabels.join(', ')}.`
-                        : 'Esse equipamento ainda nao libera maquininha nem dinheiro para a entrega.'}
+                      Opcoes liberadas: {deliveryModeLabels.join(', ')}.
                     </Text>
-                    {remotePaymentDevices.length > 1 && (
-                      <TouchableOpacity
-                        onPress={() => setDeliveryDeviceModalVisible(true)}
-                        style={[
-                          styles.modalCloseButton,
-                          {
-                            marginTop: 12,
-                            backgroundColor: theme.primary,
-                            borderColor: theme.primary,
-                          },
-                        ]}>
-                        <Text
-                          style={[
-                            styles.modalCloseText,
-                            {color: theme.onPrimary || '#FFFFFF'},
-                          ]}>
-                          Selecionar equipamento
-                        </Text>
-                      </TouchableOpacity>
-                    )}
                   </>
                 ) : (
                   <Text
@@ -1179,8 +1158,8 @@ export default function CheckoutPage() {
                       styles.methodCardHint,
                       {color: theme.text},
                     ]}>
-                    Configure devices remotos de pagamento na empresa para usar
-                    o pagamento na entrega.
+                    Configure maquininha remota e/ou dinheiro na empresa para
+                    usar o pagamento na entrega.
                   </Text>
                 )}
               </View>
@@ -1330,98 +1309,6 @@ export default function CheckoutPage() {
           <Modal
             animationType="fade"
             transparent={true}
-            visible={deliveryDeviceModalVisible}
-            onRequestClose={() => setDeliveryDeviceModalVisible(false)}>
-            <View style={styles.modalBackdrop}>
-              <View
-                style={[
-                  styles.modalCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.modalTitle,
-                    {color: theme.text},
-                  ]}>
-                  Equipamento da entrega
-                </Text>
-                <Text
-                  style={[
-                    styles.modalSubtitle,
-                    {color: theme.muted},
-                  ]}>
-                  Escolha qual equipamento deve definir as opcoes de pagamento
-                  exibidas na barra da entrega.
-                </Text>
-
-                {remotePaymentDevices.map(deviceOption => {
-                  const active =
-                    deviceOption.deviceId === selectedDeliveryDevice?.deviceId;
-
-                  return (
-                    <TouchableOpacity
-                      key={deviceOption.deviceId}
-                      style={[
-                        styles.modalItem,
-                        active && styles.modalItemActive,
-                        {
-                          borderColor: active
-                            ? theme.primary
-                            : theme.cardBorder,
-                          backgroundColor: theme.background,
-                        },
-                      ]}
-                      activeOpacity={0.85}
-                      onPress={() => {
-                        setSelectedDeliveryDeviceId(deviceOption.deviceId);
-                        setDeliveryDeviceModalVisible(false);
-                      }}>
-                      <Text
-                        style={[
-                          styles.modalItemTitle,
-                          {color: theme.text},
-                        ]}>
-                        {deviceOption.alias}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.modalItemMeta,
-                          {color: theme.muted},
-                        ]}>
-                        {getPaymentGatewayLabel(deviceOption.gateway)} •{' '}
-                        {deviceOption.deviceId}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-
-                <TouchableOpacity
-                  style={[
-                    styles.modalCloseButton,
-                    {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
-                    },
-                  ]}
-                  onPress={() => setDeliveryDeviceModalVisible(false)}>
-                  <Text
-                    style={[
-                      styles.modalCloseText,
-                      {color: theme.text},
-                    ]}>
-                    Fechar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          <Modal
-            animationType="fade"
-            transparent={true}
             visible={deliveryModeModalVisible}
             onRequestClose={() => setDeliveryModeModalVisible(false)}>
             <View style={styles.modalBackdrop}>
@@ -1445,8 +1332,8 @@ export default function CheckoutPage() {
                     styles.modalSubtitle,
                     {color: theme.muted},
                   ]}>
-                  Escolha se o pagamento na entrega sera feito na maquininha do
-                  equipamento selecionado ou em dinheiro.
+                  Escolha se vai pagar ao motoboy com maquininha ou em
+                  dinheiro.
                 </Text>
 
                 {deliveryModeOptions.map(option => (
@@ -1525,8 +1412,8 @@ export default function CheckoutPage() {
                     styles.modalSubtitle,
                     {color: theme.muted},
                   ]}>
-                  Informe o valor recebido para calcular o troco
-                  automaticamente.
+                  Informe para quanto precisa de troco quando o motoboy levar o
+                  dinheiro.
                 </Text>
 
                 <TextInput
@@ -1538,9 +1425,9 @@ export default function CheckoutPage() {
                     },
                   ]}
                   keyboardType="numeric"
-                  placeholder="Valor recebido"
+                  placeholder="Troco para quanto?"
                   placeholderTextColor={theme.muted}
-                  value={cashReceivedValue}
+                  value={deliveryChangeForValue}
                   onChangeText={handleDeliveryChangeInputChange}
                 />
 
