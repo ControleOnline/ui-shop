@@ -24,6 +24,7 @@ import {
 } from '@controleonline/ui-common/src/react/utils/paymentDevices';
 import {
   detectPaymentOptionKind,
+  getInvoiceDestinationWalletId,
   getPaymentOptionId,
   getPaymentOptionLabel,
   getPaymentOptionWalletId,
@@ -213,7 +214,7 @@ const findReusableInvoiceForPaymentType = (
         return false;
       }
 
-      if (walletId && getPaymentOptionWalletId(invoice) !== walletId) {
+      if (walletId && getInvoiceDestinationWalletId(invoice) !== walletId) {
         return false;
       }
 
