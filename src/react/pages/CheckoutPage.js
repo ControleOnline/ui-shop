@@ -31,6 +31,12 @@ import {
   isCashPaymentOption,
   isIntegratedPaymentOption,
 } from '@controleonline/ui-common/src/react/utils/paymentOptions';
+import {
+  formatMoneyInputValue,
+  normalizeMoneyInputText,
+  parseMoneyInputValue,
+  resolveCashPaymentDetails,
+} from '@controleonline/ui-common/src/react/utils/cashPayment';
 import styles from './CheckoutPage.styles';
 
 import {
@@ -171,15 +177,20 @@ const matchesDeliveryMetadata = (invoice, metadata) => {
   const otherInformations = parseInvoiceOtherInformations(
     invoice?.otherInformations,
   );
+  const hasTargetDevice = normalizeEntityId(metadata?.targetDeviceId) !== '';
 
   return (
     normalizeText(otherInformations?.channel) ===
       normalizeText(metadata.channel) &&
     normalizeText(otherInformations?.paymentMode) ===
       normalizeText(metadata.paymentMode) &&
-    normalizeEntityId(otherInformations?.targetDeviceId) ===
-      normalizeEntityId(metadata.targetDeviceId) &&
-    Number(otherInformations?.changeFor || 0) === Number(metadata.changeFor || 0)
+    (!hasTargetDevice ||
+      normalizeEntityId(otherInformations?.targetDeviceId) ===
+        normalizeEntityId(metadata.targetDeviceId)) &&
+    Number(otherInformations?.changeFor || 0) ===
+      Number(metadata.changeFor || 0) &&
+    Number(otherInformations?.receivedAmount || 0) ===
+      Number(metadata.receivedAmount || 0)
   );
 };
 
@@ -253,17 +264,13 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [loadingRemoteDevices, setLoadingRemoteDevices] = useState(false);
-  const [deliveryDeviceModalVisible, setDeliveryDeviceModalVisible] =
-    useState(false);
   const [deliveryModeModalVisible, setDeliveryModeModalVisible] =
     useState(false);
   const [deliveryChangeModalVisible, setDeliveryChangeModalVisible] =
     useState(false);
-  const [deliveryChangeRequested, setDeliveryChangeRequested] = useState(false);
-  const [deliveryChangeValue, setDeliveryChangeValue] = useState('');
+  const [cashReceivedValue, setCashReceivedValue] = useState('');
   const [selectedDeliveryPaymentType, setSelectedDeliveryPaymentType] =
     useState(null);
-  const [selectedDeliveryDeviceId, setSelectedDeliveryDeviceId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -312,6 +319,14 @@ export default function CheckoutPage() {
   const pendingAmount = useMemo(
     () => Math.max(cartTotal - paidAmount, 0),
     [cartTotal, paidAmount],
+  );
+  const cashPaymentDetails = useMemo(
+    () =>
+      resolveCashPaymentDetails({
+        receivedAmount: parseMoneyInputValue(cashReceivedValue),
+        totalAmount: pendingAmount,
+      }),
+    [cashReceivedValue, pendingAmount],
   );
 
   const cardPaymentTypes = useMemo(
@@ -374,14 +389,9 @@ export default function CheckoutPage() {
       }),
     [companyDeviceConfigs, effectiveCompanyConfigs],
   );
-  const selectedDeliveryDevice = useMemo(
-    () =>
-      remotePaymentDevices.find(
-        deviceOption => deviceOption.deviceId === selectedDeliveryDeviceId,
-      ) ||
-      remotePaymentDevices[0] ||
-      null,
-    [remotePaymentDevices, selectedDeliveryDeviceId],
+  const defaultDeliveryDevice = useMemo(
+    () => remotePaymentDevices[0] || null,
+    [remotePaymentDevices],
   );
   const deliveryCashPayment = useMemo(
     () => deliveryPaymentTypes.find(isCashPaymentOption) || null,
@@ -401,11 +411,9 @@ export default function CheckoutPage() {
     if (deliveryMachinePayment) {
       options.push({
         key: 'machine',
-        label: `Maquininha ${getPaymentGatewayLabel(
-          selectedDeliveryDevice?.gateway,
-        )}`,
+        label: 'Maquininha na entrega',
         description:
-          'Registrar a cobranca pendente para o equipamento escolhido na entrega.',
+          'O cliente vai pagar quando o motoboy chegar com a maquininha.',
         paymentType: deliveryMachinePayment,
       });
     }
@@ -415,17 +423,13 @@ export default function CheckoutPage() {
         key: 'cash',
         label: 'Dinheiro',
         description:
-          'Registrar a cobranca em dinheiro e informar se precisa levar troco.',
+          'O cliente informa para quanto precisa de troco e o motoboy leva o valor.',
         paymentType: deliveryCashPayment,
       });
     }
 
     return options;
-  }, [
-    deliveryCashPayment,
-    deliveryMachinePayment,
-    selectedDeliveryDevice?.gateway,
-  ]);
+  }, [deliveryCashPayment, deliveryMachinePayment]);
   const deliveryModeLabels = useMemo(
     () => deliveryModeOptions.map(item => item.label).filter(Boolean),
     [deliveryModeOptions],
@@ -564,30 +568,13 @@ export default function CheckoutPage() {
   );
 
   useEffect(() => {
-    if (!remotePaymentDevices.length) {
-      setSelectedDeliveryDeviceId('');
-      return;
-    }
-
-    setSelectedDeliveryDeviceId(current =>
-      remotePaymentDevices.some(deviceOption => deviceOption.deviceId === current)
-        ? current
-        : remotePaymentDevices[0].deviceId,
-    );
-  }, [remotePaymentDevices]);
-
-  useEffect(() => {
-    if (
-      !sellerCompanyId ||
-      !chargeOnDeliveryEnabled ||
-      !selectedDeliveryDevice?.gateway
-    ) {
+    if (!sellerCompanyId || !chargeOnDeliveryEnabled) {
       setDeliveryPaymentTypes([]);
       return undefined;
     }
 
     const walletIds = buildWalletIdsForGateway({
-      gateway: selectedDeliveryDevice.gateway,
+      gateway: defaultDeliveryDevice?.gateway,
       companyConfigs: effectiveCompanyConfigs,
       includeCashWallet: true,
     });
@@ -621,8 +608,8 @@ export default function CheckoutPage() {
     };
   }, [
     chargeOnDeliveryEnabled,
+    defaultDeliveryDevice?.gateway,
     effectiveCompanyConfigs,
-    selectedDeliveryDevice?.gateway,
     sellerCompanyId,
     walletPaymentTypeActions,
   ]);
@@ -709,23 +696,26 @@ export default function CheckoutPage() {
   );
 
   const buildDeliveryPaymentMetadata = useCallback(
-    ({selectedPaymentType, changeFor = 0}) => ({
+    ({selectedPaymentType, receivedAmount = 0, changeAmount = 0}) => ({
       channel: 'delivery',
       paymentLabel: isCashPaymentOption(selectedPaymentType)
         ? 'Dinheiro'
-        : `Maquininha ${getPaymentGatewayLabel(selectedDeliveryDevice?.gateway)}`,
+        : 'Maquininha na entrega',
       paymentMode: isCashPaymentOption(selectedPaymentType) ? 'cash' : 'machine',
-      needsChange: Number(changeFor || 0) > 0,
-      changeFor: Number(changeFor || 0) > 0 ? Number(changeFor) : null,
-      targetDeviceId: selectedDeliveryDevice?.deviceId || null,
-      targetDeviceLabel: selectedDeliveryDevice?.alias || null,
-      targetGateway: selectedDeliveryDevice?.gateway || null,
+      needsChange: Number(changeAmount || 0) > 0.009,
+      changeFor:
+        Number(changeAmount || 0) > 0.009 ? Number(receivedAmount || 0) : null,
+      receivedAmount: Number(receivedAmount || 0) > 0 ? Number(receivedAmount) : null,
+      changeAmount: Number(changeAmount || 0) > 0 ? Number(changeAmount) : 0,
+      targetDeviceId: null,
+      targetDeviceLabel: null,
+      targetGateway: defaultDeliveryDevice?.gateway || null,
     }),
-    [selectedDeliveryDevice],
+    [defaultDeliveryDevice?.gateway],
   );
 
   const finalizeDeliveryRegistration = useCallback(
-    async (selectedPaymentType, {changeFor = 0} = {}) => {
+    async (selectedPaymentType, {receivedAmount = 0, changeAmount = 0} = {}) => {
       setError('');
       setMessage('');
       setPixData(null);
@@ -735,7 +725,8 @@ export default function CheckoutPage() {
         await ensureInvoiceForPaymentType(selectedPaymentType, {
           additionalInfo: buildDeliveryPaymentMetadata({
             selectedPaymentType,
-            changeFor,
+            receivedAmount,
+            changeAmount,
           }),
         });
 
@@ -749,9 +740,7 @@ export default function CheckoutPage() {
           `Pedido registrado para cobrar na entrega via ${
             isCashPaymentOption(selectedPaymentType)
               ? 'dinheiro'
-              : `maquininha ${getPaymentGatewayLabel(
-                  selectedDeliveryDevice?.gateway,
-                )}`
+              : 'maquininha'
           }.`,
         );
       } catch (e) {
@@ -767,9 +756,9 @@ export default function CheckoutPage() {
     [
       buildDeliveryPaymentMetadata,
       cart?.id,
+      defaultDeliveryDevice?.gateway,
       ensureInvoiceForPaymentType,
       navigation,
-      selectedDeliveryDevice?.gateway,
     ],
   );
 
@@ -786,15 +775,14 @@ export default function CheckoutPage() {
       setSelectedDeliveryPaymentType(selectedPaymentType);
 
       if (isCashPaymentOption(selectedPaymentType)) {
-        setDeliveryChangeRequested(false);
-        setDeliveryChangeValue('');
+        setCashReceivedValue(formatMoneyInputValue(pendingAmount));
         setDeliveryChangeModalVisible(true);
         return;
       }
 
       await finalizeDeliveryRegistration(selectedPaymentType);
     },
-    [finalizeDeliveryRegistration],
+    [finalizeDeliveryRegistration, pendingAmount],
   );
 
   const handlePayWithCard = useCallback(async () => {
@@ -867,16 +855,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!selectedDeliveryDevice?.deviceId) {
-      setError(
-        'Selecione qual equipamento fara a cobranca na entrega antes de continuar.',
-      );
-      return;
-    }
-
     if (deliveryModeOptions.length === 0) {
       setError(
-        'O equipamento escolhido nao tem maquininha nem dinheiro configurados para a entrega.',
+        'A loja ainda nao configurou maquininha ou dinheiro para cobrar na entrega.',
       );
       return;
     }
@@ -890,7 +871,6 @@ export default function CheckoutPage() {
   }, [
     chargeOnDeliveryEnabled,
     deliveryModeOptions,
-    selectedDeliveryDevice?.deviceId,
     startDeliveryPayment,
   ]);
 
@@ -902,13 +882,7 @@ export default function CheckoutPage() {
   );
 
   const handleDeliveryChangeInputChange = useCallback(text => {
-    const numericValue = text.replace(/\D/g, '');
-    if (!numericValue) {
-      setDeliveryChangeValue('');
-      return;
-    }
-
-    setDeliveryChangeValue(Formatter.formatMoney(Number(numericValue) / 100));
+    setCashReceivedValue(normalizeMoneyInputText(text));
   }, []);
 
   const handleConfirmDeliveryChange = useCallback(async () => {
@@ -919,22 +893,25 @@ export default function CheckoutPage() {
       return;
     }
 
-    const changeFor = deliveryChangeRequested
-      ? Number(String(deliveryChangeValue || '').replace(/\D/g, '')) / 100
-      : 0;
+    if (cashPaymentDetails.receivedAmount <= 0.009) {
+      setError('Informe o valor recebido para continuar.');
+      return;
+    }
 
-    if (deliveryChangeRequested && changeFor <= 0) {
-      setError('Informe o valor do troco para continuar.');
+    if (cashPaymentDetails.missingAmount > 0.009) {
+      setError(
+        'O valor recebido nao pode ser menor que o total do pedido na entrega.',
+      );
       return;
     }
 
     setDeliveryChangeModalVisible(false);
     await finalizeDeliveryRegistration(selectedDeliveryPaymentType, {
-      changeFor,
+      receivedAmount: cashPaymentDetails.receivedAmount,
+      changeAmount: cashPaymentDetails.changeAmount,
     });
   }, [
-    deliveryChangeRequested,
-    deliveryChangeValue,
+    cashPaymentDetails,
     finalizeDeliveryRegistration,
     selectedDeliveryPaymentType,
   ]);
@@ -943,7 +920,6 @@ export default function CheckoutPage() {
   const deliveryCheckoutBlocked =
     checkoutBlocked ||
     pendingAmount <= 0.009 ||
-    !selectedDeliveryDevice?.deviceId ||
     deliveryModeOptions.length === 0;
   const checkoutActions = useMemo(
     () => [
@@ -1549,88 +1525,39 @@ export default function CheckoutPage() {
                     styles.modalSubtitle,
                     {color: theme.muted},
                   ]}>
-                  Informe se o cliente vai pagar em dinheiro exato ou se o
-                  entregador precisa levar troco.
+                  Informe o valor recebido para calcular o troco
+                  automaticamente.
                 </Text>
 
-                <View style={styles.modalChoicesRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.modalChoice,
-                      !deliveryChangeRequested && styles.modalChoiceActive,
-                      {
-                        borderColor:
-                          !deliveryChangeRequested
-                            ? theme.primary
-                            : theme.cardBorder,
-                      },
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      setDeliveryChangeRequested(false);
-                      setDeliveryChangeValue('');
-                    }}>
-                    <Text
-                      style={[
-                        styles.modalItemTitle,
-                        {color: theme.text},
-                      ]}>
-                      Sem troco
-                    </Text>
-                    <Text
-                      style={[
-                        styles.modalItemMeta,
-                        {color: theme.muted},
-                      ]}>
-                      Registrar dinheiro exato.
-                    </Text>
-                  </TouchableOpacity>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      borderColor: theme.cardBorder,
+                      color: theme.text,
+                    },
+                  ]}
+                  keyboardType="numeric"
+                  placeholder="Valor recebido"
+                  placeholderTextColor={theme.muted}
+                  value={cashReceivedValue}
+                  onChangeText={handleDeliveryChangeInputChange}
+                />
 
-                  <TouchableOpacity
-                    style={[
-                      styles.modalChoice,
-                      deliveryChangeRequested && styles.modalChoiceActive,
-                      {
-                        borderColor: deliveryChangeRequested
-                          ? theme.primary
-                          : theme.cardBorder,
-                      },
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => setDeliveryChangeRequested(true)}>
-                    <Text
-                      style={[
-                        styles.modalItemTitle,
-                        {color: theme.text},
-                      ]}>
-                      Precisa troco
-                    </Text>
-                    <Text
-                      style={[
-                        styles.modalItemMeta,
-                        {color: theme.muted},
-                      ]}>
-                      Informar para quanto.
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {deliveryChangeRequested ? (
-                  <TextInput
-                    style={[
-                      styles.modalInput,
-                      {
-                        borderColor: theme.cardBorder,
-                        color: theme.text,
-                      },
-                    ]}
-                    keyboardType="numeric"
-                    placeholder="Troco para quanto?"
-                    placeholderTextColor={theme.muted}
-                    value={deliveryChangeValue}
-                    onChangeText={handleDeliveryChangeInputChange}
-                  />
-                ) : null}
+                <Text
+                  style={[
+                    styles.modalSubtitle,
+                    {color: theme.text},
+                  ]}>
+                  Valor do pedido: {formatMoney(pendingAmount)}
+                </Text>
+                <Text
+                  style={[
+                    styles.modalSubtitle,
+                    {color: theme.text},
+                  ]}>
+                  Troco: {formatMoney(cashPaymentDetails.changeAmount)}
+                </Text>
 
                 <View style={styles.modalActionsRow}>
                   <TouchableOpacity
