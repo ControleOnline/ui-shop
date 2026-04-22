@@ -7,6 +7,7 @@
 - Se existir `src/vue`, ela e apenas legado e deve ser ignorada, salvo pedido explicito.
 
 ## Regras de pagamento
+- O `/cart` do cliente deve trabalhar com o carrinho de venda canonico (`orderType = cart`).
 - O cliente escolhe pagar online agora ou cobrar na entrega.
 - O pagamento online atual do shop usa Asaas.
 - O pagamento na entrega depende das configuracoes da empresa e dos devices remotos liberados.
