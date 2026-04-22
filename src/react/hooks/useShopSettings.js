@@ -27,10 +27,6 @@ export default function useShopSettings() {
   );
 
   const companyConfigs = useMemo(() => {
-    if (isConfigMap(defaultCompany?.configs)) {
-      return defaultCompany.configs;
-    }
-
     if (
       defaultCompanyId &&
       currentCompanyId &&
@@ -42,6 +38,10 @@ export default function useShopSettings() {
 
     if (!defaultCompanyId && isConfigMap(runtimeConfigs)) {
       return runtimeConfigs;
+    }
+
+    if (isConfigMap(defaultCompany?.configs)) {
+      return defaultCompany.configs;
     }
 
     return {};

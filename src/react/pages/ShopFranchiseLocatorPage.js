@@ -780,10 +780,7 @@ export default function ShopFranchiseLocatorPage() {
   );
 
   const configuredDirectory = useMemo(() => {
-    if (
-      visibleFranchiseCompanyIds.length === 0 ||
-      visibleFranchiseAddressIds.length === 0
-    ) {
+    if (visibleFranchiseAddressIds.length === 0) {
       return [];
     }
 
@@ -791,7 +788,10 @@ export default function ShopFranchiseLocatorPage() {
       .map(company => {
         const companyId = normalizeShopEntityId(company);
 
-        if (!visibleFranchiseCompanyIds.includes(companyId)) {
+        if (
+          visibleFranchiseCompanyIds.length > 0 &&
+          !visibleFranchiseCompanyIds.includes(companyId)
+        ) {
           return null;
         }
 
@@ -821,8 +821,18 @@ export default function ShopFranchiseLocatorPage() {
   );
 
   const effectiveDirectory = useMemo(
-    () => (hasConfiguredAddresses ? configuredDirectory : FALLBACK_DIRECTORY),
-    [configuredDirectory, hasConfiguredAddresses],
+    () => {
+      if (hasConfiguredAddresses) {
+        return configuredDirectory;
+      }
+
+      if (isLoading) {
+        return [];
+      }
+
+      return FALLBACK_DIRECTORY;
+    },
+    [configuredDirectory, hasConfiguredAddresses, isLoading],
   );
 
   const flattenedAddressRecords = useMemo(
@@ -912,6 +922,13 @@ export default function ShopFranchiseLocatorPage() {
               return null;
             }
 
+            const lat = normalizeCoordinate(coordinates.latitude);
+            const lng = normalizeCoordinate(coordinates.longitude);
+
+            if (lat === null || lng === null) {
+              return null;
+            }
+
             const addressParts = resolveAddressDisplayParts(address);
             const distanceLabel = formatDistance(
               calculateDistanceInKm(userCoordinates, coordinates),
@@ -947,8 +964,8 @@ export default function ShopFranchiseLocatorPage() {
                 mapQuery,
                 origin: userCoordinates,
               }),
-              latitude: coordinates.latitude,
-              longitude: coordinates.longitude,
+              latitude: lat,
+              longitude: lng,
               markerIconUrl: franchisePinIconUrl,
               openingHours: address?.openingHours || '',
               phoneLabel: resolveCompanyPhone(company),
