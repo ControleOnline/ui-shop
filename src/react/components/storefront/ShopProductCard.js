@@ -120,7 +120,6 @@ export default function ShopProductCard({product, compact = false, company = nul
                 await refreshCart?.();
               } catch {}
               navigation.navigate('CustomizeScreen', {
-                product,
                 productId: normalizeId(product?.id || product?.['@id']),
                 redirectToCart: true,
               });

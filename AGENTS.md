@@ -19,3 +19,4 @@
 
 ## Limites
 - Nao mover para `ui-shop` regras operacionais de PDV que pertencem a `ui-orders`.
+- Ao navegar para telas compartilhadas como `CustomizeScreen`, o shop deve enviar apenas ids e flags primitivas em params. Nao passar objetos do produto pela URL.

@@ -325,7 +325,6 @@ export default function ProductPage() {
                         await refreshCart?.();
                       } catch {}
                       navigation.navigate('CustomizeScreen', {
-                        product,
                         productId: normalizeId(product?.id || product?.['@id']),
                         redirectToCart: true,
                       });
