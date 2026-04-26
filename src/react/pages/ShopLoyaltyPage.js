@@ -188,7 +188,7 @@ export default function ShopLoyaltyPage() {
                 </View>
                 <Text style={[styles.summaryHelp, {color: theme.muted}]}>
                   {remainingSales > 0
-                    ? `Faltam ${remainingSales} venda(s) para liberar o brinde.`
+                    ? `Faltam ${remainingSales} compra(s) para liberar o brinde.`
                     : 'Brinde liberado nos dados de teste.'}
                 </Text>
               </View>
