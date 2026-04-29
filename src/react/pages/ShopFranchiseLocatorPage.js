@@ -22,6 +22,11 @@ import {
   formatPhoneDisplay,
   resolveAddressDisplayParts,
 } from '@controleonline/ui-common/src/react/utils/entityDisplay';
+import {
+  buildGoogleMapsNavigationUrl,
+  buildNavigationMapQuery,
+  buildWazeNavigationUrl,
+} from '@controleonline/ui-common/src/react/utils/mapNavigation';
 import {fetchShopFranchiseDirectory} from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {
   normalizeShopEntityId,
@@ -186,15 +191,13 @@ const extractAddressCoordinates = address => {
 const buildMapQuery = (company, address) => {
   const parts = resolveAddressDisplayParts(address);
 
-  return [
+  return buildNavigationMapQuery([
     company?.alias || company?.name,
     parts.streetLine,
     parts.district,
     parts.cityStateLine,
     address?.searchFor,
-  ]
-    .filter(Boolean)
-    .join(', ');
+  ]);
 };
 
 const calculateDistanceInKm = (origin, destination) => {
@@ -303,33 +306,6 @@ const geocodeMapQuery = async ({apiKey, mapQuery}) => {
 
   geocodeCache.set(cacheKey, request);
   return request;
-};
-
-const buildGoogleMapsWebUrl = ({coordinates, mapQuery, origin}) => {
-  if (coordinates) {
-    const originParam =
-      origin && Number.isFinite(origin?.latitude) && Number.isFinite(origin?.longitude)
-        ? `&origin=${encodeURIComponent(
-            `${origin.latitude},${origin.longitude}`,
-          )}`
-        : '';
-
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-      `${coordinates.latitude},${coordinates.longitude}`,
-    )}${originParam}&travelmode=driving`;
-  }
-
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    mapQuery,
-  )}`;
-};
-
-const buildWazeWebUrl = ({coordinates, mapQuery}) => {
-  if (coordinates) {
-    return `https://waze.com/ul?ll=${coordinates.latitude},${coordinates.longitude}&navigate=yes`;
-  }
-
-  return `https://waze.com/ul?q=${encodeURIComponent(mapQuery)}&navigate=yes`;
 };
 
 const resolveCompanyPhone = company => {
@@ -959,7 +935,7 @@ export default function ShopFranchiseLocatorPage() {
               addressLine,
               addressExtra,
               distanceLabel,
-              googleMapsUrl: buildGoogleMapsWebUrl({
+              googleMapsUrl: buildGoogleMapsNavigationUrl({
                 coordinates,
                 mapQuery,
                 origin: userCoordinates,
@@ -969,7 +945,7 @@ export default function ShopFranchiseLocatorPage() {
               markerIconUrl: franchisePinIconUrl,
               openingHours: address?.openingHours || '',
               phoneLabel: resolveCompanyPhone(company),
-              wazeUrl: buildWazeWebUrl({coordinates, mapQuery}),
+              wazeUrl: buildWazeNavigationUrl({coordinates, mapQuery}),
             };
           }),
         )
