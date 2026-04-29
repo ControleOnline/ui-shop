@@ -71,13 +71,15 @@ export default function ShopCategoryHero({
         <Text
           style={categoryHeroTitleStyle({
             theme: company,
-          })}>
+          })}
+          numberOfLines={2}>
           {title}
         </Text>
         <Text
           style={categoryHeroDescriptionStyle({
             theme: company,
-          })}>
+          })}
+          numberOfLines={2}>
           {description}
         </Text>
 
@@ -93,7 +95,7 @@ export default function ShopCategoryHero({
               {productsCount} item(ns)
             </Text>
           </View>
-          {mode !== 'search' && category?.name ? (
+          {mode === 'search' && categoriesCount > 0 ? (
             <View
               style={categoryHeroMetaChipStyle({
                 theme: company,
@@ -102,7 +104,7 @@ export default function ShopCategoryHero({
                 style={categoryHeroMetaTextStyle({
                   theme: company,
                 })}>
-                Produtos da categoria
+                {categoriesCount} categoria(s)
               </Text>
             </View>
           ) : null}

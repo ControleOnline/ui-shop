@@ -8,6 +8,7 @@ import {
 import {
   getShopCategoryDescription,
   getShopCategoryFile,
+  getTopLevelShopCategories,
 } from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 import {
   sidebarPanelStyle,
@@ -48,15 +49,6 @@ export default function ShopCategorySidebar({
             })}>
             Categorias
           </Text>
-          {!compact ? (
-            <Text
-              numberOfLines={2}
-              style={sidebarHintStyle({
-                theme: company,
-              })}>
-              Navegue pelas secoes principais do cardapio.
-            </Text>
-          ) : null}
         </View>
 
         <TouchableOpacity
@@ -86,7 +78,7 @@ export default function ShopCategorySidebar({
           </Text>
         </View>
 
-        {categories.map(category => {
+        {getTopLevelShopCategories(categories).map(category => {
           const categoryId = String(category?.id || category?.['@id'] || '');
           const categoryFile = getShopCategoryFile(category);
           const categoryImageUrl = categoryFile

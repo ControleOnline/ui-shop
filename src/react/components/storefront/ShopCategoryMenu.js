@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import {getTopLevelShopCategories} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 import {
   categoryMenuContainerStyle,
   categoryMenuChipStyle,
@@ -17,7 +18,7 @@ export default function ShopCategoryMenu({
 }) {
   const theme = pickTheme(company);
   const topLevel = useMemo(
-    () => categories.filter(category => !category?.parent),
+    () => getTopLevelShopCategories(categories),
     [categories],
   );
 

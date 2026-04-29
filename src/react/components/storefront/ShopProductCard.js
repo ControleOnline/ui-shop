@@ -18,6 +18,7 @@ import {
   inlineStyle_53_14,
   inlineStyle_56_18,
   inlineStyle_67_12,
+  inlineStyle_68_12,
   inlineStyle_87_12,
   inlineStyle_89_10,
   inlineStyle_96_12,
@@ -35,9 +36,14 @@ export default function ShopProductCard({product, compact = false, company = nul
   const {cart, refreshCart, defaultCompany} = useShopCart();
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
+  const productId = String(product?.id || '');
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
   const requiresCustomization = product?.type === 'custom' || hasInlineGroups;
+  const openProductDetails = () =>
+    navigation.navigate('ShopProductPage', {
+      id: productId,
+    });
 
   return (
     <View
@@ -47,11 +53,7 @@ export default function ShopProductCard({product, compact = false, company = nul
       })}>
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() =>
-          navigation.navigate('ShopProductPage', {
-            id: String(product?.id || ''),
-          })
-        }>
+        onPress={openProductDetails}>
         <View
           style={inlineStyle_42_10({
             compact: compact,
@@ -74,44 +76,48 @@ export default function ShopProductCard({product, compact = false, company = nul
           )}
 
           <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('ShopProductPage', {
-                id: String(product?.id || ''),
-              })
-            }
+            onPress={openProductDetails}
             style={inlineStyle_67_12({
               theme: theme,
             })}>
-            <Icon name="open-in-full" size={18} color={theme.primary} />
+            <Text
+              style={inlineStyle_68_12({
+                theme: theme,
+              })}>
+              Detalhes
+            </Text>
+            <Icon name="open-in-full" size={16} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
       <View style={inlineStyle_87_12}>
-        <View
-          style={inlineStyle_89_10}>
-          <Text
-            style={inlineStyle_96_12({
-              theme: theme,
-            })}
-            numberOfLines={2}>
-            {product?.product}
-          </Text>
-          <Text
-            style={inlineStyle_107_12({
-              theme: theme,
-            })}>
-            {formatMoney(product?.price)}
-          </Text>
-        </View>
-        {product?.description ? (
-          <Text
-            numberOfLines={2}
-            style={inlineStyle_118_12({
-              theme: theme,
-            })}>
-            {product.description}
-          </Text>
-        ) : null}
+        <TouchableOpacity activeOpacity={0.82} onPress={openProductDetails}>
+          <View
+            style={inlineStyle_89_10}>
+            <Text
+              style={inlineStyle_96_12({
+                theme: theme,
+              })}
+              numberOfLines={2}>
+              {product?.product}
+            </Text>
+            <Text
+              style={inlineStyle_107_12({
+                theme: theme,
+              })}>
+              {formatMoney(product?.price)}
+            </Text>
+          </View>
+          {product?.description ? (
+            <Text
+              numberOfLines={2}
+              style={inlineStyle_118_12({
+                theme: theme,
+              })}>
+              {product.description}
+            </Text>
+          ) : null}
+        </TouchableOpacity>
 
         {requiresCustomization ? (
           <TouchableOpacity

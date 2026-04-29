@@ -10,14 +10,14 @@ export const purchasesTopSlotStyle = {
 export const purchasesMainRowStyle = ({showSidebar, showCartAside}) => ({
   flexDirection: showSidebar || showCartAside ? 'row' : 'column',
   alignItems: 'flex-start',
-  gap: 16,
-  paddingHorizontal: 14,
-  paddingTop: 14,
+  gap: 18,
+  paddingHorizontal: 16,
+  paddingTop: 16,
   paddingBottom: showCartAside ? 24 : 96,
 });
 
 export const purchasesSidebarSlotStyle = ({compact}) => ({
-  width: compact ? 248 : 316,
+  width: compact ? 248 : 308,
 });
 
 export const purchasesMainSlotStyle = {
@@ -26,5 +26,5 @@ export const purchasesMainSlotStyle = {
 };
 
 export const purchasesAsideSlotStyle = {
-  width: 332,
+  width: 324,
 };

@@ -7,10 +7,10 @@ export const productsSectionPanelStyle = ({theme: company}) => {
 
   return {
     backgroundColor: theme.surface,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: theme.cardBorder,
-    padding: 16,
+    padding: 18,
   };
 };
 
@@ -26,7 +26,7 @@ export const productsSectionTitleStyle = ({theme: company}) => {
 
   return {
     color: theme.text,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
   };
 };
@@ -38,7 +38,7 @@ export const productsSectionHintStyle = ({theme: company}) => {
     marginTop: 4,
     color: theme.muted,
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 17,
   };
 };
 
@@ -59,7 +59,7 @@ export const productsSectionCountStyle = ({theme: company}) => {
 };
 
 export const productsSectionGridStyle = ({gap}) => ({
-  marginTop: 16,
+  marginTop: 14,
   flexDirection: 'row',
   flexWrap: 'wrap',
   gap,

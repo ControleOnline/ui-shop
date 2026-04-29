@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
@@ -47,6 +47,7 @@ export default function ShopQuantityControl({
   const {actions: orderProductActions} = orderProductsStore;
   const productGroupStore = useStore('product_group');
   const {salesCompany} = useShopSalesCompany();
+  const {width} = useWindowDimensions();
   const [quantity, setQuantity] = useState(defaultQuantity);
   const timeoutRef = useRef(null);
 
@@ -200,6 +201,8 @@ export default function ShopQuantityControl({
     setQuantity(next);
     persist(next);
   }, [persist, quantity]);
+  const isDesktopActiveState = width >= 900 && quantity > 0;
+  const activeControlColor = isDesktopActiveState ? '#FFFFFF' : iconColor;
 
   return (
     <View
@@ -208,11 +211,11 @@ export default function ShopQuantityControl({
           minHeight: 54,
           borderWidth: 1,
           borderColor: iconColor,
-          borderRadius: 6,
+          borderRadius: 14,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#fff',
+          backgroundColor: isDesktopActiveState ? iconColor : '#fff',
           paddingHorizontal: 14,
         },
         style,
@@ -221,16 +224,16 @@ export default function ShopQuantityControl({
         <Icon
           name={quantity <= 1 ? 'delete' : 'remove'}
           size={22}
-          color={quantity > 0 ? iconColor : 'transparent'}
+          color={quantity > 0 ? activeControlColor : 'transparent'}
         />
       </TouchableOpacity>
 
       <Text
         style={[
           {
-            color: iconColor,
+            color: activeControlColor,
             fontSize: 22,
-            fontWeight: '400',
+            fontWeight: '700',
           },
           textStyle,
         ]}>
@@ -238,7 +241,7 @@ export default function ShopQuantityControl({
       </Text>
 
       <TouchableOpacity onPress={increase}>
-        <Icon name="add" size={24} color={iconColor} />
+        <Icon name="add" size={24} color={activeControlColor} />
       </TouchableOpacity>
     </View>
   );

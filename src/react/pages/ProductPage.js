@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 
 import {
   ActivityIndicator,
@@ -36,33 +36,35 @@ import {
 import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import {
-  inlineStyle_137_22,
-  inlineStyle_139_14,
-  inlineStyle_145_20,
-  inlineStyle_148_18,
-  inlineStyle_155_20,
-  inlineStyle_165_20,
-  inlineStyle_167_18,
-  inlineStyle_181_22,
-  inlineStyle_184_26,
-  inlineStyle_190_22,
-  inlineStyle_195_20,
-  inlineStyle_197_18,
-  inlineStyle_205_18,
-  inlineStyle_213_22,
-  inlineStyle_221_12,
-  inlineStyle_230_16,
-  inlineStyle_252_16,
-  inlineStyle_259_22,
-  inlineStyle_264_20,
-  inlineStyle_266_18,
-  inlineStyle_277_20,
-  inlineStyle_282_18,
-  inlineStyle_289_20,
-  inlineStyle_297_26,
+  productPageScrollStyle,
+  productPageContentStyle,
+  productPageBackRowStyle,
+  productPageBackButtonStyle,
+  productPageBackTextStyle,
+  productPageHeroStyle,
+  productPageMediaPanelStyle,
+  productPageMediaStyle,
+  productPageMediaEmptyStyle,
+  productPageInfoColumnStyle,
+  productPageEyebrowStyle,
+  productPageTitleStyle,
+  productPagePriceStyle,
+  productPageDescriptionStyle,
+  productPageHelperChipStyle,
+  productPageHelperChipTextStyle,
+  productPageInlineActionWrapStyle,
+  productPageLoadingActionStyle,
+  productPageCustomizeButtonStyle,
+  productPageCustomizeButtonTextStyle,
+  productPageSimpleActionRowStyle,
+  productPageQuantitySlotStyle,
+  productPageCartButtonStyle,
+  productPageCartButtonTextStyle,
+  productPageDetailsCardStyle,
+  productPageDetailsTitleStyle,
+  productPageDetailsTextStyle,
+  productPageMobileFooterStyle,
 } from './ProductPage.styles';
-
-import { inlineStyle_285_20 } from './ProductPage.styles';
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
@@ -93,7 +95,25 @@ export default function ProductPage() {
     salesCompanyOptions,
     selectSalesCompany,
   } = useShopSalesCompany();
-  const theme = pickTheme(defaultCompany);
+  const detailCompany = useMemo(() => {
+    const activeCompany = salesCompany || defaultCompany;
+    const companyTheme = activeCompany?.theme || {};
+    const companyColors = companyTheme?.colors || {};
+
+    // Keep the web detail page readable even when a store theme is more contrast-heavy.
+    return {
+      ...activeCompany,
+      theme: {
+        ...companyTheme,
+        colors: {
+          ...companyColors,
+          'text-primary': '#111827',
+          'text-secondary': '#475569',
+        },
+      },
+    };
+  }, [defaultCompany, salesCompany]);
+  const theme = pickTheme(detailCompany);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,6 +124,7 @@ export default function ProductPage() {
         setIsCheckingGroups(false);
         return;
       }
+
       setIsCheckingGroups(true);
       productsStore.actions
         .get(productId)
@@ -152,6 +173,7 @@ export default function ProductPage() {
         .finally(() => {
           setIsCheckingGroups(false);
         });
+
       if (salesCompany?.id) {
         categoriesStore.actions.getItems({
           itemsPerPage: 500,
@@ -180,6 +202,18 @@ export default function ProductPage() {
   const requiresCustomization = Boolean(
     product?.type === 'custom' || hasCustomizationGroups,
   );
+  const productDescription = String(product?.description || '').trim();
+  const detailsCopy = productDescription || 'Sem descricao adicional para este item.';
+  const handleOpenCustomize = useCallback(async () => {
+    try {
+      await refreshCart?.();
+    } catch {}
+
+    navigation.navigate('CustomizeScreen', {
+      productId: normalizeId(product?.id || product?.['@id']),
+      redirectToCart: true,
+    });
+  }, [navigation, product, refreshCart]);
 
   if (!salesPageEnabled) {
     return (
@@ -190,7 +224,7 @@ export default function ProductPage() {
         }
         showHomeEntryControls>
         {() => (
-          <ScrollView style={inlineStyle_137_22}>
+          <ScrollView style={productPageScrollStyle}>
             <ShopFeatureState
               theme={theme}
               iconName="inventory-2"
@@ -232,139 +266,249 @@ export default function ProductPage() {
             />
           ) : (
             <>
-              <ScrollView style={inlineStyle_137_22}>
-                <View
-                  style={inlineStyle_139_14}>
-                  <View style={inlineStyle_145_20}>
-                    <TouchableOpacity
-                      onPress={() => navigation.goBack()}
-                      style={inlineStyle_148_18}>
-                      <Icon name="arrow-back" size={20} color={theme.primary} />
-                      <Text
-                        style={inlineStyle_155_20({
-                          theme: theme,
-                        })}>
-                        Voltar
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={inlineStyle_165_20({
-                    isMobile: isMobile,
-                  })}>
-                    <View
-                      style={inlineStyle_167_18({
-                        isMobile: isMobile,
-                        theme: theme,
-                      })}>
-                      {imageUrl ? (
-                        <Image
-                          source={{uri: imageUrl}}
-                          resizeMode="cover"
-                          style={inlineStyle_181_22({
-                            isMobile: isMobile,
-                          })}
-                        />
-                      ) : (
-                        <Text style={inlineStyle_184_26({
-                          theme: theme,
-                        })}>
-                          SEM IMAGEM
-                        </Text>
-                      )}
-                    </View>
-
-                    <Text style={inlineStyle_190_22({
-                      theme: theme,
-                    })}>
-                      {product?.description}
-                    </Text>
-                  </View>
-
-                  <View style={inlineStyle_195_20({
-                    isMobile: isMobile,
-                  })}>
+              <ScrollView
+                contentContainerStyle={productPageContentStyle({
+                  isMobile,
+                })}
+                style={productPageScrollStyle}>
+                <View style={productPageBackRowStyle}>
+                  <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={productPageBackButtonStyle}>
+                    <Icon name="arrow-back" size={20} color={theme.primary} />
                     <Text
-                      style={inlineStyle_197_18({
-                        isMobile: isMobile,
-                        theme: theme,
+                      style={productPageBackTextStyle({
+                        theme,
+                      })}>
+                      Voltar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
+                  style={productPageHeroStyle({
+                    isMobile,
+                    theme,
+                  })}>
+                  <View
+                    style={productPageMediaPanelStyle({
+                      isMobile,
+                      theme,
+                    })}>
+                    {imageUrl ? (
+                      <Image
+                        source={{uri: imageUrl}}
+                        resizeMode="contain"
+                        style={productPageMediaStyle({
+                          isMobile,
+                        })}
+                      />
+                    ) : (
+                      <Text
+                        style={productPageMediaEmptyStyle({
+                          theme,
+                        })}>
+                        SEM IMAGEM
+                      </Text>
+                    )}
+                  </View>
+
+                  <View
+                    style={productPageInfoColumnStyle({
+                      isMobile,
+                    })}>
+                    {!isMobile ? (
+                      <Text
+                        style={productPageEyebrowStyle({
+                          theme,
+                        })}>
+                        Detalhes do produto
+                      </Text>
+                    ) : null}
+
+                    <Text
+                      style={productPageTitleStyle({
+                        isMobile,
+                        theme,
                       })}>
                       {product?.product}
                     </Text>
+
                     <Text
-                      style={inlineStyle_205_18({
-                        isMobile: isMobile,
-                        theme: theme,
+                      style={productPagePriceStyle({
+                        isMobile,
+                        theme,
                       })}>
                       {formatMoney(product?.price)}
                     </Text>
-                    <Text style={inlineStyle_213_22({
-                      theme: theme,
-                    })}>
-                      {product?.description}
-                    </Text>
+
+                    {productDescription ? (
+                      <Text
+                        numberOfLines={isMobile ? 4 : 5}
+                        style={productPageDescriptionStyle({
+                          theme,
+                        })}>
+                        {productDescription}
+                      </Text>
+                    ) : null}
+
+                    <View
+                      style={productPageHelperChipStyle({
+                        theme,
+                        highlighted: requiresCustomization,
+                      })}>
+                      <Text
+                        style={productPageHelperChipTextStyle({
+                          theme,
+                          highlighted: requiresCustomization,
+                        })}>
+                        {requiresCustomization
+                          ? 'Abra a personalizacao para escolher os complementos'
+                          : 'Adicione o item ao pedido em poucos toques'}
+                      </Text>
+                    </View>
+
+                    {!isMobile ? (
+                      <View style={productPageInlineActionWrapStyle}>
+                        {isCheckingGroups ? (
+                          <View
+                            style={productPageLoadingActionStyle({
+                              theme,
+                            })}>
+                            <ActivityIndicator color={theme.primary} />
+                          </View>
+                        ) : requiresCustomization ? (
+                          <TouchableOpacity
+                            onPress={handleOpenCustomize}
+                            style={productPageCustomizeButtonStyle({
+                              theme,
+                            })}>
+                            <Text
+                              style={productPageCustomizeButtonTextStyle({
+                                theme,
+                              })}>
+                              Personalizar
+                            </Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View
+                            style={productPageSimpleActionRowStyle({
+                              isMobile,
+                            })}>
+                            <View style={productPageQuantitySlotStyle}>
+                              <ShopQuantityControl
+                                product={product}
+                                cart={cart}
+                                refreshCart={refreshCart}
+                                iconColor={theme.primary}
+                                defaultQuantity={1}
+                              />
+                            </View>
+
+                            <TouchableOpacity
+                              onPress={() => navigation.navigate('ShopCartPage')}
+                              style={productPageCartButtonStyle({
+                                theme,
+                              })}>
+                              <Text
+                                style={productPageCartButtonTextStyle({
+                                  theme,
+                                })}>
+                                Ir para carrinho
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    ) : null}
                   </View>
+
+                  {!isMobile ? (
+                    <View
+                      style={productPageDetailsCardStyle({
+                        theme,
+                      })}>
+                      <Text
+                        style={productPageDetailsTitleStyle({
+                          theme,
+                        })}>
+                        Descricao
+                      </Text>
+                      <Text
+                        style={productPageDetailsTextStyle({
+                          theme,
+                        })}>
+                        {detailsCopy}
+                      </Text>
+                      {requiresCustomization ? (
+                        <Text
+                          style={productPageDetailsTextStyle({
+                            theme,
+                          })}>
+                          Este item pode ser ajustado antes de entrar no pedido, com os complementos e escolhas da categoria.
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
               </ScrollView>
 
-              <View
-                style={inlineStyle_221_12({
-                  theme: theme,
-                })}>
-                {isCheckingGroups ? (
-                  <View
-                    style={inlineStyle_230_16({
-                      theme: theme,
-                    })}>
-                    <ActivityIndicator color={theme.primary} />
-                  </View>
-                ) : requiresCustomization ? (
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await refreshCart?.();
-                      } catch {}
-                      navigation.navigate('CustomizeScreen', {
-                        productId: normalizeId(product?.id || product?.['@id']),
-                        redirectToCart: true,
-                      });
-                    }}
-                    style={inlineStyle_252_16({
-                      theme: theme,
-                    })}>
-                    <Text style={inlineStyle_259_22}>
-                      Personalizar e adicionar
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={inlineStyle_264_20}>
+              {isMobile ? (
+                <View
+                  style={productPageMobileFooterStyle({
+                    theme,
+                  })}>
+                  {isCheckingGroups ? (
                     <View
-                      style={inlineStyle_266_18}>
-                      <ShopQuantityControl
-                        product={product}
-                        cart={cart}
-                        refreshCart={refreshCart}
-                        iconColor={theme.primary}
-                        defaultQuantity={1}
-                        style={inlineStyle_277_20}
-                        textStyle={inlineStyle_285_20}
-                      />
+                      style={productPageLoadingActionStyle({
+                        theme,
+                      })}>
+                      <ActivityIndicator color={theme.primary} />
                     </View>
+                  ) : requiresCustomization ? (
+                    <TouchableOpacity
+                      onPress={handleOpenCustomize}
+                      style={productPageCustomizeButtonStyle({
+                        theme,
+                      })}>
+                      <Text
+                        style={productPageCustomizeButtonTextStyle({
+                          theme,
+                        })}>
+                        Personalizar
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
                     <View
-                      style={inlineStyle_282_18}>
+                      style={productPageSimpleActionRowStyle({
+                        isMobile,
+                      })}>
+                      <View style={productPageQuantitySlotStyle}>
+                        <ShopQuantityControl
+                          product={product}
+                          cart={cart}
+                          refreshCart={refreshCart}
+                          iconColor={theme.primary}
+                          defaultQuantity={1}
+                        />
+                      </View>
+
                       <TouchableOpacity
                         onPress={() => navigation.navigate('ShopCartPage')}
-                        style={inlineStyle_289_20({
-                          theme: theme,
+                        style={productPageCartButtonStyle({
+                          theme,
                         })}>
-                        <Text style={inlineStyle_297_26}>
+                        <Text
+                          style={productPageCartButtonTextStyle({
+                            theme,
+                          })}>
                           Ir para carrinho
                         </Text>
                       </TouchableOpacity>
                     </View>
-                  </View>
-                )}
-              </View>
+                  )}
+                </View>
+              ) : null}
             </>
           )}
         </>

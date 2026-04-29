@@ -7,20 +7,20 @@ export const sidebarPanelStyle = ({compact, theme: company}) => {
 
   return {
     backgroundColor: theme.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: theme.cardBorder,
     overflow: 'hidden',
-    padding: compact ? 12 : 14,
-    gap: 12,
+    padding: compact ? 12 : 16,
+    gap: 10,
   };
 };
 
 export const sidebarHeaderStyle = {
   flexDirection: 'row',
-  alignItems: 'flex-start',
+  alignItems: 'center',
   justifyContent: 'space-between',
-  gap: 12,
+  gap: 10,
 };
 
 export const sidebarItemContentStyle = {
@@ -33,7 +33,7 @@ export const sidebarTitleStyle = ({theme: company}) => {
 
   return {
     color: theme.text,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
   };
 };
@@ -53,11 +53,11 @@ export const sidebarCountBadgeStyle = ({theme: company}) => {
 
   return {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: `${theme.primary}25`,
-    backgroundColor: `${theme.primary}10`,
+    backgroundColor: `${theme.primary}08`,
     alignSelf: 'flex-start',
   };
 };
@@ -66,14 +66,14 @@ export const sidebarToggleButtonStyle = ({theme: company}) => {
   const theme = resolveTheme(company);
 
   return {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: theme.cardBorder,
-    backgroundColor: `${theme.primary}08`,
+    backgroundColor: theme.surface,
   };
 };
 
@@ -87,19 +87,20 @@ export const sidebarItemStyle = ({compact, isActive, theme: company}) => {
   return {
     flexDirection: 'row',
     alignItems: compact ? 'center' : 'flex-start',
-    gap: 10,
-    padding: compact ? 10 : 12,
-    borderRadius: 16,
+    gap: compact ? 10 : 12,
+    paddingHorizontal: compact ? 12 : 14,
+    paddingVertical: compact ? 11 : 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: isActive ? `${theme.primary}55` : theme.cardBorder,
-    backgroundColor: isActive ? `${theme.primary}12` : theme.surface,
+    backgroundColor: isActive ? `${theme.primary}10` : theme.surface,
   };
 };
 
 export const sidebarThumbStyle = ({compact}) => ({
-  width: compact ? 44 : 56,
-  height: compact ? 44 : 56,
-  borderRadius: 14,
+  width: compact ? 50 : 52,
+  height: compact ? 50 : 52,
+  borderRadius: 16,
 });
 
 export const sidebarNameStyle = ({isActive, theme: company}) => {
@@ -107,7 +108,7 @@ export const sidebarNameStyle = ({isActive, theme: company}) => {
 
   return {
     color: isActive ? theme.primary : theme.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
   };
@@ -117,7 +118,7 @@ export const sidebarDescriptionStyle = ({theme: company}) => {
   const theme = resolveTheme(company);
 
   return {
-    marginTop: 6,
+    marginTop: 4,
     color: theme.muted,
     fontSize: 12,
     lineHeight: 17,

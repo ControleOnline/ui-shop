@@ -1,6 +1,6 @@
 export const cartAsidePanelStyle = ({theme}) => ({
   backgroundColor: theme.surface,
-  borderRadius: 20,
+  borderRadius: 22,
   borderWidth: 1,
   borderColor: theme.cardBorder,
   overflow: 'hidden',
@@ -18,7 +18,7 @@ export const cartAsideHeaderStyle = {
 
 export const cartAsideTitleStyle = ({theme}) => ({
   color: theme.text,
-  fontSize: 18,
+  fontSize: 17,
   fontWeight: '800',
 });
 
@@ -26,7 +26,7 @@ export const cartAsideHintStyle = ({theme}) => ({
   marginTop: 4,
   color: theme.muted,
   fontSize: 12,
-  lineHeight: 18,
+  lineHeight: 17,
 });
 
 export const cartAsideCountStyle = ({theme}) => ({
@@ -42,7 +42,8 @@ export const cartAsideCountStyle = ({theme}) => ({
 });
 
 export const cartAsideBodyStyle = {
-  padding: 16,
+  paddingHorizontal: 16,
+  paddingBottom: 16,
 };
 
 export const cartAsideEmptyStyle = ({theme}) => ({
@@ -62,15 +63,16 @@ export const cartAsideEmptyTitleStyle = ({theme}) => ({
 });
 
 export const cartAsideListStyle = {
-  gap: 10,
+  gap: 8,
 };
 
 export const cartAsideRowStyle = ({theme}) => ({
   borderWidth: 1,
   borderColor: theme.cardBorder,
   borderRadius: 16,
-  padding: 14,
-  gap: 4,
+  paddingHorizontal: 12,
+  paddingVertical: 11,
+  gap: 3,
   backgroundColor: `${theme.primary}06`,
 });
 

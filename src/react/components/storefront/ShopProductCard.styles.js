@@ -5,12 +5,12 @@ export const inlineStyle_25_6 = (
   },
 ) => ({
   backgroundColor: theme.surface,
-  borderRadius: 18,
+  borderRadius: 22,
   borderWidth: 1,
   borderColor: theme.cardBorder,
   overflow: 'hidden',
   flex: 1,
-  minWidth: compact ? 150 : 180,
+  minWidth: compact ? 240 : 280,
 });
 
 export const inlineStyle_42_10 = (
@@ -19,10 +19,10 @@ export const inlineStyle_42_10 = (
     theme: theme,
   },
 ) => ({
-  minHeight: compact ? 118 : 148,
+  minHeight: compact ? 118 : 142,
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: `${theme.primary}10`,
+  backgroundColor: `${theme.primary}08`,
   position: 'relative',
 });
 
@@ -32,7 +32,7 @@ export const inlineStyle_53_14 = (
   },
 ) => ({
   width: '100%',
-  height: compact ? 140 : 170,
+  height: compact ? 148 : 184,
 });
 
 export const inlineStyle_56_18 = (
@@ -51,16 +51,19 @@ export const inlineStyle_67_12 = (
 ) => ({
   position: 'absolute',
   right: 10,
-  bottom: 10,
-  width: 34,
+  top: 10,
+  minWidth: 96,
   height: 34,
   backgroundColor: theme.surface,
   borderRadius: 17,
   alignItems: 'center',
+  flexDirection: 'row',
+  gap: 6,
   justifyContent: 'center',
+  paddingHorizontal: 10,
   shadowColor: '#000',
-  shadowOpacity: 0.15,
-  shadowRadius: 6,
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
 
   shadowOffset: {
     width: 0,
@@ -68,10 +71,20 @@ export const inlineStyle_67_12 = (
   },
 });
 
+export const inlineStyle_68_12 = (
+  {
+    theme: theme,
+  },
+) => ({
+  color: theme.primary,
+  fontSize: 11,
+  fontWeight: '800',
+});
+
 export const inlineStyle_87_12 = {
-  paddingHorizontal: 12,
-  paddingTop: 10,
-  paddingBottom: 12,
+  paddingHorizontal: 14,
+  paddingTop: 12,
+  paddingBottom: 14,
 };
 
 export const inlineStyle_89_10 = {
@@ -88,9 +101,9 @@ export const inlineStyle_96_12 = (
 ) => ({
   flex: 1,
   color: theme.text,
-  fontSize: 14,
-  fontWeight: '700',
-  lineHeight: 18,
+  fontSize: 17,
+  fontWeight: '800',
+  lineHeight: 22,
 });
 
 export const inlineStyle_107_12 = (
@@ -99,7 +112,7 @@ export const inlineStyle_107_12 = (
   },
 ) => ({
   color: theme.primary,
-  fontSize: 14,
+  fontSize: 17,
   fontWeight: '800',
 });
 
@@ -110,8 +123,8 @@ export const inlineStyle_118_12 = (
 ) => ({
   marginTop: 6,
   color: theme.muted,
-  fontSize: 12,
-  lineHeight: 16,
+  fontSize: 13,
+  lineHeight: 18,
 });
 
 export const inlineStyle_140_12 = (
@@ -141,12 +154,11 @@ export const inlineStyle_151_14 = (
 
 export const inlineStyle_161_12 = {
   marginTop: 12,
-  minHeight: 44,
-  borderRadius: 12,
+  minHeight: 48,
+  borderRadius: 14,
 };
 
 export const inlineStyle_143_12 = {
   fontSize: 18,
   fontWeight: '700',
 };
-
