@@ -13,6 +13,7 @@ import ShopCategoryHero from '@controleonline/ui-shop/src/react/components/store
 import ShopCartAside from '@controleonline/ui-shop/src/react/components/storefront/ShopCartAside';
 import ShopCategorySidebar from '@controleonline/ui-shop/src/react/components/storefront/ShopCategorySidebar';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
+import ShopMobileCatalog from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileCatalog';
 import ShopProductsSection from '@controleonline/ui-shop/src/react/components/storefront/ShopProductsSection';
 import ShopPurchasesLayout from '@controleonline/ui-shop/src/react/components/storefront/ShopPurchasesLayout';
 import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
@@ -38,6 +39,7 @@ export default function ShopCatalogPage({
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
   const normalizedSearchQuery = decodeURIComponent(String(searchQuery || ''));
+  const showMobileCatalog = width < 1120;
   const showSidebar = width >= 1120;
   const showCartAside = width >= 1440;
   const [isSidebarCompact, setIsSidebarCompact] = useState(width < 1380);
@@ -51,6 +53,7 @@ export default function ShopCatalogPage({
     isLoadingCatalog,
     isLoadingSalesCompanies,
     products,
+    productsByCategoryId,
     requiresCompanySelection,
     salesCompany,
     salesCompanyOptions,
@@ -61,8 +64,9 @@ export default function ShopCatalogPage({
     setActiveCategoryId,
     theme,
   } = useShopCatalogState({
-    categoryId,
+    loadCategorySections: showMobileCatalog,
     mode,
+    routeCategoryId: categoryId,
     searchQuery: normalizedSearchQuery,
   });
   const company = salesCompany || defaultCompany;
@@ -164,6 +168,7 @@ export default function ShopCatalogPage({
       onSearch={handleSearch}
       searchValue={normalizedSearchQuery}
       showBottomCart={showBottomCart}
+      showSearch={!showMobileCatalog}
       showHomeEntryControls>
       {() =>
         requiresCompanySelection ? (
@@ -174,6 +179,19 @@ export default function ShopCatalogPage({
             onSelect={selectSalesCompany}
             theme={theme}
             title="Escolha a unidade para continuar"
+          />
+        ) : showMobileCatalog ? (
+          <ShopMobileCatalog
+            activeCategoryId={activeCategoryId}
+            categories={categories}
+            company={catalogCompany}
+            isLoadingCatalog={isLoadingCatalog}
+            mode={mode}
+            onSearch={handleSearch}
+            onSelectCategory={handleSelectCategory}
+            productsByCategoryId={productsByCategoryId}
+            searchProducts={searchProducts}
+            searchValue={normalizedSearchQuery}
           />
         ) : (
           <ScrollView contentContainerStyle={catalogPageScrollContentStyle}>

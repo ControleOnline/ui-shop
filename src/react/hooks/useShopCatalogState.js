@@ -19,6 +19,7 @@ const normalizeCollection = payload => (Array.isArray(payload) ? payload.filter(
 
 // Manage shared catalog state so every `Compras` route behaves like the same experience.
 export default function useShopCatalogState({
+  loadCategorySections = false,
   mode = 'default',
   routeCategoryId = '',
   searchQuery = '',
@@ -43,6 +44,7 @@ export default function useShopCatalogState({
   const [categories, setCategories] = useState([]);
   const [activeCategoryId, setActiveCategoryId] = useState('');
   const [products, setProducts] = useState([]);
+  const [productsByCategoryId, setProductsByCategoryId] = useState({});
   const [searchProducts, setSearchProducts] = useState([]);
   const [searchCategories, setSearchCategories] = useState([]);
 
@@ -58,6 +60,14 @@ export default function useShopCatalogState({
   const topLevelCategories = useMemo(
     () => getTopLevelShopCategories(categories),
     [categories],
+  );
+  const topLevelCategoryIds = useMemo(
+    () =>
+      topLevelCategories
+        .map(category => String(category?.id || category?.['@id'] || ''))
+        .filter(Boolean)
+        .join('|'),
+    [topLevelCategories],
   );
   const activeCategory = useMemo(
     () =>
@@ -91,6 +101,7 @@ export default function useShopCatalogState({
     if (!salesCompany?.id || requiresCompanySelection) {
       setCategories([]);
       setProducts([]);
+      setProductsByCategoryId({});
       setSearchProducts([]);
       setSearchCategories([]);
     }
@@ -162,6 +173,84 @@ export default function useShopCatalogState({
     routeCategoryId,
     salesCompany?.id,
     storageKey,
+  ]);
+
+  // Mobile and tablet render the catalog as a continuous menu with one section per category.
+  useEffect(() => {
+    let isMounted = true;
+
+    if (
+      !loadCategorySections ||
+      mode === 'search' ||
+      !salesCompany?.id ||
+      requiresCompanySelection ||
+      topLevelCategories.length === 0
+    ) {
+      setProductsByCategoryId({});
+      return undefined;
+    }
+
+    setIsLoadingResults(true);
+    setProductsByCategoryId({});
+
+    const loadSections = async () => {
+      for (const category of topLevelCategories) {
+        if (!isMounted) {
+          return;
+        }
+
+        const categoryId = String(category?.id || category?.['@id'] || '');
+
+        if (!categoryId) {
+          continue;
+        }
+
+        try {
+          const data = await productsStore.actions.getItems({
+            'productCategory.category': `/categories/${categoryId}`,
+            exists: {productFiles: 'true'},
+            productFiles: {file: {fileType: 'image'}},
+            active: 1,
+            type: SHOP_PRODUCT_TYPES,
+            itemsPerPage: 500,
+            'order[product]': 'ASC',
+            company: salesCompany.id,
+          });
+
+          if (isMounted) {
+            setProductsByCategoryId(currentValue => ({
+              ...currentValue,
+              [categoryId]: normalizeCollection(data),
+            }));
+          }
+        } catch {
+          if (isMounted) {
+            setProductsByCategoryId(currentValue => ({
+              ...currentValue,
+              [categoryId]: [],
+            }));
+          }
+        }
+      }
+    };
+
+    loadSections().finally(() => {
+      if (isMounted) {
+        setIsLoadingResults(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    loadCategorySections,
+    mode,
+    productsStore.actions,
+    refreshKey,
+    requiresCompanySelection,
+    salesCompany?.id,
+    topLevelCategoryIds,
   ]);
 
   // Persist the latest storefront category for this company pairing.
@@ -308,6 +397,7 @@ export default function useShopCatalogState({
     isLoadingCatalog: isLoadingCategories || isLoadingResults,
     isLoadingSalesCompanies,
     products,
+    productsByCategoryId,
     refreshCart,
     requiresCompanySelection,
     salesCompany,
