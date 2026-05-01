@@ -1,6 +1,6 @@
 export const cartAsidePanelStyle = ({theme}) => ({
   backgroundColor: theme.surface,
-  borderRadius: 22,
+  borderRadius: 18,
   borderWidth: 1,
   borderColor: theme.cardBorder,
   overflow: 'hidden',
@@ -11,22 +11,22 @@ export const cartAsideHeaderStyle = {
   alignItems: 'flex-start',
   justifyContent: 'space-between',
   gap: 12,
-  padding: 16,
+  padding: 14,
   borderBottomWidth: 1,
   borderBottomColor: '#00000000',
 };
 
 export const cartAsideTitleStyle = ({theme}) => ({
   color: theme.text,
-  fontSize: 17,
+  fontSize: 16,
   fontWeight: '800',
 });
 
 export const cartAsideHintStyle = ({theme}) => ({
   marginTop: 4,
   color: theme.muted,
-  fontSize: 12,
-  lineHeight: 17,
+  fontSize: 11,
+  lineHeight: 16,
 });
 
 export const cartAsideCountStyle = ({theme}) => ({
@@ -37,27 +37,27 @@ export const cartAsideCountStyle = ({theme}) => ({
   borderColor: `${theme.primary}25`,
   backgroundColor: `${theme.primary}10`,
   borderRadius: 999,
-  paddingHorizontal: 10,
-  paddingVertical: 8,
+  paddingHorizontal: 9,
+  paddingVertical: 6,
 });
 
 export const cartAsideBodyStyle = {
-  paddingHorizontal: 16,
-  paddingBottom: 16,
+  paddingHorizontal: 14,
+  paddingBottom: 14,
 };
 
 export const cartAsideEmptyStyle = ({theme}) => ({
   borderWidth: 1,
-  borderColor: theme.cardBorder,
-  borderRadius: 18,
-  padding: 18,
+  borderColor: `${theme.primary}18`,
+  borderRadius: 16,
+  padding: 16,
   alignItems: 'center',
-  backgroundColor: `${theme.primary}06`,
+  backgroundColor: `${theme.primary}04`,
 });
 
 export const cartAsideEmptyTitleStyle = ({theme}) => ({
   color: theme.text,
-  fontSize: 16,
+  fontSize: 14,
   fontWeight: '800',
   textAlign: 'center',
 });
@@ -69,9 +69,9 @@ export const cartAsideListStyle = {
 export const cartAsideRowStyle = ({theme}) => ({
   borderWidth: 1,
   borderColor: theme.cardBorder,
-  borderRadius: 16,
+  borderRadius: 14,
   paddingHorizontal: 12,
-  paddingVertical: 11,
+  paddingVertical: 10,
   gap: 3,
   backgroundColor: `${theme.primary}06`,
 });
@@ -90,7 +90,7 @@ export const cartAsideRowMetaStyle = ({theme}) => ({
 });
 
 export const cartAsideFooterStyle = {
-  padding: 16,
+  padding: 14,
   borderTopWidth: 1,
   borderTopColor: '#00000000',
   flexDirection: 'row',
@@ -108,19 +108,19 @@ export const cartAsideTotalLabelStyle = ({theme}) => ({
 export const cartAsideTotalValueStyle = ({theme}) => ({
   marginTop: 4,
   color: theme.text,
-  fontSize: 24,
+  fontSize: 22,
   fontWeight: '800',
 });
 
 export const cartAsideButtonStyle = ({disabled, theme}) => ({
-  minHeight: 44,
-  minWidth: 132,
+  minHeight: 42,
+  minWidth: 124,
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 14,
+  borderRadius: 12,
   borderWidth: 1,
   borderColor: disabled ? theme.cardBorder : theme.primary,
-  backgroundColor: disabled ? theme.background : `${theme.primary}12`,
+  backgroundColor: disabled ? `${theme.primary}06` : `${theme.primary}14`,
   paddingHorizontal: 16,
 });
 

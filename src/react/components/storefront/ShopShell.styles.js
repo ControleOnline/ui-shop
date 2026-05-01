@@ -22,9 +22,9 @@ export const inlineStyle_121_10 = (
   },
 ) => ({
   paddingHorizontal: shellPadding,
-  paddingTop: isMobile ? 12 : 18,
-  paddingBottom: isMobile ? 14 : 18,
-  gap: 14,
+  paddingTop: isMobile ? 12 : 12,
+  paddingBottom: isMobile ? 14 : 12,
+  gap: isMobile ? 14 : 10,
 });
 
 export const inlineStyle_128_12 = {
@@ -46,8 +46,8 @@ export const inlineStyle_146_20 = (
     isMobile: isMobile,
   },
 ) => ({
-  width: isMobile ? 56 : 82,
-  height: isMobile ? 56 : 64,
+  width: isMobile ? 56 : 58,
+  height: isMobile ? 56 : 54,
   borderRadius: 10,
 });
 
@@ -56,8 +56,8 @@ export const inlineStyle_155_20 = (
     isMobile: isMobile,
   },
 ) => ({
-  width: isMobile ? 56 : 82,
-  height: isMobile ? 56 : 64,
+  width: isMobile ? 56 : 58,
+  height: isMobile ? 56 : 54,
   borderRadius: 12,
   alignItems: 'center',
   justifyContent: 'center',
@@ -90,7 +90,7 @@ export const inlineStyle_180_20 = (
   },
 ) => ({
   color: '#fff',
-  fontSize: isMobile ? 15 : 20,
+  fontSize: isMobile ? 15 : 18,
   fontWeight: '700',
   flexShrink: 1,
 });
@@ -107,8 +107,8 @@ export const inlineStyle_191_22 = {
 
 export const inlineStyle_214_18 = {
   color: 'rgba(255,255,255,0.86)',
-  fontSize: 12,
-  marginTop: 3,
+  fontSize: 11,
+  marginTop: 2,
 };
 
 export const inlineStyle_224_18 = {
@@ -138,27 +138,27 @@ export const inlineStyle_241_16 = {
 export const inlineStyle_255_12 = {
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: 'rgba(255,255,255,0.16)',
-  borderRadius: 14,
+  backgroundColor: 'rgba(255,255,255,0.18)',
+  borderRadius: 12,
   borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.24)',
-  paddingHorizontal: 12,
-  minHeight: 44,
+  borderColor: 'rgba(255,255,255,0.3)',
+  paddingHorizontal: 14,
+  minHeight: 40,
   gap: 8,
 };
 
 export const inlineStyle_273_14 = {
   flex: 1,
   color: '#fff',
-  fontSize: 14,
-  minHeight: 40,
+  fontSize: 13,
+  minHeight: 36,
 };
 
 export const inlineStyle_282_14 = {
   width: 30,
   height: 30,
-  borderRadius: 10,
-  backgroundColor: 'rgba(255,255,255,0.2)',
+  borderRadius: 15,
+  backgroundColor: 'rgba(255,255,255,0.24)',
   alignItems: 'center',
   justifyContent: 'center',
 };

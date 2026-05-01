@@ -35,9 +35,15 @@ export default function ShopProductsSection({
     [products],
   );
   const availableWidth = Math.max(layoutWidth || 720, 320);
-  const gap = availableWidth < 720 ? 12 : 16;
+  const gap = availableWidth < 720 ? 12 : 14;
   const columns =
-    availableWidth >= 1320 ? 3 : availableWidth >= 740 ? 2 : 1;
+    availableWidth >= 1680
+      ? 4
+      : availableWidth >= 1120
+        ? 3
+        : availableWidth >= 760
+          ? 2
+          : 1;
   const cardWidth =
     columns === 1
       ? availableWidth

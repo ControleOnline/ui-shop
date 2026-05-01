@@ -2,16 +2,16 @@ export const categoryMenuContainerStyle = ({theme}) => ({
   backgroundColor: theme.surface,
   borderBottomWidth: 1,
   borderBottomColor: theme.cardBorder,
-  paddingVertical: 8,
+  paddingVertical: 7,
 });
 
 export const categoryMenuChipStyle = ({isActive, theme}) => ({
-  backgroundColor: isActive ? `${theme.primary}14` : theme.surface,
-  borderColor: isActive ? `${theme.primary}55` : theme.cardBorder,
+  backgroundColor: isActive ? `${theme.accent}18` : `${theme.primary}05`,
+  borderColor: isActive ? theme.accent : `${theme.primary}25`,
   borderWidth: 1,
-  minHeight: 38,
-  paddingVertical: 8,
-  paddingHorizontal: 16,
+  minHeight: 34,
+  paddingVertical: 7,
+  paddingHorizontal: 14,
   borderRadius: 999,
   justifyContent: 'center',
 });
@@ -23,6 +23,6 @@ export const categoryMenuChipTextStyle = ({isActive, theme}) => ({
 });
 
 export const categoryMenuContentStyle = {
-  paddingHorizontal: 16,
-  gap: 8,
+  paddingHorizontal: 14,
+  gap: 10,
 };

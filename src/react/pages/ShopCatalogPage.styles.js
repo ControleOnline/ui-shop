@@ -3,7 +3,9 @@ export const catalogPageScrollContentStyle = {
 };
 
 export const catalogPageSectionStackStyle = {
-  gap: 16,
+  width: '100%',
+  alignSelf: 'stretch',
+  gap: 10,
 };
 
 export const catalogPageSearchCategoriesStyle = ({theme}) => ({
