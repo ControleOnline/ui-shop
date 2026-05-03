@@ -5,12 +5,21 @@ export const inlineStyle_25_6 = (
   },
 ) => ({
   backgroundColor: theme.surface,
-  borderRadius: 22,
+  borderRadius: 16,
   borderWidth: 1,
   borderColor: theme.cardBorder,
   overflow: 'hidden',
   flex: 1,
-  minWidth: compact ? 240 : 280,
+  minWidth: compact ? 300 : 280,
+  flexDirection: compact ? 'row' : 'column',
+  minHeight: compact ? 166 : undefined,
+  shadowColor: '#0F172A',
+  shadowOpacity: compact ? 0.05 : 0,
+  shadowRadius: compact ? 12 : 0,
+  shadowOffset: {
+    width: 0,
+    height: compact ? 4 : 0,
+  },
 });
 
 export const inlineStyle_42_10 = (
@@ -19,7 +28,9 @@ export const inlineStyle_42_10 = (
     theme: theme,
   },
 ) => ({
-  minHeight: compact ? 118 : 142,
+  width: compact ? 150 : '100%',
+  minHeight: compact ? 166 : 142,
+  height: compact ? '100%' : undefined,
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: `${theme.primary}08`,
@@ -32,7 +43,7 @@ export const inlineStyle_53_14 = (
   },
 ) => ({
   width: '100%',
-  height: compact ? 148 : 184,
+  height: compact ? '100%' : 174,
 });
 
 export const inlineStyle_56_18 = (
@@ -46,21 +57,22 @@ export const inlineStyle_56_18 = (
 
 export const inlineStyle_67_12 = (
   {
+    compact: compact,
     theme: theme,
   },
 ) => ({
   position: 'absolute',
-  right: 10,
-  top: 10,
-  minWidth: 96,
-  height: 34,
+  right: compact ? 8 : 10,
+  top: compact ? 8 : 10,
+  minWidth: compact ? 34 : 88,
+  height: compact ? 30 : 32,
   backgroundColor: theme.surface,
-  borderRadius: 17,
+  borderRadius: 16,
   alignItems: 'center',
   flexDirection: 'row',
-  gap: 6,
+  gap: compact ? 0 : 6,
   justifyContent: 'center',
-  paddingHorizontal: 10,
+  paddingHorizontal: compact ? 7 : 10,
   shadowColor: '#000',
   shadowOpacity: 0.1,
   shadowRadius: 10,
@@ -73,18 +85,23 @@ export const inlineStyle_67_12 = (
 
 export const inlineStyle_68_12 = (
   {
+    compact: compact,
     theme: theme,
   },
 ) => ({
   color: theme.primary,
   fontSize: 11,
   fontWeight: '800',
+  display: compact ? 'none' : 'flex',
 });
 
 export const inlineStyle_87_12 = {
+  flex: 1,
+  minWidth: 0,
   paddingHorizontal: 14,
   paddingTop: 12,
-  paddingBottom: 14,
+  paddingBottom: 12,
+  justifyContent: 'space-between',
 };
 
 export const inlineStyle_89_10 = {
@@ -101,9 +118,9 @@ export const inlineStyle_96_12 = (
 ) => ({
   flex: 1,
   color: theme.text,
-  fontSize: 17,
+  fontSize: 16,
   fontWeight: '800',
-  lineHeight: 22,
+  lineHeight: 20,
 });
 
 export const inlineStyle_107_12 = (
@@ -113,7 +130,7 @@ export const inlineStyle_107_12 = (
 ) => ({
   color: theme.primary,
   fontSize: 17,
-  fontWeight: '800',
+  fontWeight: '900',
 });
 
 export const inlineStyle_118_12 = (
@@ -123,8 +140,8 @@ export const inlineStyle_118_12 = (
 ) => ({
   marginTop: 6,
   color: theme.muted,
-  fontSize: 13,
-  lineHeight: 18,
+  fontSize: 12,
+  lineHeight: 16,
 });
 
 export const inlineStyle_140_12 = (
@@ -132,14 +149,17 @@ export const inlineStyle_140_12 = (
     theme: theme,
   },
 ) => ({
-  marginTop: 12,
-  minHeight: 42,
-  borderRadius: 12,
+  marginTop: 10,
+  minHeight: 36,
+  minWidth: 132,
+  alignSelf: 'flex-start',
+  borderRadius: 999,
   borderWidth: 1,
-  borderColor: theme.primary,
+  borderColor: `${theme.primary}70`,
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: `${theme.primary}10`,
+  backgroundColor: `${theme.primary}08`,
+  paddingHorizontal: 18,
 });
 
 export const inlineStyle_151_14 = (
@@ -148,17 +168,17 @@ export const inlineStyle_151_14 = (
   },
 ) => ({
   color: theme.primary,
-  fontSize: 13,
+  fontSize: 12,
   fontWeight: '800',
 });
 
 export const inlineStyle_161_12 = {
-  marginTop: 12,
-  minHeight: 48,
-  borderRadius: 14,
+  marginTop: 10,
+  minHeight: 42,
+  borderRadius: 12,
 };
 
 export const inlineStyle_143_12 = {
-  fontSize: 18,
+  fontSize: 16,
   fontWeight: '700',
 };

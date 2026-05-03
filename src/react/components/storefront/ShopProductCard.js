@@ -78,10 +78,12 @@ export default function ShopProductCard({product, compact = false, company = nul
           <TouchableOpacity
             onPress={openProductDetails}
             style={inlineStyle_67_12({
+              compact: compact,
               theme: theme,
             })}>
             <Text
               style={inlineStyle_68_12({
+                compact: compact,
                 theme: theme,
               })}>
               Detalhes

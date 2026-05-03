@@ -6,11 +6,13 @@ export const productsSectionPanelStyle = ({theme: company}) => {
   const theme = resolveTheme(company);
 
   return {
+    width: '100%',
+    alignSelf: 'stretch',
     backgroundColor: theme.surface,
-    borderRadius: 24,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: theme.cardBorder,
-    padding: 18,
+    padding: 14,
   };
 };
 
@@ -26,7 +28,7 @@ export const productsSectionTitleStyle = ({theme: company}) => {
 
   return {
     color: theme.text,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
   };
 };
@@ -37,8 +39,8 @@ export const productsSectionHintStyle = ({theme: company}) => {
   return {
     marginTop: 4,
     color: theme.muted,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 11,
+    lineHeight: 16,
   };
 };
 
@@ -54,19 +56,21 @@ export const productsSectionCountStyle = ({theme: company}) => {
     backgroundColor: `${theme.primary}10`,
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
   };
 };
 
 export const productsSectionGridStyle = ({gap}) => ({
-  marginTop: 14,
+  marginTop: 12,
   flexDirection: 'row',
   flexWrap: 'wrap',
+  alignItems: 'stretch',
   gap,
 });
 
 export const productsSectionCardSlotStyle = ({cardWidth}) => ({
   width: cardWidth,
+  minWidth: 0,
 });
 
 export const productsSectionEmptyStateStyle = ({theme: company}) => {
