@@ -112,6 +112,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'center',
     marginTop: 18,
   },
   stampSlot: {
