@@ -8,6 +8,7 @@
 
 ## Regras de pagamento
 - O `/cart` do cliente deve trabalhar com o carrinho de venda canonico (`orderType = cart`).
+- A tela de fidelidade deve ler pedidos `orderType = fidelity`; por padrao mostra apenas o cartao aberto atual e oferece acesso aos ultimos cartoes. Os carimbos sao pedidos `sale` pagos vinculados por `mainOrderId`.
 - O cliente escolhe pagar online agora ou cobrar na entrega.
 - O pagamento online atual do shop usa Asaas.
 - O pagamento na entrega depende das configuracoes da empresa e dos devices remotos liberados.

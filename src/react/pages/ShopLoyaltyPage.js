@@ -1,26 +1,59 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   ScrollView,
-  StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import {normalizeId, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {useStore} from '@store';
 import {SHOP_HOME_OPTION_LOYALTY} from '@controleonline/ui-common/src/react/utils/shopConfig';
+import styles from '@controleonline/ui-shop/src/react/pages/ShopLoyaltyPage.styles';
 
 const resolveProductLabel = product =>
   String(product?.product || product?.name || '').trim() ||
   `Produto #${product?.id || ''}`;
 
+const formatStampNumber = value => String(value).padStart(2, '0');
+
+const extractOrderInfo = order => {
+  const raw = order?.otherInformations;
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const resolveCardRequiredSales = (card, fallback) => {
+  const info = extractOrderInfo(card);
+  const configuredValue = Number(info.loyalty_required_sales || 0);
+  const fallbackValue = Number(fallback || 0);
+
+  return Math.max(0, configuredValue || fallbackValue);
+};
+
+const isPaidSale = order => {
+  const status = String(order?.status?.status || '').trim().toLowerCase();
+  const realStatus = String(order?.status?.realStatus || '').trim().toLowerCase();
+
+  return status === 'paid' || realStatus === 'paid' || realStatus === 'closed';
+};
+
 export default function ShopLoyaltyPage() {
   const navigation = useNavigation();
   const productsStore = useStore('products');
+  const ordersStore = useStore('orders');
   const {
     defaultCompany,
     loyaltyCouponsEnabled,
@@ -29,10 +62,19 @@ export default function ShopLoyaltyPage() {
     loyaltyRequiredSales,
     primaryEntryRouteName,
   } = useShopSettings();
+  const {
+    currentCompany,
+    defaultCompany: cartDefaultCompany,
+    refreshCart,
+    salesCompany,
+  } = useShopCart({autoRefresh: true});
   const theme = pickTheme(defaultCompany);
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
+  const [loyaltyCards, setLoyaltyCards] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isLoadingCards, setIsLoadingCards] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,19 +129,213 @@ export default function ShopLoyaltyPage() {
     };
   }, [loyaltyCouponsEnabled, loyaltyGiftProductId, productsStore.actions]);
 
-  const fakeCompletedSales = useMemo(() => {
-    if (!loyaltyRequiredSales) {
-      return 0;
+  const loadLoyaltyCards = useCallback(async () => {
+    const providerId = normalizeId(salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id);
+    const clientId = normalizeId(currentCompany?.id);
+
+    if (!loyaltyCouponsEnabled || !providerId || !clientId) {
+      setLoyaltyCards([]);
+      return;
     }
 
-    return Math.max(1, Math.min(loyaltyRequiredSales - 1, 3));
-  }, [loyaltyRequiredSales]);
+    setIsLoadingCards(true);
+    try {
+      await refreshCart?.();
 
-  const remainingSales = Math.max(loyaltyRequiredSales - fakeCompletedSales, 0);
-  const progressPercent =
-    loyaltyRequiredSales > 0
-      ? Math.min(100, (fakeCompletedSales / loyaltyRequiredSales) * 100)
-      : 0;
+      const cardQuery = {
+        client: clientId,
+        provider: providerId,
+        orderType: 'fidelity',
+        page: 1,
+        itemsPerPage: showHistory ? 8 : 1,
+      };
+
+      if (!showHistory) {
+        cardQuery.status = {realStatus: 'open'};
+      }
+
+      const cards = await ordersStore.actions.getItems(cardQuery);
+      const hydratedCards = await Promise.all(
+        (Array.isArray(cards) ? cards : []).map(async card => {
+          const requiredSales = resolveCardRequiredSales(
+            card,
+            loyaltyRequiredSales,
+          );
+          const stamps = await ordersStore.actions.getItems({
+            mainOrderId: card?.id,
+            orderType: 'sale',
+            page: 1,
+            itemsPerPage: Math.max(requiredSales || 1, 1),
+          });
+
+          return {
+            card,
+            requiredSales,
+            stamps: (Array.isArray(stamps) ? stamps : [])
+              .filter(isPaidSale)
+              .sort(
+                (left, right) =>
+                  new Date(left?.orderDate || 0).getTime() -
+                  new Date(right?.orderDate || 0).getTime(),
+              ),
+          };
+        }),
+      );
+
+      setLoyaltyCards(hydratedCards);
+    } catch {
+      setLoyaltyCards([]);
+    } finally {
+      setIsLoadingCards(false);
+    }
+  }, [
+    cartDefaultCompany?.id,
+    currentCompany?.id,
+    defaultCompany?.id,
+    loyaltyCouponsEnabled,
+    loyaltyRequiredSales,
+    ordersStore.actions,
+    refreshCart,
+    salesCompany?.id,
+    showHistory,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadLoyaltyCards();
+    }, [loadLoyaltyCards]),
+  );
+
+  const renderStampGrid = cardData => {
+    const requiredSales = cardData?.requiredSales || loyaltyRequiredSales || 0;
+    const stamps = Array.isArray(cardData?.stamps) ? cardData.stamps : [];
+    const completedStampCount = Math.min(stamps.length, requiredSales);
+    const remainingSales = Math.max(requiredSales - completedStampCount, 0);
+    const stampSlots = Array.from({length: requiredSales}, (_, index) => ({
+      completed: index < completedStampCount,
+      number: index + 1,
+      order: stamps[index] || null,
+    }));
+
+    return (
+      <>
+        <View style={styles.summaryHeader}>
+          <View style={styles.summaryTitleGroup}>
+            <Text style={[styles.summaryLabel, {color: theme.muted}]}>
+              Pedidos carimbados
+            </Text>
+            <Text style={[styles.summaryValue, {color: theme.text}]}>
+              {completedStampCount} / {requiredSales || 0}
+            </Text>
+            {cardData?.card?.id ? (
+              <Text style={[styles.cardMeta, {color: theme.muted}]}>
+                Cartao #{cardData.card.id}
+              </Text>
+            ) : null}
+          </View>
+          <View
+            style={[
+              styles.rewardBadge,
+              {backgroundColor: theme.primary},
+            ]}>
+            <Text
+              style={[
+                styles.rewardBadgeText,
+                {color: theme.onPrimary},
+              ]}>
+              premio
+            </Text>
+          </View>
+        </View>
+        {stampSlots.length > 0 ? (
+          <View style={styles.stampGrid}>
+            {stampSlots.map(slot => (
+              <View
+                key={`loyalty-stamp-${cardData?.card?.id || 'empty'}-${slot.number}`}
+                style={[
+                  styles.stampSlot,
+                  {
+                    backgroundColor: slot.completed
+                      ? theme.background
+                      : theme.surface,
+                    borderColor: slot.completed
+                      ? theme.primary
+                      : theme.cardBorder,
+                  },
+                ]}>
+                {slot.completed ? (
+                  <View
+                    style={[
+                      styles.stampMark,
+                      {
+                        borderColor: theme.primary,
+                        transform: [
+                          {
+                            rotate:
+                              slot.number % 2 === 0 ? '4deg' : '-5deg',
+                          },
+                        ],
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.stampMarkMain,
+                        {color: theme.primary},
+                      ]}>
+                      OK
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stampMarkLabel,
+                        {color: theme.primary},
+                      ]}>
+                      {slot.order?.id
+                        ? `PEDIDO #${slot.order.id}`
+                        : `PEDIDO ${formatStampNumber(slot.number)}`}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text
+                      style={[
+                        styles.pendingStampNumber,
+                        {color: theme.cardBorder},
+                      ]}>
+                      {formatStampNumber(slot.number)}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.pendingStampLabel,
+                        {color: theme.muted},
+                      ]}>
+                      aguardando pedido
+                    </Text>
+                  </>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.emptyStampBoard,
+              {borderColor: theme.cardBorder},
+            ]}>
+            <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+              Nenhuma meta de pedidos foi configurada para esta fidelidade.
+            </Text>
+          </View>
+        )}
+        {stampSlots.length > 0 && (
+          <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+            {remainingSales > 0
+              ? `Faltam ${remainingSales} pedido(s) para liberar o brinde.`
+              : 'Brinde liberado para o proximo pedido.'}
+          </Text>
+        )}
+      </>
+    );
+  };
 
   return (
     <ShopShell
@@ -142,7 +378,7 @@ export default function ShopLoyaltyPage() {
                   },
                 ]}>
                 <Text style={[styles.heroEyebrow, {color: theme.accent}]}>
-                  DADOS DE TESTE
+                  FIDELIDADE
                 </Text>
                 <Text style={[styles.heroTitle, {color: theme.onPrimary}]}>
                   Acompanhe a sua fidelidade
@@ -152,46 +388,79 @@ export default function ShopLoyaltyPage() {
                     styles.heroText,
                     {color: 'rgba(255,255,255,0.78)'},
                   ]}>
-                  Esta tela usa contadores fake apenas para validar se a
-                  experiencia aparece ou nao conforme a configuracao da empresa.
+                  Cada pedido pago com produtos participantes ganha um carimbo.
+                  Ao completar o cartao, o brinde entra no proximo carrinho.
                 </Text>
               </View>
 
-              <View
-                style={[
-                  styles.summaryCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
-                ]}>
-                <Text style={[styles.summaryLabel, {color: theme.muted}]}>
-                  Compras registradas
-                </Text>
-                <Text style={[styles.summaryValue, {color: theme.text}]}>
-                  {fakeCompletedSales} / {loyaltyRequiredSales || 0}
-                </Text>
+              <View style={styles.loyaltyToolbar}>
+                <View style={styles.toolbarTitleGroup}>
+                  <Text style={[styles.toolbarTitle, {color: theme.text}]}>
+                    {showHistory ? 'Ultimos cartoes' : 'Cartao atual'}
+                  </Text>
+                  <Text style={[styles.toolbarMeta, {color: theme.muted}]}>
+                    {loyaltyCards.length} cartao(oes) carregado(s)
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.84}
+                  onPress={() => setShowHistory(value => !value)}
+                  style={[
+                    styles.historyButton,
+                    {borderColor: theme.primary},
+                  ]}>
+                  <Text style={[styles.historyButtonText, {color: theme.primary}]}>
+                    {showHistory ? 'Ver atual' : 'Ver ultimos'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {isLoadingCards ? (
                 <View
                   style={[
-                    styles.progressTrack,
-                    {backgroundColor: theme.cardBorder},
+                    styles.summaryCard,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                    },
                   ]}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        backgroundColor: theme.primary,
-                        width: `${progressPercent}%`,
-                      },
-                    ]}
-                  />
+                  <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+                    Carregando cartoes de fidelidade.
+                  </Text>
                 </View>
-                <Text style={[styles.summaryHelp, {color: theme.muted}]}>
-                  {remainingSales > 0
-                    ? `Faltam ${remainingSales} compra(s) para liberar o brinde.`
-                    : 'Brinde liberado nos dados de teste.'}
-                </Text>
-              </View>
+              ) : loyaltyCards.length > 0 ? (
+                loyaltyCards.map(cardData => (
+                  <View
+                    key={`loyalty-card-${cardData?.card?.id || 'current'}`}
+                    style={[
+                      styles.summaryCard,
+                      {
+                        backgroundColor: theme.surface,
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}>
+                    {renderStampGrid(cardData)}
+                  </View>
+                ))
+              ) : (
+                <View
+                  style={[
+                    styles.summaryCard,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                    },
+                  ]}>
+                  {renderStampGrid({
+                    card: null,
+                    requiredSales: loyaltyRequiredSales || 0,
+                    stamps: [],
+                  })}
+                  <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+                    Nenhum cartao aberto foi encontrado para este cliente.
+                  </Text>
+                </View>
+              )}
 
               <View style={styles.infoGrid}>
                 <View
@@ -243,7 +512,7 @@ export default function ShopLoyaltyPage() {
                       : 'Nenhum brinde configurado'}
                   </Text>
                   <Text style={[styles.infoEmpty, {color: theme.muted}]}>
-                    Meta configurada: {loyaltyRequiredSales || 0} venda(s).
+                    Meta configurada: {loyaltyRequiredSales || 0} pedido(s).
                   </Text>
                 </View>
               </View>
@@ -254,99 +523,3 @@ export default function ShopLoyaltyPage() {
     </ShopShell>
   );
 }
-
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-  },
-  pageContent: {
-    paddingBottom: 40,
-  },
-  hero: {
-    marginHorizontal: 14,
-    marginTop: 14,
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-  },
-  heroEyebrow: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  heroTitle: {
-    fontSize: 27,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-  heroText: {
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 8,
-  },
-  summaryCard: {
-    marginHorizontal: 14,
-    marginTop: 14,
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 18,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  summaryValue: {
-    fontSize: 30,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-  progressTrack: {
-    height: 12,
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginTop: 16,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
-  summaryHelp: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 12,
-  },
-  infoGrid: {
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    gap: 14,
-  },
-  infoCard: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 18,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  infoMeta: {
-    fontSize: 12,
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  infoListItem: {
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 4,
-  },
-  infoEmpty: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  giftTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-});

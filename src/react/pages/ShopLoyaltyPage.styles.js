@@ -1,0 +1,207 @@
+import {StyleSheet} from 'react-native';
+
+export default StyleSheet.create({
+  page: {
+    flex: 1,
+  },
+  pageContent: {
+    paddingBottom: 40,
+  },
+  hero: {
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+  },
+  heroEyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  heroTitle: {
+    fontSize: 27,
+    fontWeight: '800',
+    marginTop: 8,
+  },
+  heroText: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 8,
+  },
+  summaryCard: {
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+  },
+  loyaltyToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    marginHorizontal: 14,
+    marginTop: 16,
+  },
+  toolbarTitleGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  toolbarTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  toolbarMeta: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 3,
+  },
+  historyButton: {
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  historyButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  summaryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  summaryTitleGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  summaryValue: {
+    fontSize: 30,
+    fontWeight: '800',
+    marginTop: 8,
+  },
+  cardMeta: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  rewardBadge: {
+    alignItems: 'center',
+    borderRadius: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  rewardBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  stampGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 18,
+  },
+  stampSlot: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    padding: 8,
+    width: 98,
+  },
+  stampMark: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderStyle: 'solid',
+    borderWidth: 3,
+    height: 72,
+    justifyContent: 'center',
+    width: 72,
+  },
+  stampMarkMain: {
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  stampMarkLabel: {
+    fontSize: 8,
+    fontWeight: '900',
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  pendingStampNumber: {
+    fontSize: 28,
+    fontWeight: '900',
+    lineHeight: 32,
+  },
+  pendingStampLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 13,
+    marginTop: 4,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  emptyStampBoard: {
+    alignItems: 'center',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    marginTop: 18,
+    padding: 14,
+  },
+  summaryHelp: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 12,
+  },
+  infoGrid: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    gap: 14,
+  },
+  infoCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  infoMeta: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  infoListItem: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 4,
+  },
+  infoEmpty: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  giftTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+});
