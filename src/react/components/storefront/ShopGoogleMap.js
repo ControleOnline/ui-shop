@@ -5,6 +5,8 @@ import styles from './ShopGoogleMap.styles';
 
 const GOOGLE_MAPS_SCRIPT_ID = 'shop-google-maps-api-script';
 const GOOGLE_MAPS_CALLBACK_NAME = '__shopGoogleMapsApiReady__';
+const GOOGLE_MAPS_LOAD_TIMEOUT_MS = 15000;
+const GOOGLE_MAPS_POLL_INTERVAL_MS = 100;
 
 const escapeHtml = value =>
   String(value || '')
@@ -167,27 +169,87 @@ const loadGoogleMapsApi = apiKey => {
     return window.__shopGoogleMapsPromise;
   }
 
-  window.__shopGoogleMapsPromise = new Promise((resolve, reject) => {
+  const loadPromise = new Promise((resolve, reject) => {
+    let settled = false;
+    let pollTimer = null;
+    let timeoutTimer = null;
+
+    const cleanup = () => {
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      if (timeoutTimer) {
+        window.clearTimeout(timeoutTimer);
+        timeoutTimer = null;
+      }
+    };
+
     const resolveMaps = () => {
-      if (window.google?.maps) {
-        resolve(window.google.maps);
+      if (settled || !window.google?.maps) {
+        return false;
+      }
+
+      settled = true;
+      cleanup();
+      resolve(window.google.maps);
+      return true;
+    };
+
+    const rejectMaps = error => {
+      if (settled) {
         return;
       }
 
-      reject(new Error('google-maps-unavailable'));
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const startWatching = () => {
+      if (settled || pollTimer || timeoutTimer) {
+        return;
+      }
+
+      pollTimer = window.setInterval(() => {
+        resolveMaps();
+      }, GOOGLE_MAPS_POLL_INTERVAL_MS);
+
+      timeoutTimer = window.setTimeout(() => {
+        rejectMaps(new Error('google-maps-load-failed'));
+      }, GOOGLE_MAPS_LOAD_TIMEOUT_MS);
+    };
+
+    const handleLoad = () => {
+      if (resolveMaps()) {
+        return;
+      }
+
+      startWatching();
     };
 
     const handleError = () => {
-      window.__shopGoogleMapsPromise = null;
-      reject(new Error('google-maps-load-failed'));
+      rejectMaps(new Error('google-maps-load-failed'));
     };
 
-    window[GOOGLE_MAPS_CALLBACK_NAME] = resolveMaps;
+    window[GOOGLE_MAPS_CALLBACK_NAME] = handleLoad;
 
     const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
     if (existingScript) {
-      existingScript.addEventListener('load', resolveMaps, {once: true});
+      existingScript.addEventListener('load', handleLoad, {once: true});
       existingScript.addEventListener('error', handleError, {once: true});
+      startWatching();
+      return;
+    }
+
+    const existingMapsScript = document.querySelector(
+      'script[src*="maps.googleapis.com/maps/api/js"]',
+    );
+    if (existingMapsScript) {
+      existingMapsScript.addEventListener('load', handleLoad, {once: true});
+      existingMapsScript.addEventListener('error', handleError, {once: true});
+      startWatching();
       return;
     }
 
@@ -198,9 +260,15 @@ const loadGoogleMapsApi = apiKey => {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
       apiKey,
     )}&loading=async&callback=${GOOGLE_MAPS_CALLBACK_NAME}`;
-    script.addEventListener('load', resolveMaps, {once: true});
+    script.addEventListener('load', handleLoad, {once: true});
     script.addEventListener('error', handleError, {once: true});
     document.head.appendChild(script);
+    startWatching();
+  });
+
+  window.__shopGoogleMapsPromise = loadPromise.catch(error => {
+    window.__shopGoogleMapsPromise = null;
+    throw error;
   });
 
   return window.__shopGoogleMapsPromise;
