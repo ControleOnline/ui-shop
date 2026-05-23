@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Image, Linking, Text, View} from 'react-native';
+import {Image, Linking, Platform, Text, View} from 'react-native';
 
 import styles from './ShopNativeMap.styles';
 
@@ -17,6 +17,7 @@ const Marker = nativeMapComponents?.Marker || null;
 const Callout = nativeMapComponents?.Callout || null;
 const CalloutSubview = nativeMapComponents?.CalloutSubview || null;
 const Polyline = nativeMapComponents?.Polyline || null;
+const PROVIDER_GOOGLE = nativeMapComponents?.PROVIDER_GOOGLE || null;
 export const HAS_NATIVE_MAP_SUPPORT = Boolean(
   NativeMapView && Marker && Callout,
 );
@@ -170,6 +171,7 @@ export default function ShopNativeMap({
   userCoordinates = null,
 }) {
   const mapRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
   const [selectedMarkerId, setSelectedMarkerId] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const hasUserCoordinates =
@@ -287,7 +289,7 @@ export default function ShopNativeMap({
   ]);
 
   useEffect(() => {
-    if (!mapRef.current || focusCoordinates.length === 0) {
+    if (!mapReady || !mapRef.current || focusCoordinates.length === 0) {
       return undefined;
     }
 
@@ -313,7 +315,7 @@ export default function ShopNativeMap({
     }, 60);
 
     return () => clearTimeout(timeoutId);
-  }, [focusCoordinates]);
+  }, [focusCoordinates, mapReady]);
 
   if (!HAS_NATIVE_MAP_SUPPORT) {
     return null;
@@ -324,11 +326,13 @@ export default function ShopNativeMap({
       ref={mapRef}
       style={styles.mapViewport}
       initialRegion={initialRegion}
+      provider={Platform.OS === 'android' && PROVIDER_GOOGLE ? PROVIDER_GOOGLE : undefined}
       showsUserLocation={false}
       showsMyLocationButton={false}
       showsCompass
       rotateEnabled
-      toolbarEnabled={false}>
+      toolbarEnabled={false}
+      onMapReady={() => setMapReady(true)}>
       {hasUserCoordinates ? (
         <Marker
           key="shop-user-location"
