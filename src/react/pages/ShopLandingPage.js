@@ -73,7 +73,7 @@ export default function ShopLandingPage() {
   }
 
   return (
-    <ShopShell showSearch={false}>
+    <ShopShell hideHeader showSearch={false}>
       {() => (
         <ShopFeatureState
           theme={theme}

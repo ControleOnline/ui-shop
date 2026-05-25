@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
+import {api} from '@controleonline/ui-common/src/api';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
@@ -37,6 +38,14 @@ import {
   parseMoneyInputValue,
   resolveCashPaymentDetails,
 } from '@controleonline/ui-common/src/react/utils/cashPayment';
+import {
+  createEmptyAddressForm,
+  normalizePostalCodeInput,
+} from '@controleonline/ui-common/src/react/utils/entityDisplay';
+import {
+  normalizeEntityId,
+  toEntityIri,
+} from '@controleonline/ui-common/src/react/utils/commercialDocumentOrders';
 import styles from './CheckoutPage.styles';
 
 import {
@@ -96,16 +105,60 @@ const normalizeText = value =>
     .trim()
     .toLowerCase();
 
-const normalizeEntityId = value => {
-  if (!value) {
-    return '';
+const normalizeActionResult = response => {
+  if (Array.isArray(response?.member)) {
+    return response.member[0] || null;
   }
 
-  if (typeof value === 'object') {
-    return normalizeEntityId(value?.['@id'] || value?.id);
+  if (Array.isArray(response?.['hydra:member'])) {
+    return response['hydra:member'][0] || null;
   }
 
-  return String(value).replace(/\D+/g, '').trim();
+  if (response?.result && typeof response.result === 'object') {
+    return response.result;
+  }
+
+  if (response?.data && typeof response.data === 'object') {
+    return response.data;
+  }
+
+  return response || null;
+};
+
+const extractQuotePayload = response => {
+  const result = normalizeActionResult(response);
+  const data = result?.data && typeof result.data === 'object'
+    ? result.data
+    : result;
+
+  return data || {};
+};
+
+const extractQuotesFromResponse = response => {
+  const data = extractQuotePayload(response);
+  return Array.isArray(data?.quotes) ? data.quotes : [];
+};
+
+const getQuotePrice = quote => {
+  const price = Number(quote?.price);
+  return Number.isFinite(price) ? price : 0;
+};
+
+const formatApiError = error => {
+  if (!error) {
+    return 'Nao foi possivel concluir a solicitacao.';
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  return (
+    error?.message ||
+    error?.errmsg ||
+    error?.data?.message ||
+    'Nao foi possivel concluir a solicitacao.'
+  );
 };
 
 const parseInvoiceOtherInformations = value => {
@@ -235,8 +288,9 @@ export default function CheckoutPage() {
   const {
     chargeOnDeliveryEnabled: shopChargeOnDeliveryEnabled,
     companyConfigs: settingsCompanyConfigs,
+    deliveryFeeEnabled,
+    deliveryFeeValue,
   } = useShopSettings();
-  const theme = pickTheme(defaultCompany);
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
   const walletPaymentTypeActions = walletPaymentTypeStore.actions;
@@ -250,6 +304,10 @@ export default function CheckoutPage() {
   const asaasActions = asaasStore.actions;
   const deviceConfigStore = useStore('device_config');
   const deviceConfigActions = deviceConfigStore.actions;
+  const addressStore = useStore('address');
+  const addressActions = addressStore.actions;
+  const ordersStore = useStore('orders');
+  const ordersActions = ordersStore.actions;
 
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [deliveryPaymentTypes, setDeliveryPaymentTypes] = useState([]);
@@ -269,11 +327,20 @@ export default function CheckoutPage() {
   const [deliveryChangeForValue, setDeliveryChangeForValue] = useState('');
   const [selectedDeliveryPaymentType, setSelectedDeliveryPaymentType] =
     useState(null);
+  const [addressForm, setAddressForm] = useState({
+    ...createEmptyAddressForm(),
+    country: 'BR',
+  });
+  const [addressSaveLoading, setAddressSaveLoading] = useState(false);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [deliveryQuotes, setDeliveryQuotes] = useState([]);
+  const [selectedDeliveryQuote, setSelectedDeliveryQuote] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
   const sellerCompany = salesCompany || defaultCompany || null;
   const sellerCompanyId = sellerCompany?.id || null;
+  const theme = pickTheme(sellerCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -295,14 +362,24 @@ export default function CheckoutPage() {
       isOrderChargeOnDeliveryEnabled(effectiveCompanyConfigs),
     [effectiveCompanyConfigs, shopChargeOnDeliveryEnabled],
   );
+  const asaasConfigured = Boolean(effectiveCompanyConfigs?.['asaas-key']);
+  const asaasPixConfigured = Boolean(
+    effectiveCompanyConfigs?.['asaas-key'] &&
+      effectiveCompanyConfigs?.['asaas-receiver-pix-key'],
+  );
 
   const hasCart = Boolean(cart?.id);
+  const cartAddressDestination = cart?.addressDestination || null;
   const cartItems = Array.isArray(cart?.orderProducts) ? cart.orderProducts : [];
   const itemsCount = cartItems.reduce(
     (sum, item) => sum + Number(item?.quantity || 0),
     0,
   );
   const cartTotal = Number(cart?.price || 0);
+  const configuredDeliveryFee = deliveryFeeEnabled ? Number(deliveryFeeValue || 0) : 0;
+  const quotedDeliveryFee = getQuotePrice(selectedDeliveryQuote);
+  const deliveryFee = quotedDeliveryFee > 0 ? quotedDeliveryFee : configuredDeliveryFee;
+  const financialTotal = cartTotal + deliveryFee;
   const paidAmount = useMemo(
     () =>
       invoices.reduce((sum, currentInvoice) => {
@@ -315,8 +392,8 @@ export default function CheckoutPage() {
     [invoices],
   );
   const pendingAmount = useMemo(
-    () => Math.max(cartTotal - paidAmount, 0),
-    [cartTotal, paidAmount],
+    () => Math.max(financialTotal - paidAmount, 0),
+    [financialTotal, paidAmount],
   );
   const changeForAmount = useMemo(
     () => parseMoneyInputValue(deliveryChangeForValue),
@@ -336,18 +413,20 @@ export default function CheckoutPage() {
       paymentTypes.filter(
         item =>
           detectPaymentOptionKind(item) === 'card' &&
+          asaasConfigured &&
           isIntegratedPaymentOption(item),
       ),
-    [paymentTypes],
+    [asaasConfigured, paymentTypes],
   );
   const pixPaymentTypes = useMemo(
     () =>
       paymentTypes.filter(
         item =>
           detectPaymentOptionKind(item) === 'pix' &&
+          asaasPixConfigured &&
           isIntegratedPaymentOption(item),
       ),
-    [paymentTypes],
+    [asaasPixConfigured, paymentTypes],
   );
   const paymentMethodChips = useMemo(() => {
     const chips = [];
@@ -452,6 +531,172 @@ export default function CheckoutPage() {
     [cardPaymentTypes, paymentTypes, pixPaymentTypes],
   );
 
+  const handleAddressFormChange = useCallback((field, value) => {
+    setAddressForm(current => ({
+      ...current,
+      [field]: field === 'cep' ? normalizePostalCodeInput(value) : value,
+    }));
+  }, []);
+
+  const saveDeliveryAddress = useCallback(async () => {
+    setError('');
+    setMessage('');
+
+    if (!cart?.id) {
+      setError('Carrinho nao encontrado para atualizar a entrega.');
+      return;
+    }
+
+    const clientIri = toEntityIri(currentCompany, 'people');
+    const providerIri = toEntityIri(sellerCompany, 'people');
+
+    if (!clientIri) {
+      setError('Cliente nao encontrado para cadastrar o endereco.');
+      return;
+    }
+
+    const street = String(addressForm.street || '').trim();
+    const district = String(addressForm.district || '').trim();
+    const city = String(addressForm.city || '').trim();
+    const state = String(addressForm.state || '').trim();
+    const country = String(addressForm.country || 'BR').trim();
+    const number = String(addressForm.number ?? '').replace(/\D+/g, '').trim();
+    const cep = normalizePostalCodeInput(addressForm.cep);
+    const complement = String(addressForm.complement || '').trim();
+    const nickname = String(addressForm.nickname || 'Entrega').trim();
+
+    if (!street || !district || !city || !state || !country || !number || !cep) {
+      setError('Rua, numero, bairro, cidade, estado, pais e CEP sao obrigatorios.');
+      return;
+    }
+
+    try {
+      setAddressSaveLoading(true);
+
+      const savedAddress = normalizeActionResult(
+        await addressActions.save({
+          street,
+          district,
+          city,
+          state,
+          country,
+          number: Number(number),
+          cep,
+          nickname,
+          complement,
+          people: clientIri,
+        }),
+      );
+      const savedAddressIri = toEntityIri(savedAddress, 'addresses');
+
+      if (!savedAddressIri) {
+        throw new Error('Endereco criado sem identificador valido.');
+      }
+
+      const savedOrder = await ordersActions.save({
+        id: cart.id,
+        '@id': cart?.['@id'],
+        addressDestination: savedAddressIri,
+        client: clientIri,
+        payer: clientIri,
+        provider: providerIri || undefined,
+      });
+
+      if (savedOrder) {
+        if (typeof ordersActions.syncOrder === 'function') {
+          ordersActions.syncOrder(savedOrder);
+        } else if (typeof ordersActions.setItem === 'function') {
+          ordersActions.setItem(savedOrder);
+        }
+      }
+
+      setDeliveryQuotes([]);
+      setSelectedDeliveryQuote(null);
+      await refreshCart();
+      setMessage('Endereco de entrega salvo no pedido.');
+    } catch (e) {
+      setError(formatApiError(e));
+    } finally {
+      setAddressSaveLoading(false);
+    }
+  }, [
+    addressActions,
+    addressForm.cep,
+    addressForm.city,
+    addressForm.complement,
+    addressForm.country,
+    addressForm.district,
+    addressForm.nickname,
+    addressForm.number,
+    addressForm.state,
+    addressForm.street,
+    cart?.id,
+    cart?.['@id'],
+    currentCompany,
+    ordersActions,
+    refreshCart,
+    sellerCompany,
+  ]);
+
+  const loadDeliveryQuotes = useCallback(async () => {
+    if (!cart?.id) {
+      return [];
+    }
+
+    const response = await api.fetch(`orders/${cart.id}/logistic`, {
+      method: 'GET',
+    });
+    const quotes = extractQuotesFromResponse(response);
+    setDeliveryQuotes(quotes);
+    setSelectedDeliveryQuote(current => {
+      if (!current?.id) {
+        return quotes.find(item => getQuotePrice(item) > 0) || null;
+      }
+
+      return quotes.find(item => item?.id === current.id) || current;
+    });
+    return quotes;
+  }, [cart?.id]);
+
+  const requestDeliveryQuote = useCallback(async () => {
+    setError('');
+    setMessage('');
+
+    if (!cart?.id) {
+      setError('Carrinho nao encontrado para cotar entrega.');
+      return;
+    }
+
+    if (!toEntityIri(cartAddressDestination, 'addresses')) {
+      setError('Salve o endereco de entrega antes de cotar.');
+      return;
+    }
+
+    try {
+      setQuoteLoading(true);
+      const response = await api.fetch(`orders/${cart.id}/logistic/quote`, {
+        method: 'POST',
+      });
+      const result = normalizeActionResult(response);
+      if (String(result?.errno ?? '0') !== '0') {
+        throw result || response;
+      }
+
+      const quotes = extractQuotesFromResponse(response);
+      if (quotes.length > 0) {
+        setDeliveryQuotes(quotes);
+        setSelectedDeliveryQuote(quotes.find(item => getQuotePrice(item) > 0) || null);
+      } else {
+        await loadDeliveryQuotes();
+      }
+      setMessage('Cotacao de entrega solicitada.');
+    } catch (e) {
+      setError(formatApiError(e));
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [cart?.id, cartAddressDestination, loadDeliveryQuotes]);
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -473,7 +718,9 @@ export default function CheckoutPage() {
               itemsPerPage: 200,
             })
           : Promise.resolve([]),
-        cardActions.getItems({itemsPerPage: 200}),
+        asaasConfigured
+          ? cardActions.getItems({itemsPerPage: 200})
+          : Promise.resolve([]),
         statusActions.getItems({
           context: 'invoice',
           itemsPerPage: 200,
@@ -504,6 +751,10 @@ export default function CheckoutPage() {
           null,
       );
       setPendingStatus(pickPendingStatus(fetchedStatuses));
+
+      if (resolvedCart?.id) {
+        await loadDeliveryQuotes().catch(() => {});
+      }
     } catch (e) {
       setError(
         e?.message || 'Não foi possível carregar os dados de pagamento.',
@@ -512,9 +763,11 @@ export default function CheckoutPage() {
       setIsLoading(false);
     }
   }, [
+    asaasConfigured,
     cardActions,
     cart,
     invoiceActions,
+    loadDeliveryQuotes,
     refreshCart,
     sellerCompanyId,
     statusActions,
@@ -636,7 +889,10 @@ export default function CheckoutPage() {
           })
         : null;
 
-      if (reusableInvoice?.id) {
+      if (
+        reusableInvoice?.id &&
+        Math.abs(Number(reusableInvoice?.price || 0) - Number(price || 0)) < 0.01
+      ) {
         return reusableInvoice;
       }
 
@@ -663,8 +919,27 @@ export default function CheckoutPage() {
         payload.status = pendingStatus['@id'];
       }
 
-      if (additionalInfo && typeof additionalInfo === 'object') {
-        payload.otherInformations = additionalInfo;
+      const invoiceInfo =
+        additionalInfo && typeof additionalInfo === 'object'
+          ? {...additionalInfo}
+          : {};
+
+      if (deliveryFee > 0) {
+        invoiceInfo.deliveryFee = deliveryFee;
+        invoiceInfo.orderSubtotal = cartTotal;
+        invoiceInfo.orderTotal = financialTotal;
+      }
+
+      if (selectedDeliveryQuote?.id) {
+        invoiceInfo.deliveryQuoteOrderId = selectedDeliveryQuote.id;
+        invoiceInfo.deliveryProvider =
+          selectedDeliveryQuote.providerKey || selectedDeliveryQuote.app || null;
+        invoiceInfo.deliveryProviderLabel =
+          selectedDeliveryQuote.providerLabel || null;
+      }
+
+      if (Object.keys(invoiceInfo).length > 0) {
+        payload.otherInformations = invoiceInfo;
       }
 
       const createdInvoice = await invoiceActions.save(payload);
@@ -680,12 +955,16 @@ export default function CheckoutPage() {
       cart?.['@id'],
       cart?.id,
       currentCompany?.id,
+      deliveryFee,
+      financialTotal,
       hasCart,
       invoiceActions,
       invoices,
       pendingAmount,
       pendingStatus,
       sellerCompanyId,
+      selectedDeliveryQuote,
+      cartTotal,
     ],
   );
 
@@ -711,8 +990,11 @@ export default function CheckoutPage() {
       targetDeviceId: null,
       targetDeviceLabel: null,
       targetGateway: defaultDeliveryDevice?.gateway || null,
+      deliveryQuoteOrderId: selectedDeliveryQuote?.id || null,
+      deliveryProvider:
+        selectedDeliveryQuote?.providerKey || selectedDeliveryQuote?.app || null,
     }),
-    [defaultDeliveryDevice?.gateway],
+    [defaultDeliveryDevice?.gateway, selectedDeliveryQuote],
   );
 
   const finalizeDeliveryRegistration = useCallback(
@@ -733,6 +1015,7 @@ export default function CheckoutPage() {
 
         const orderId = String(cart?.id || '');
         if (orderId) {
+          await api.fetch(`orders/${orderId}/confirm`, {method: 'POST'});
           navigation.navigate('ShopOrderDetailsPage', {id: orderId});
           return;
         }
@@ -1015,8 +1298,249 @@ export default function CheckoutPage() {
                 style={inlineStyle_355_16({
                   theme: theme,
                 })}>
-                {formatMoney(cartTotal)}
+                {formatMoney(financialTotal)}
               </Text>
+            </View>
+
+            {deliveryFee > 0 && (
+              <View
+                style={inlineStyle_366_14({
+                  theme: theme,
+                })}>
+                <Text
+                  style={inlineStyle_375_16({
+                    theme: theme,
+                  })}>
+                  Resumo da entrega
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Produtos: {formatMoney(cartTotal)}
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Entrega: {formatMoney(deliveryFee)}
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Total a cobrar: {formatMoney(financialTotal)}
+                </Text>
+              </View>
+            )}
+
+            <View
+              style={inlineStyle_366_14({
+                theme: theme,
+              })}>
+              <Text
+                style={inlineStyle_375_16({
+                  theme: theme,
+                })}>
+                Entrega
+              </Text>
+              <Text
+                style={[
+                  styles.methodCardHint,
+                  {color: theme.text},
+                ]}>
+                Informe o endereco para cotar entrega. Se nenhuma cotacao for
+                selecionada, o checkout usa a taxa fixa configurada na loja.
+              </Text>
+
+              {cartAddressDestination ? (
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.muted},
+                  ]}>
+                  Endereco salvo no pedido.
+                </Text>
+              ) : null}
+
+              <View style={styles.formGrid}>
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Apelido do endereco"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.nickname}
+                  onChangeText={value => handleAddressFormChange('nickname', value)}
+                />
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="CEP"
+                    placeholderTextColor={theme.muted}
+                    keyboardType="numeric"
+                    value={addressForm.cep}
+                    onChangeText={value => handleAddressFormChange('cep', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {width: 112, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Numero"
+                    placeholderTextColor={theme.muted}
+                    keyboardType="numeric"
+                    value={String(addressForm.number || '')}
+                    onChangeText={value => handleAddressFormChange('number', value)}
+                  />
+                </View>
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Rua"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.street}
+                  onChangeText={value => handleAddressFormChange('street', value)}
+                />
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Complemento"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.complement}
+                  onChangeText={value => handleAddressFormChange('complement', value)}
+                />
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Bairro"
+                    placeholderTextColor={theme.muted}
+                    value={addressForm.district}
+                    onChangeText={value => handleAddressFormChange('district', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Cidade"
+                    placeholderTextColor={theme.muted}
+                    value={addressForm.city}
+                    onChangeText={value => handleAddressFormChange('city', value)}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="UF"
+                    placeholderTextColor={theme.muted}
+                    autoCapitalize="characters"
+                    value={addressForm.state}
+                    onChangeText={value => handleAddressFormChange('state', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Pais"
+                    placeholderTextColor={theme.muted}
+                    autoCapitalize="characters"
+                    value={addressForm.country}
+                    onChangeText={value => handleAddressFormChange('country', value)}
+                  />
+                </View>
+
+                <View style={styles.formRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryButton,
+                      {
+                        flex: 1,
+                        borderColor: theme.cardBorder,
+                        opacity: addressSaveLoading ? 0.7 : 1,
+                      },
+                    ]}
+                    disabled={addressSaveLoading}
+                    onPress={saveDeliveryAddress}>
+                    <Text style={[styles.confirmButtonText, {color: theme.text}]}>
+                      {addressSaveLoading ? 'Salvando...' : 'Salvar endereco'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.primary,
+                        opacity: quoteLoading ? 0.7 : 1,
+                      },
+                    ]}
+                    disabled={quoteLoading}
+                    onPress={requestDeliveryQuote}>
+                    <Text
+                      style={[
+                        styles.confirmButtonText,
+                        {color: theme.onPrimary || '#FFFFFF'},
+                      ]}>
+                      {quoteLoading ? 'Cotando...' : 'Cotar entrega'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {deliveryQuotes.length > 0 ? (
+                <View style={{marginTop: 8}}>
+                  {deliveryQuotes.map(quote => {
+                    const quotePrice = getQuotePrice(quote);
+                    const isSelected = selectedDeliveryQuote?.id === quote?.id;
+                    const providerLabel =
+                      quote?.providerLabel || quote?.providerKey || quote?.app || 'Entrega';
+
+                    return (
+                      <TouchableOpacity
+                        key={quote?.id || providerLabel}
+                        style={[
+                          styles.quoteCard,
+                          {
+                            borderColor: isSelected ? theme.primary : theme.cardBorder,
+                            backgroundColor: isSelected
+                              ? `${theme.primary}12`
+                              : theme.background,
+                          },
+                        ]}
+                        disabled={quotePrice <= 0}
+                        onPress={() => setSelectedDeliveryQuote(quote)}>
+                        <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                          {providerLabel}
+                        </Text>
+                        <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                          {quotePrice > 0
+                            ? `Valor: ${formatMoney(quotePrice)}`
+                            : quote?.quoteStateLabel || 'Aguardando cotacao'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
             </View>
 
             <View
@@ -1166,6 +1690,7 @@ export default function CheckoutPage() {
               </View>
             )}
 
+            {cardPaymentTypes.length > 0 && (
             <View
               style={inlineStyle_429_14({
                 theme: theme,
@@ -1231,6 +1756,7 @@ export default function CheckoutPage() {
                 })
               )}
             </View>
+            )}
 
             {!!pixData?.payload && (
               <View
@@ -1491,7 +2017,7 @@ export default function CheckoutPage() {
             paidAmount={paidAmount}
             pendingAmount={pendingAmount}
             theme={theme}
-            totalAmount={cartTotal}
+            totalAmount={financialTotal}
           />
         </View>
       )}

@@ -23,6 +23,7 @@ import {
   mobileCatalogCategoryCardStyle,
   mobileCatalogCategoryCardTextStyle,
   mobileCatalogCategoryListContentStyle,
+  mobileCatalogCategoryStickyStyle,
   mobileCatalogControlsStyle,
   mobileCatalogRootStyle,
   mobileCatalogSearchButtonStyle,
@@ -42,6 +43,7 @@ export default function ShopMobileCatalog({
   company = null,
   isLoadingCatalog = false,
   mode = 'default',
+  onOpenMenu = null,
   onSearch = null,
   onSelectCategory = null,
   productsByCategoryId = {},
@@ -137,41 +139,50 @@ export default function ShopMobileCatalog({
       keyboardShouldPersistTaps="handled"
       onScroll={handleScroll}
       scrollEventThrottle={80}
+      stickyHeaderIndices={[1]}
       style={mobileCatalogRootStyle({theme})}>
-      <ShopMobileStoreHeader categories={categories} company={company} />
+      <ShopMobileStoreHeader
+        categories={categories}
+        company={company}
+        onOpenMenu={onOpenMenu}
+      />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={mobileCatalogCategoryListContentStyle}>
-        {categories.map(category => {
-          const categoryId = getCategoryId(category);
-          const isActive = String(visibleCategoryId || '') === categoryId;
-          const categoryFile = getShopCategoryFile(category);
-          const imageUrl = categoryFile ? buildFileUrl(categoryFile, company) : '';
+      <View style={mobileCatalogCategoryStickyStyle({theme})}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={mobileCatalogCategoryListContentStyle}>
+          {categories.map(category => {
+            const categoryId = getCategoryId(category);
+            const isActive = String(visibleCategoryId || '') === categoryId;
+            const categoryFile = getShopCategoryFile(category);
+            const imageUrl = categoryFile
+              ? buildFileUrl(categoryFile, company)
+              : '';
 
-          return (
-            <TouchableOpacity
-              key={categoryId}
-              activeOpacity={0.9}
-              onPress={() => handleSelectCategory(category)}
-              style={mobileCatalogCategoryCardStyle({isActive, theme})}>
-              {imageUrl ? (
-                <Image
-                  resizeMode="cover"
-                  source={{uri: imageUrl}}
-                  style={mobileCatalogCategoryCardImageStyle}
-                />
-              ) : null}
-              <Text
-                numberOfLines={2}
-                style={mobileCatalogCategoryCardTextStyle({isActive, theme})}>
-                {category?.name || 'Categoria'}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+            return (
+              <TouchableOpacity
+                key={categoryId}
+                activeOpacity={0.9}
+                onPress={() => handleSelectCategory(category)}
+                style={mobileCatalogCategoryCardStyle({isActive, theme})}>
+                {imageUrl ? (
+                  <Image
+                    resizeMode="cover"
+                    source={{uri: imageUrl}}
+                    style={mobileCatalogCategoryCardImageStyle}
+                  />
+                ) : null}
+                <Text
+                  numberOfLines={2}
+                  style={mobileCatalogCategoryCardTextStyle({isActive, theme})}>
+                  {category?.name || 'Categoria'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={mobileCatalogControlsStyle({theme})}>
         <View style={mobileCatalogSearchWrapStyle}>

@@ -5,6 +5,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import styles from './CardsPage.styles';
 
@@ -98,8 +99,16 @@ const initialForm = {
 
 export default function CardsPage() {
   const navigation = useNavigation();
-  const {defaultCompany, currentCompany} = useShopCart();
-  const theme = pickTheme(defaultCompany);
+  const {defaultCompany, currentCompany, salesCompany} = useShopCart();
+  const {companyConfigs} = useShopSettings();
+  const theme = pickTheme(salesCompany || defaultCompany);
+  const effectiveCompanyConfigs = useMemo(() => {
+    if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
+      return salesCompany.configs;
+    }
+    return companyConfigs || {};
+  }, [companyConfigs, salesCompany?.configs]);
+  const cardRegistrationEnabled = Boolean(effectiveCompanyConfigs?.['asaas-key']);
 
   const cardStore = useStore('card');
   const cardActions = cardStore.actions;
@@ -112,6 +121,11 @@ export default function CardsPage() {
   const [form, setForm] = useState(initialForm);
 
   const loadCards = useCallback(async () => {
+    if (!cardRegistrationEnabled) {
+      setCards([]);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     try {
@@ -122,7 +136,7 @@ export default function CardsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cardActions]);
+  }, [cardActions, cardRegistrationEnabled]);
 
   useFocusEffect(
     useCallback(() => {
@@ -207,6 +221,11 @@ export default function CardsPage() {
   const handleSaveCard = useCallback(async () => {
     setError('');
     setMessage('');
+    if (!cardRegistrationEnabled) {
+      setError('Cadastro de cartão indisponível para esta loja.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload = validatePayload();
@@ -225,7 +244,7 @@ export default function CardsPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [cardActions, loadCards, validatePayload]);
+  }, [cardActions, cardRegistrationEnabled, loadCards, validatePayload]);
 
   const handleDeleteCard = useCallback(
     card => {
@@ -271,6 +290,25 @@ export default function CardsPage() {
           <ScrollView
             style={inlineStyle_239_12}
             contentContainerStyle={inlineStyle_271_12}>
+            {!cardRegistrationEnabled ? (
+              <View
+                style={inlineStyle_268_14({
+                  theme: theme,
+                })}>
+                <Text
+                  style={inlineStyle_277_16({
+                    theme: theme,
+                  })}>
+                  Cartão indisponível
+                </Text>
+                <Text style={inlineStyle_286_22({
+                  theme: theme,
+                })}>
+                  Esta loja ainda não possui integração Asaas configurada para pagamento online com cartão.
+                </Text>
+              </View>
+            ) : (
+              <>
             <View
               style={inlineStyle_242_14({
                 theme: theme,
@@ -536,6 +574,8 @@ export default function CardsPage() {
                 </Text>
               </View>
             )}
+              </>
+            )}
           </ScrollView>
 
           <View
@@ -554,6 +594,7 @@ export default function CardsPage() {
               </Text>
             </TouchableOpacity>
 
+            {cardRegistrationEnabled && (
             <TouchableOpacity
               onPress={handleSaveCard}
               disabled={isSaving}
@@ -569,6 +610,7 @@ export default function CardsPage() {
                 </Text>
               )}
             </TouchableOpacity>
+            )}
           </View>
         </View>
       )}

@@ -16,6 +16,10 @@ import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {
+  clearAnonymousCart,
+  updateAnonymousCartProduct,
+} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 
 import {
   formatMoney,
@@ -83,8 +87,10 @@ export default function CartPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
   const orderProductsStore = useStore('order_products');
-  const {cart, refreshCart, defaultCompany} = useShopCart({autoRefresh: true});
-  const theme = pickTheme(defaultCompany);
+  const {cart, refreshCart, defaultCompany, salesCompany} = useShopCart({
+    autoRefresh: true,
+  });
+  const theme = pickTheme(salesCompany || defaultCompany);
 
   const [orderProducts, setOrderProducts] = useState([]);
   const [isClearing, setIsClearing] = useState(false);
@@ -92,6 +98,14 @@ export default function CartPage() {
   const isMobile = width < 980;
 
   const reloadRows = React.useCallback(() => {
+    if (cart?.anonymous) {
+      const localRows = Array.isArray(cart.orderProducts)
+        ? cart.orderProducts
+        : [];
+      setOrderProducts(localRows);
+      return Promise.resolve(localRows);
+    }
+
     if (!cart?.id) {
       setOrderProducts([]);
       return Promise.resolve([]);
@@ -106,7 +120,7 @@ export default function CartPage() {
         setOrderProducts(data || []);
         return data || [];
       });
-  }, [cart?.id, orderProductsStore.actions]);
+  }, [cart, cart?.id, orderProductsStore.actions]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -122,8 +136,11 @@ export default function CartPage() {
   const total = useMemo(
     () =>
       rows.reduce(
-        (sum, row) =>
-          sum + Number(row?.total ?? row?.quantity * row?.price ?? 0),
+        (sum, row) => {
+          const computedTotal =
+            Number(row?.quantity || 0) * Number(row?.price || 0);
+          return sum + Number(row?.total ?? computedTotal);
+        },
         0,
       ),
     [rows],
@@ -131,6 +148,17 @@ export default function CartPage() {
 
   const handleRemoveRow = async row => {
     if (!row?.id) return;
+    if (cart?.anonymous) {
+      updateAnonymousCartProduct({
+        providerId: cart.providerId,
+        product: row.product,
+        quantity: 0,
+      });
+      await refreshCart();
+      await reloadRows();
+      return;
+    }
+
     await orderProductsStore.actions.remove(row.id);
     await refreshCart();
     await reloadRows();
@@ -142,6 +170,13 @@ export default function CartPage() {
     const clearAction = async () => {
       setIsClearing(true);
       try {
+        if (cart?.anonymous) {
+          clearAnonymousCart(cart.providerId);
+          await refreshCart();
+          await reloadRows();
+          return;
+        }
+
         await Promise.all(
           rows
             .filter(item => item?.id)
@@ -244,8 +279,10 @@ export default function CartPage() {
                     theme: theme,
                   })}>
                   {rows.map(row => {
+                    const computedRowTotal =
+                      Number(row?.quantity || 0) * Number(row?.price || 0);
                     const rowTotal = Number(
-                      row?.total ?? row?.quantity * row?.price ?? 0,
+                      row?.total ?? computedRowTotal,
                     );
                     const groupedComponents = groupOrderProductComponents(row);
                     return (

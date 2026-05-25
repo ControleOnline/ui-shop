@@ -165,12 +165,13 @@ export default function ShopCatalogPage({
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
+      hideHeader={showMobileCatalog}
       onSearch={handleSearch}
       searchValue={normalizedSearchQuery}
       showBottomCart={showBottomCart}
       showSearch={!showMobileCatalog}
       showHomeEntryControls>
-      {() =>
+      {({openAccountMenu}) =>
         requiresCompanySelection ? (
           <ShopSalesCompanySelector
             companies={salesCompanyOptions}
@@ -187,6 +188,7 @@ export default function ShopCatalogPage({
             company={catalogCompany}
             isLoadingCatalog={isLoadingCatalog}
             mode={mode}
+            onOpenMenu={openAccountMenu}
             onSearch={handleSearch}
             onSelectCategory={handleSelectCategory}
             productsByCategoryId={productsByCategoryId}

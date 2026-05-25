@@ -124,6 +124,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  formGrid: {
+    marginTop: 10,
+    gap: 8,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  formInput: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  secondaryButton: {
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  primaryButton: {
+    minHeight: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  quoteCard: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+  },
+  quoteTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quoteMeta: {
+    marginTop: 4,
+    fontSize: 12,
+  },
 });
 
 export default styles;

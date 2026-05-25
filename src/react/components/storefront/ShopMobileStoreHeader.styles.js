@@ -3,7 +3,7 @@ export const mobileStorePanelStyle = {
 };
 
 export const mobileStoreCoverStyle = ({theme}) => ({
-  height: 152,
+  height: 98,
   borderBottomLeftRadius: 24,
   borderBottomRightRadius: 24,
   overflow: 'hidden',
@@ -23,9 +23,9 @@ export const mobileStoreCoverFallbackTextStyle = ({theme}) => ({
   fontWeight: '800',
 });
 
-export const mobileStoreCardStyle = ({theme}) => ({
+export const mobileStoreCardStyle = ({hasCover, theme}) => ({
   marginHorizontal: 14,
-  marginTop: -24,
+  marginTop: hasCover ? -18 : 14,
   padding: 14,
   borderRadius: 22,
   borderWidth: 1,
@@ -41,6 +41,17 @@ export const mobileStoreCardStyle = ({theme}) => ({
     height: 6,
   },
   elevation: 4,
+});
+
+export const mobileStoreMenuButtonStyle = ({theme}) => ({
+  width: 42,
+  height: 42,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: `${theme.primary}24`,
+  backgroundColor: `${theme.primary}10`,
+  alignItems: 'center',
+  justifyContent: 'center',
 });
 
 export const mobileStoreLogoStyle = ({theme}) => ({

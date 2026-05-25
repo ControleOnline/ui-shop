@@ -5,6 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
+import {updateAnonymousCartProduct} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 
 const productGroupRequirementCache = new Map();
 
@@ -77,6 +78,14 @@ export default function ShopQuantityControl({
           if (!activeCart?.id && refreshCart) {
             activeCart = await refreshCart();
           }
+          if (activeCart?.anonymous) {
+            updateAnonymousCartProduct({
+              providerId: activeCart.providerId || salesCompany?.id,
+              product,
+              quantity: nextQuantity,
+            });
+            return;
+          }
           if (!activeCart?.id) return;
 
           const targetId =
@@ -111,6 +120,7 @@ export default function ShopQuantityControl({
       orderProductActions,
       product,
       refreshCart,
+      salesCompany?.id,
     ],
   );
 

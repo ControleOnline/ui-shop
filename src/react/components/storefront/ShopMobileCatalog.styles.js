@@ -9,6 +9,12 @@ export const mobileCatalogCategoryListContentStyle = {
   gap: 10,
 };
 
+export const mobileCatalogCategoryStickyStyle = ({theme}) => ({
+  backgroundColor: theme.background,
+  paddingTop: 8,
+  zIndex: 20,
+});
+
 export const mobileCatalogCategoryCardStyle = ({isActive, theme}) => ({
   width: 104,
   minHeight: 122,
