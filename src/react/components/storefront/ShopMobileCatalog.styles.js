@@ -71,6 +71,9 @@ export const mobileCatalogSearchInputStyle = ({theme}) => ({
   minHeight: 44,
   color: theme.text,
   fontSize: 14,
+  outlineColor: 'transparent',
+  outlineStyle: 'none',
+  outlineWidth: 0,
 });
 
 export const mobileCatalogSearchButtonStyle = ({theme}) => ({

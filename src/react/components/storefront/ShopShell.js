@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -53,7 +54,6 @@ import {
   inlineStyle_241_16,
   inlineStyle_255_12,
   inlineStyle_273_14,
-  inlineStyle_282_14,
   inlineStyle_345_10,
   inlineStyle_358_12,
   inlineStyle_369_18,
@@ -146,8 +146,12 @@ export default function ShopShell({
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
+  const searchValueRef = useRef('');
   useEffect(() => {
     setSearchTerm(searchValue);
+  }, [searchValue]);
+  useEffect(() => {
+    searchValueRef.current = String(searchValue || '').trim();
   }, [searchValue]);
 
   useLayoutEffect(() => {
@@ -185,7 +189,33 @@ export default function ShopShell({
     : '';
 
   const submitSearch = useCallback(() => {
-    if (onSearch) onSearch(searchTerm);
+    const normalizedTerm = String(searchTerm || '').trim();
+    if (normalizedTerm.length === 0 || normalizedTerm.length >= 3) {
+      onSearch?.(normalizedTerm);
+    }
+  }, [onSearch, searchTerm]);
+
+  useEffect(() => {
+    if (!onSearch) {
+      return undefined;
+    }
+
+    const normalizedTerm = String(searchTerm || '').trim();
+    const currentSearchValue = searchValueRef.current;
+    if (normalizedTerm.length > 0 && normalizedTerm.length < 3) {
+      if (currentSearchValue) {
+        const timeoutId = setTimeout(() => onSearch(''), 250);
+        return () => clearTimeout(timeoutId);
+      }
+      return undefined;
+    }
+
+    if (normalizedTerm === currentSearchValue) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => onSearch(normalizedTerm), 300);
+    return () => clearTimeout(timeoutId);
   }, [onSearch, searchTerm]);
 
   const shellBackground = theme.background;
@@ -336,11 +366,6 @@ export default function ShopShell({
                   placeholderTextColor="rgba(255,255,255,0.75)"
                   style={inlineStyle_273_14}
                 />
-                <TouchableOpacity
-                  onPress={submitSearch}
-                  style={inlineStyle_282_14}>
-                  <Icon name="arrow-forward" size={16} color="#fff" />
-                </TouchableOpacity>
               </View>
             )}
 

@@ -60,10 +60,13 @@ import {
   inlineStyle_400_12,
   inlineStyle_415_14,
   inlineStyle_424_20,
-  inlineStyle_432_14,
-  inlineStyle_445_18,
   inlineStyle_457_14,
   inlineStyle_467_16,
+  cartSummaryClearBadgeStyle,
+  cartSummaryClearBadgeTextStyle,
+  cartSummaryClearButtonStyle,
+  cartSummaryHeaderRowStyle,
+  cartSummaryTitleWrapStyle,
 } from './CartPage.styles';
 
 import { inlineStyle_185_12, inlineStyle_310_30 } from './CartPage.styles';
@@ -235,23 +238,51 @@ export default function CartPage() {
               style={inlineStyle_144_14({
                 theme: theme,
               })}>
-              <Text
-                style={inlineStyle_153_16({
-                  theme: theme,
-                })}>
-                CARRINHO
-              </Text>
-              <Text
-                style={inlineStyle_157_16({
-                  theme: theme,
-                })}>
-                Seu pedido
-              </Text>
-              <Text style={inlineStyle_165_20({
-                theme: theme,
-              })}>
-                {itemsCount} item(ns) no carrinho
-              </Text>
+              <View style={cartSummaryHeaderRowStyle}>
+                <View style={cartSummaryTitleWrapStyle}>
+                  <Text
+                    style={inlineStyle_153_16({
+                      theme: theme,
+                    })}>
+                    CARRINHO
+                  </Text>
+                  <Text
+                    style={inlineStyle_157_16({
+                      theme: theme,
+                    })}>
+                    Seu pedido
+                  </Text>
+                  <Text style={inlineStyle_165_20({
+                    theme: theme,
+                  })}>
+                    {itemsCount} item(ns) no carrinho
+                  </Text>
+                </View>
+                {rows.length > 0 ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    disabled={isClearing}
+                    onPress={handleClearCart}
+                    style={cartSummaryClearButtonStyle({theme})}>
+                    {isClearing ? (
+                      <ActivityIndicator color={theme.danger} />
+                    ) : (
+                      <>
+                        <Icon
+                          name="delete-sweep"
+                          size={21}
+                          color={theme.danger}
+                        />
+                        <View style={cartSummaryClearBadgeStyle({theme})}>
+                          <Text style={cartSummaryClearBadgeTextStyle({theme})}>
+                            {itemsCount}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
 
             {rows.length === 0 ? (
@@ -436,26 +467,6 @@ export default function CartPage() {
               })}>
                 Continuar comprando
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleClearCart}
-              disabled={isClearing || rows.length === 0}
-              style={inlineStyle_432_14({
-                rows: rows,
-                theme: theme,
-              })}>
-              {isClearing ? (
-                <ActivityIndicator color={theme.danger} />
-              ) : (
-                <Text
-                  style={inlineStyle_445_18({
-                    rows: rows,
-                    theme: theme,
-                  })}>
-                  Limpar carrinho
-                </Text>
-              )}
             </TouchableOpacity>
 
             <TouchableOpacity
