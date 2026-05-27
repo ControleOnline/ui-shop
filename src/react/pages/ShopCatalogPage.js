@@ -54,6 +54,7 @@ export default function ShopCatalogPage({
     isLoadingSalesCompanies,
     products,
     productsByCategoryId,
+    refreshCart,
     requiresCompanySelection,
     salesCompany,
     salesCompanyOptions,
@@ -184,14 +185,17 @@ export default function ShopCatalogPage({
         ) : showMobileCatalog ? (
           <ShopMobileCatalog
             activeCategoryId={activeCategoryId}
+            cart={cart}
             categories={categories}
             company={catalogCompany}
+            defaultCompany={defaultCompany}
             isLoadingCatalog={isLoadingCatalog}
             mode={mode}
             onOpenMenu={openAccountMenu}
             onSearch={handleSearch}
             onSelectCategory={handleSelectCategory}
             productsByCategoryId={productsByCategoryId}
+            refreshCart={refreshCart}
             searchProducts={searchProducts}
             searchValue={normalizedSearchQuery}
           />
@@ -228,7 +232,9 @@ export default function ShopCatalogPage({
                   />
 
                   <ShopProductsSection
+                    cart={cart}
                     company={catalogCompany}
+                    defaultCompany={defaultCompany}
                     emptyDescription={
                       mode === 'search'
                         ? normalizedSearchQuery
@@ -245,6 +251,7 @@ export default function ShopCatalogPage({
                     }
                     isLoading={isLoadingCatalog}
                     products={mode === 'search' ? searchProducts : products}
+                    refreshCart={refreshCart}
                     title={mode === 'search' ? 'Produtos encontrados' : activeCategory?.name || 'Produtos'}
                   />
 

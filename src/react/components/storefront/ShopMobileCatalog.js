@@ -39,14 +39,17 @@ const getCategoryId = category => String(category?.id || category?.['@id'] || ''
 
 export default function ShopMobileCatalog({
   activeCategoryId = '',
+  cart = null,
   categories = [],
   company = null,
+  defaultCompany = null,
   isLoadingCatalog = false,
   mode = 'default',
   onOpenMenu = null,
   onSearch = null,
   onSelectCategory = null,
   productsByCategoryId = {},
+  refreshCart = null,
   searchProducts = [],
   searchValue = '',
 }) {
@@ -223,8 +226,11 @@ export default function ShopMobileCatalog({
             {(Array.isArray(searchProducts) ? searchProducts : []).map(product => (
               <ShopMobileProductCard
                 key={String(product?.id || product?.['@id'] || product?.product)}
+                cart={cart}
                 company={company}
+                defaultCompany={defaultCompany}
                 product={product}
+                refreshCart={refreshCart}
               />
             ))}
           </View>
@@ -240,10 +246,13 @@ export default function ShopMobileCatalog({
                     event?.nativeEvent?.layout?.y || 0;
                 }}>
                 <ShopMobileProductSection
+                  cart={cart}
                   category={category}
                   company={company}
+                  defaultCompany={defaultCompany}
                   isLoading={isLoadingCatalog}
                   products={productsByCategoryId?.[categoryId] || []}
+                  refreshCart={refreshCart}
                 />
               </View>
             );

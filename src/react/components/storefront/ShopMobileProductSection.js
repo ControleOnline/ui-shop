@@ -17,10 +17,13 @@ import {
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductSection.styles';
 
 export default function ShopMobileProductSection({
+  cart = null,
   category = null,
   company = null,
+  defaultCompany = null,
   isLoading = false,
   products = [],
+  refreshCart = null,
 }) {
   const {width} = useWindowDimensions();
   const theme = pickTheme(company);
@@ -67,8 +70,11 @@ export default function ShopMobileProductSection({
               key={String(product?.id || product?.['@id'] || product?.product)}
               style={mobileProductSectionCardSlotStyle({isTabletGrid})}>
               <ShopMobileProductCard
+                cart={cart}
                 company={company}
+                defaultCompany={defaultCompany}
                 product={product}
+                refreshCart={refreshCart}
               />
             </View>
           ))}

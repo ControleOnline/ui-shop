@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
-import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 import {
   formatMoney,
   getImageFromRelations,
@@ -28,9 +28,14 @@ import {
   mobileProductQuantityTextStyle,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductCard.styles';
 
-export default function ShopMobileProductCard({company = null, product = null}) {
+export default function ShopMobileProductCard({
+  cart = null,
+  company = null,
+  defaultCompany = null,
+  product = null,
+  refreshCart = null,
+}) {
   const navigation = useNavigation();
-  const {cart, refreshCart, defaultCompany} = useShopCart();
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = normalizeId(product?.id || product?.['@id']);
@@ -46,16 +51,14 @@ export default function ShopMobileProductCard({company = null, product = null}) 
     navigation.navigate('ShopProductPage', {id: productId});
   };
 
-  const openCustomize = async () => {
-    try {
-      await refreshCart?.();
-    } catch {}
-
-    navigation.navigate('CustomizeScreen', {
+  const openCustomize = () =>
+    openShopCustomize({
+      cart,
+      navigation,
       productId,
       redirectToCart: true,
+      refreshCart,
     });
-  };
 
   return (
     <TouchableOpacity

@@ -6,6 +6,7 @@ import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import {updateAnonymousCartProduct} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 
 const productGroupRequirementCache = new Map();
 
@@ -185,11 +186,11 @@ export default function ShopQuantityControl({
     }
 
     if (requiresCustomization) {
-      try {
-        await refreshCart?.();
-      } catch {}
-      navigation.navigate('CustomizeScreen', {
-        productId: normalizeId(product?.id || product?.['@id']),
+      await openShopCustomize({
+        cart,
+        navigation,
+        productId: product?.id || product?.['@id'],
+        refreshCart,
       });
       return;
     }
@@ -199,6 +200,7 @@ export default function ShopQuantityControl({
     persist(next);
   }, [
     ensureCustomizationRequired,
+    cart,
     navigation,
     persist,
     product,

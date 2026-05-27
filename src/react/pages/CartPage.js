@@ -210,6 +210,17 @@ export default function CartPage() {
     );
   };
 
+  const handleCheckout = () => {
+    if (cart?.id) {
+      navigation.navigate('ShopCheckoutPage');
+      return;
+    }
+
+    navigation.navigate('SignInPage', {
+      redirectRoute: 'ShopCheckoutPage',
+    });
+  };
+
   return (
     <ShopShell
       onSearch={query =>
@@ -448,7 +459,7 @@ export default function CartPage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate('ShopCheckoutPage')}
+              onPress={handleCheckout}
               disabled={rows.length === 0}
               style={inlineStyle_457_14({
                 rows: rows,

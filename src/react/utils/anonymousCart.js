@@ -26,7 +26,13 @@ const readJson = key => {
 const writeCart = (providerId, cart) => {
   const key = buildStorageKey(providerId);
   localStorage.setItem(key, JSON.stringify(cart));
-  window.dispatchEvent(new window.CustomEvent(EVENT_NAME, {detail: {providerId}}));
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.dispatchEvent === 'function' &&
+    typeof window.CustomEvent === 'function'
+  ) {
+    window.dispatchEvent(new window.CustomEvent(EVENT_NAME, {detail: {providerId}}));
+  }
 };
 
 export const readAnonymousCart = providerId => {
@@ -124,7 +130,13 @@ export const clearAnonymousCart = providerId => {
   }
 
   localStorage.removeItem(buildStorageKey(normalizedProviderId));
-  window.dispatchEvent(new window.CustomEvent(EVENT_NAME, {detail: {providerId}}));
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.dispatchEvent === 'function' &&
+    typeof window.CustomEvent === 'function'
+  ) {
+    window.dispatchEvent(new window.CustomEvent(EVENT_NAME, {detail: {providerId}}));
+  }
 };
 
 export const subscribeAnonymousCart = callback => {

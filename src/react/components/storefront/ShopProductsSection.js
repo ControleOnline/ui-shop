@@ -22,11 +22,14 @@ import {
 
 // Render the main product grid used by the shared storefront page.
 export default function ShopProductsSection({
+  cart = null,
   company = null,
+  defaultCompany = null,
   emptyDescription = '',
   emptyTitle = '',
   isLoading = false,
   products = [],
+  refreshCart = null,
   title = 'Produtos',
 }) {
   const [layoutWidth, setLayoutWidth] = useState(0);
@@ -138,9 +141,12 @@ export default function ShopProductsSection({
                 cardWidth,
               })}>
               <ShopProductCard
+                cart={cart}
                 company={company}
                 compact={columns > 1}
+                defaultCompany={defaultCompany}
                 product={product}
+                refreshCart={refreshCart}
               />
             </View>
           ))}
