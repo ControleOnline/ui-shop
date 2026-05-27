@@ -380,7 +380,7 @@ export default function ShopLoyaltyPage() {
                 <Text style={[styles.heroEyebrow, {color: theme.accent}]}>
                   FIDELIDADE
                 </Text>
-                <Text style={[styles.heroTitle, {color: theme.onPrimary}]}>
+                <Text style={[styles.heroTitle, {color: '#FFFFFF'}]}>
                   Acompanhe a sua fidelidade
                 </Text>
                 <Text

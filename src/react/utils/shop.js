@@ -30,18 +30,119 @@ export const getImageFromRelations = relations => {
   return first?.file ? buildFileUrl(first.file) : '';
 };
 
+const CSS_VAR_FALLBACK_HEX_REGEX =
+  /^var\([^,]+,\s*(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})\s*\)$/;
+const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+const normalizeHexColor = value => {
+  if (typeof value !== 'string') return null;
+
+  const raw = value.trim().replace(/;$/, '');
+  const fallbackMatch = raw.match(CSS_VAR_FALLBACK_HEX_REGEX);
+  const color = fallbackMatch?.[1] || raw;
+
+  if (!HEX_COLOR_REGEX.test(color)) return null;
+
+  if (color.length === 4) {
+    return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+  }
+
+  return color;
+};
+
+const getRelativeLuminance = value => {
+  const normalized = normalizeHexColor(value);
+  if (!normalized) return null;
+
+  const intValue = parseInt(normalized.slice(1), 16);
+  const channels = [
+    (intValue >> 16) & 255,
+    (intValue >> 8) & 255,
+    intValue & 255,
+  ].map(channel => {
+    const srgb = channel / 255;
+    return srgb <= 0.03928
+      ? srgb / 12.92
+      : ((srgb + 0.055) / 1.055) ** 2.4;
+  });
+
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+};
+
+const getContrastRatio = (foreground, background) => {
+  const foregroundLuminance = getRelativeLuminance(foreground);
+  const backgroundLuminance = getRelativeLuminance(background);
+
+  if (foregroundLuminance === null || backgroundLuminance === null) {
+    return null;
+  }
+
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+const resolveReadableColor = ({
+  backgrounds,
+  candidates,
+  fallback,
+  minimumRatio,
+  preferred,
+}) => {
+  const validBackgrounds = backgrounds.filter(Boolean);
+  const isReadable = color =>
+    validBackgrounds.every(background => {
+      const ratio = getContrastRatio(color, background);
+      return ratio === null || ratio >= minimumRatio;
+    });
+
+  if (preferred && isReadable(preferred)) {
+    return preferred;
+  }
+
+  const readableCandidate = candidates.find(
+    candidate => candidate && isReadable(candidate),
+  );
+
+  return readableCandidate || preferred || fallback;
+};
+
 export const pickTheme = company => {
   const companyColors = company?.theme?.colors || {};
+  const background = companyColors.background || '#F3F7FB';
+  const surface = companyColors.surface || '#ffffff';
+  const textBackgrounds = [surface, background];
+  const primary = companyColors.primary || '#0E7490';
+
   return {
     header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
-    primary: companyColors.primary || '#0E7490',
+    primary,
     accent: companyColors.accent || companyColors.secondary || '#F59E0B',
-    background: companyColors.background || '#F3F7FB',
-    surface: companyColors.surface || '#ffffff',
-    text: companyColors['text-primary'] || '#111827',
-    muted: companyColors['text-secondary'] || '#64748b',
+    background,
+    surface,
+    text: resolveReadableColor({
+      backgrounds: textBackgrounds,
+      candidates: ['#111827', '#F8FAFC'],
+      fallback: '#111827',
+      minimumRatio: 4.5,
+      preferred: companyColors['text-primary'] || '#111827',
+    }),
+    muted: resolveReadableColor({
+      backgrounds: textBackgrounds,
+      candidates: ['#475569', '#CBD5E1', '#64748b'],
+      fallback: '#64748b',
+      minimumRatio: 3,
+      preferred: companyColors['text-secondary'] || '#64748b',
+    }),
     cardBorder: companyColors.border || '#D7E1EC',
-    onPrimary: companyColors['text-on-primary'] || '#ffffff',
+    onPrimary: resolveReadableColor({
+      backgrounds: [primary],
+      candidates: ['#ffffff', '#111827'],
+      fallback: '#ffffff',
+      minimumRatio: 4.5,
+      preferred: companyColors['text-on-primary'] || '#ffffff',
+    }),
     success: companyColors.success || '#22C55E',
     danger: companyColors.danger || '#EF4444',
     darkCard: companyColors['card-dark'] || '#163042',
