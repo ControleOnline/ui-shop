@@ -153,6 +153,7 @@ export default function ShopProductCard({
             cart={cart}
             refreshCart={refreshCart}
             iconColor={theme.primary}
+            shouldCheckCustomization={false}
             style={inlineStyle_161_12}
             textStyle={inlineStyle_143_12}
           />

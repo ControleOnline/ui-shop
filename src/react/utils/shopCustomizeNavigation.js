@@ -4,6 +4,7 @@ export const openShopCustomize = async ({
   cart = null,
   navigation,
   productId,
+  presentation = null,
   redirectToCart = false,
   refreshCart = null,
 }) => {
@@ -14,14 +15,20 @@ export const openShopCustomize = async ({
   }
 
   let activeCart = cart;
-  try {
-    activeCart = (await refreshCart?.()) || activeCart;
-  } catch {}
+  if (!activeCart?.id) {
+    try {
+      activeCart = (await refreshCart?.()) || activeCart;
+    } catch {}
+  }
 
   const customizeParams = {
     productId: normalizedProductId,
     redirectToCart,
   };
+
+  if (presentation) {
+    customizeParams.presentation = presentation;
+  }
 
   if (activeCart?.id) {
     navigation.navigate('CustomizeScreen', customizeParams);

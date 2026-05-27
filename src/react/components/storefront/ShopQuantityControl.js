@@ -43,6 +43,7 @@ export default function ShopQuantityControl({
   textStyle,
   iconColor = '#1f95c6',
   defaultQuantity = 0,
+  shouldCheckCustomization = true,
 }) {
   const navigation = useNavigation();
   const orderProductsStore = useStore('order_products');
@@ -137,6 +138,10 @@ export default function ShopQuantityControl({
       return false;
     }
 
+    if (!shouldCheckCustomization) {
+      return false;
+    }
+
     const providerId = salesCompany?.id || '';
     const inlineHasGroups =
       Array.isArray(product?.productGroups) && product.productGroups.length > 0;
@@ -155,12 +160,12 @@ export default function ShopQuantityControl({
     }
 
     const baseFilter = {
-      parentProduct: `/products/${productId}`,
+      product: productId,
       itemsPerPage: 1,
     };
 
     const groupFilters = providerId
-      ? {...baseFilter, people: providerId}
+      ? {...baseFilter, company: providerId}
       : baseFilter;
 
     const response = await productGroupStore.actions.getItems(groupFilters);
@@ -175,6 +180,7 @@ export default function ShopQuantityControl({
     product,
     productGroupStore.actions,
     salesCompany?.id,
+    shouldCheckCustomization,
   ]);
 
   const increase = useCallback(async () => {

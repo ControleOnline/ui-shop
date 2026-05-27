@@ -151,12 +151,12 @@ export default function ProductPage() {
           }
 
           const baseFilter = {
-            parentProduct: `/products/${nextProductId}`,
+            product: nextProductId,
             itemsPerPage: 1,
           };
 
           const groupFilters = providerId
-            ? {...baseFilter, people: providerId}
+            ? {...baseFilter, company: providerId}
             : baseFilter;
 
           const response = await productGroupStore.actions.getItems(groupFilters);
@@ -210,11 +210,12 @@ export default function ProductPage() {
       openShopCustomize({
         cart,
         navigation,
+        presentation: isMobile ? 'bottomSheet' : null,
         productId: product?.id || product?.['@id'],
         redirectToCart: true,
         refreshCart,
       }),
-    [cart, navigation, product, refreshCart],
+    [cart, isMobile, navigation, product, refreshCart],
   );
 
   if (!salesPageEnabled) {
@@ -403,6 +404,7 @@ export default function ProductPage() {
                                 cart={cart}
                                 refreshCart={refreshCart}
                                 iconColor={theme.primary}
+                                shouldCheckCustomization={false}
                               />
                             </View>
 
@@ -490,6 +492,7 @@ export default function ProductPage() {
                           cart={cart}
                           refreshCart={refreshCart}
                           iconColor={theme.primary}
+                          shouldCheckCustomization={false}
                         />
                       </View>
 
