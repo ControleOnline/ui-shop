@@ -162,14 +162,14 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
       ) || null,
     [selectionOptions, storedSelectionId],
   );
-  const fallbackStoredSelection = !loadOptions ? storedSelection : null;
-  const salesCompany =
-    matchedSelection ||
-    (selectionOptions.length === 1 ? selectionOptions[0] : null) ||
-    fallbackStoredSelection ||
-    (!hasConfiguredSalesCompanies || (!isLoading && selectionOptions.length === 0)
-      ? defaultCompany
-      : null);
+  const fallbackStoredSelection =
+    !loadOptions && hasConfiguredSalesCompanies ? storedSelection : null;
+  const salesCompany = !hasConfiguredSalesCompanies
+    ? defaultCompany
+    : matchedSelection ||
+      (selectionOptions.length === 1 ? selectionOptions[0] : null) ||
+      fallbackStoredSelection ||
+      (!isLoading && selectionOptions.length === 0 ? defaultCompany : null);
   const requiresCompanySelection =
     loadOptions &&
     ((hasConfiguredSalesCompanies && isLoading) ||
