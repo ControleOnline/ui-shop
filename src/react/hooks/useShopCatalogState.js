@@ -19,18 +19,6 @@ const normalizeId = value =>
     .replace(/\D+/g, '')
     .trim();
 
-const collectProductCategoryIds = product => {
-  const relations = Array.isArray(product?.productCategory)
-    ? product.productCategory
-    : product?.productCategory
-      ? [product.productCategory]
-      : [];
-
-  return relations
-    .map(relation => normalizeId(relation?.category || relation))
-    .filter(Boolean);
-};
-
 // Manage shared catalog state so every `Compras` route behaves like the same experience.
 export default function useShopCatalogState({
   loadCategorySections = false,
@@ -222,34 +210,37 @@ export default function useShopCatalogState({
     setIsLoadingResults(true);
     setProductsByCategoryId({});
 
-    productsStore.actions
-      .getItems({
-        ...productFileFilters,
-        active: 1,
-        type: catalogProductTypes,
-        itemsPerPage: 500,
-        'order[product]': 'ASC',
-        company: salesCompany.id,
-      })
-      .then(data => {
+    const categoryRecords = topLevelCategories
+      .map(category => ({
+        key: String(category?.id || category?.['@id'] || ''),
+        id: normalizeId(category?.id || category?.['@id']),
+      }))
+      .filter(category => category.key && category.id);
+
+    Promise.all(
+      categoryRecords.map(category =>
+        productsStore.actions.getItems({
+          'productCategory.category': `/categories/${category.id}`,
+          ...productFileFilters,
+          active: 1,
+          type: catalogProductTypes,
+          itemsPerPage: 500,
+          'order[product]': 'ASC',
+          company: salesCompany.id,
+        }),
+      ),
+    )
+      .then(results => {
         if (!isMounted) {
           return;
         }
 
         const groupedProducts = Object.fromEntries(
-          topLevelCategories.map(category => [
-            String(category?.id || category?.['@id'] || ''),
-            [],
+          categoryRecords.map((category, index) => [
+            category.key,
+            normalizeCollection(results[index]),
           ]),
         );
-
-        normalizeCollection(data).forEach(product => {
-          collectProductCategoryIds(product).forEach(categoryId => {
-            if (groupedProducts[categoryId]) {
-              groupedProducts[categoryId].push(product);
-            }
-          });
-        });
 
         setProductsByCategoryId(groupedProducts);
       })
