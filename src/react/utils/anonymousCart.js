@@ -145,7 +145,15 @@ export const subscribeAnonymousCart = callback => {
   }
 
   const listener = event => callback(event?.detail || {});
-  window.addEventListener(EVENT_NAME, listener);
 
-  return () => window.removeEventListener(EVENT_NAME, listener);
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener(EVENT_NAME, listener);
+  }
+
+  return () => {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener(EVENT_NAME, listener);
+    }
+  };
+  
 };
