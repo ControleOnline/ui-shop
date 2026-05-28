@@ -1,11 +1,11 @@
 import React, {useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
   Text,
   View,
 } from 'react-native';
 
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
+import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import {
   productsSectionPanelStyle,
   productsSectionHeaderStyle,
@@ -17,7 +17,6 @@ import {
   productsSectionEmptyStateStyle,
   productsSectionEmptyTitleStyle,
   productsSectionEmptyTextStyle,
-  productsSectionLoadingStateStyle,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopProductsSection.styles';
 
 // Render the main product grid used by the shared storefront page.
@@ -92,20 +91,19 @@ export default function ShopProductsSection({
       </View>
 
       {isLoading && normalizedProducts.length === 0 ? (
-        <View
-          style={productsSectionLoadingStateStyle({
-            theme: company,
-          })}>
-          <ActivityIndicator
-            color={company?.theme?.colors?.primary || '#0E7490'}
-            size="small"
-          />
-          <Text
-            style={productsSectionHintStyle({
-              theme: company,
-            })}>
-            Carregando os itens desta secao...
-          </Text>
+        <View style={productsSectionGridStyle({gap})}>
+          {[0, 1, 2, 3].map(item => (
+            <View
+              key={`product-skeleton-${item}`}
+              style={productsSectionCardSlotStyle({cardWidth})}>
+              <View style={{gap: 10}}>
+                <ShopSkeleton height={132} radius={16} theme={company} />
+                <ShopSkeleton height={18} width="72%" theme={company} />
+                <ShopSkeleton height={14} width="44%" theme={company} />
+                <ShopSkeleton height={42} radius={12} theme={company} />
+              </View>
+            </View>
+          ))}
         </View>
       ) : null}
 

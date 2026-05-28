@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -10,11 +9,13 @@ import {
   View,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useStore} from '@store';
 import {api} from '@controleonline/ui-common/src/api';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
+import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
@@ -297,6 +298,14 @@ const getActionResult = response =>
   response?.result && typeof response.result === 'object'
     ? response.result
     : response;
+
+const CheckoutSkeletonRows = ({theme}) => (
+  <View style={styles.skeletonStack}>
+    <ShopSkeleton height={18} width="48%" theme={{theme: {colors: theme}}} />
+    <ShopSkeleton height={14} width="86%" theme={{theme: {colors: theme}}} />
+    <ShopSkeleton height={46} radius={12} theme={{theme: {colors: theme}}} />
+  </View>
+);
 
 export default function CheckoutPage() {
   const navigation = useNavigation();
@@ -612,6 +621,15 @@ export default function CheckoutPage() {
       [field]: field === 'cep' ? normalizePostalCodeInput(value) : value,
     }));
   }, []);
+
+  const handleBackFromCheckout = useCallback(() => {
+    if (navigation.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('ShopCartPage');
+  }, [navigation]);
 
   const updateCartDeliveryAddress = useCallback(
     async addressIri => {
@@ -1486,6 +1504,22 @@ export default function CheckoutPage() {
               inlineStyle_371_12,
               {paddingBottom: 232},
             ]}>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={handleBackFromCheckout}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                },
+              ]}>
+              <Icon name="arrow-back" size={19} color={theme.primary} />
+              <Text style={[styles.backButtonText, {color: theme.primary}]}>
+                Voltar ao carrinho
+              </Text>
+            </TouchableOpacity>
+
             <View
               style={inlineStyle_331_14({
                 theme: theme,
@@ -1602,12 +1636,7 @@ export default function CheckoutPage() {
               )}
 
               {addressOptionsLoading ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator color={theme.primary} />
-                  <Text style={[styles.methodCardHint, {color: theme.text}]}>
-                    Carregando enderecos cadastrados...
-                  </Text>
-                </View>
+                <CheckoutSkeletonRows theme={theme} />
               ) : deliveryAddresses.length > 0 ? (
                 <View style={{marginTop: 8}}>
                   {deliveryAddresses.map(address => {
@@ -1910,7 +1939,7 @@ export default function CheckoutPage() {
 
               {isLoading ? (
                 <View style={inlineStyle_380_22}>
-                  <ActivityIndicator color={theme.primary} />
+                  <CheckoutSkeletonRows theme={theme} />
                 </View>
               ) : paymentMethodChips.length > 0 ? (
                 <View style={inlineStyle_385_18}>
@@ -2007,12 +2036,7 @@ export default function CheckoutPage() {
                 </Text>
 
                 {loadingRemoteDevices ? (
-                  <View style={styles.loadingRow}>
-                    <ActivityIndicator color={theme.primary} />
-                    <Text style={[styles.methodCardHint, {color: theme.text}]}>
-                      Carregando opcoes de pagamento na entrega...
-                    </Text>
-                  </View>
+                  <CheckoutSkeletonRows theme={theme} />
                 ) : deliveryModeLabels.length > 0 ? (
                   <>
                     <Text

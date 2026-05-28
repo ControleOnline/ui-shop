@@ -7,6 +7,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  backButton: {
+    minHeight: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    marginBottom: 10,
+  },
+  backButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
   methodCard: {
     borderRadius: 14,
     borderWidth: 1,
@@ -122,6 +137,10 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+  },
+  skeletonStack: {
+    marginTop: 10,
     gap: 10,
   },
   formGrid: {

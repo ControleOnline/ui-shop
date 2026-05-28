@@ -145,8 +145,16 @@ export default function ShopQuantityControl({
     const providerId = salesCompany?.id || '';
     const inlineHasGroups =
       Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-    if ((!providerId && inlineHasGroups) || product?.type === 'custom') {
+    if (
+      product?.hasCustomizationGroups === true ||
+      (!providerId && inlineHasGroups) ||
+      product?.type === 'custom'
+    ) {
       return true;
+    }
+
+    if (product?.customizationGroupsLoaded === true) {
+      return false;
     }
 
     const productId = normalizeId(product?.id || product?.['@id']);

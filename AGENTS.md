@@ -19,6 +19,8 @@
 - A busca do shop e instantanea a partir de 3 caracteres e deve reutilizar os resultados do cardapio, sem botao separado de pesquisa.
 - Quando o cliente ja tem enderecos salvos, o formulario de novo endereco deve abrir apenas por acao explicita em "Adicionar endereco".
 - Produtos com grupos ou complementos devem abrir personalizacao antes de entrar no carrinho, mesmo que os grupos venham apenas do backend.
+- O catalogo do shop deve preferir o endpoint agregado `products/shop-catalog` para evitar uma chamada de produtos por categoria.
+- Estados de carregamento visiveis no shop devem usar skeletons, nao texto solto de carregamento.
 
 ## Quando usar
 - Prompts sobre storefront, loja, catalogo, carrinho, checkout do cliente, pedidos do cliente, cartoes e experiencia do shop.

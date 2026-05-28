@@ -13,6 +13,7 @@ import ShopMobileCategorySelector from '@controleonline/ui-shop/src/react/compon
 import ShopMobileProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductCard';
 import ShopMobileProductSection from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductSection';
 import ShopMobileStoreHeader from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileStoreHeader';
+import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import {
   buildFileUrl,
   pickTheme,
@@ -210,7 +211,23 @@ export default function ShopMobileCatalog({
         onOpenMenu={onOpenMenu}
       />
 
-      {visibleCategories.length > 0 ? (
+      {isLoadingCatalog && visibleCategories.length === 0 ? (
+        <View style={mobileCatalogCategoryStickyStyle({theme})}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={mobileCatalogCategoryListContentStyle}>
+            {[0, 1, 2, 3].map(item => (
+              <View
+                key={`mobile-category-skeleton-${item}`}
+                style={mobileCatalogCategoryCardStyle({isActive: false, theme})}>
+                <ShopSkeleton height={54} radius={16} theme={company} />
+                <ShopSkeleton height={14} width="76%" theme={company} />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : visibleCategories.length > 0 ? (
         <View style={mobileCatalogCategoryStickyStyle({theme})}>
           <ScrollView
             horizontal
@@ -292,6 +309,14 @@ export default function ShopMobileCatalog({
               />
             ))}
           </View>
+        ) : isLoadingCatalog && visibleCategories.length === 0 ? (
+          [0, 1, 2].map(item => (
+            <View key={`mobile-section-skeleton-${item}`} style={{gap: 12}}>
+              <ShopSkeleton height={22} width="42%" theme={company} />
+              <ShopSkeleton height={13} width="86%" theme={company} />
+              <ShopSkeleton height={118} radius={18} theme={company} />
+            </View>
+          ))
         ) : (
           visibleCategories.map(category => {
             const categoryId = getCategoryId(category);

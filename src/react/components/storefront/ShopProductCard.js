@@ -44,7 +44,10 @@ export default function ShopProductCard({
   const productId = String(product?.id || '');
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-  const requiresCustomization = product?.type === 'custom' || hasInlineGroups;
+  const requiresCustomization =
+    product?.type === 'custom' ||
+    hasInlineGroups ||
+    product?.hasCustomizationGroups === true;
   const openProductDetails = () =>
     navigation.navigate('ShopProductPage', {
       id: productId,
