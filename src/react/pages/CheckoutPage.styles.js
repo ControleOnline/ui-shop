@@ -132,6 +132,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  formRowAction: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
   formInput: {
     minHeight: 44,
     borderWidth: 1,

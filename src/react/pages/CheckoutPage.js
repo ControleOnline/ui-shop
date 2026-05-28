@@ -355,7 +355,8 @@ export default function CheckoutPage() {
     ...createEmptyAddressForm(),
     country: 'BR',
   });
-  const [addressOptionsLoading, setAddressOptionsLoading] = useState(false);
+  const [addressFormVisible, setAddressFormVisible] = useState(false);
+  const [addressOptionsLoading, setAddressOptionsLoading] = useState(true);
   const [addressSaveLoading, setAddressSaveLoading] = useState(false);
   const [addressSelectingId, setAddressSelectingId] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -457,6 +458,9 @@ export default function CheckoutPage() {
         : null,
     [selectedDeliveryAddress],
   );
+  const shouldShowAddressForm =
+    !addressOptionsLoading &&
+    (deliveryAddresses.length === 0 || addressFormVisible);
 
   const cardPaymentTypes = useMemo(
     () =>
@@ -675,6 +679,7 @@ export default function CheckoutPage() {
       try {
         setAddressSelectingId(addressId);
         await updateCartDeliveryAddress(addressIri);
+        setAddressFormVisible(false);
         setMessage('Endereco de entrega selecionado.');
       } catch (e) {
         setError(formatApiError(e));
@@ -751,6 +756,7 @@ export default function CheckoutPage() {
         ...createEmptyAddressForm(),
         country: 'BR',
       });
+      setAddressFormVisible(false);
       setMessage('Endereco de entrega salvo no pedido.');
     } catch (e) {
       setError(formatApiError(e));
@@ -928,6 +934,14 @@ export default function CheckoutPage() {
       loadData();
     }, [loadData]),
   );
+
+  useEffect(() => {
+    if (addressOptionsLoading) {
+      return;
+    }
+
+    setAddressFormVisible(deliveryAddresses.length === 0);
+  }, [addressOptionsLoading, deliveryAddresses.length]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1651,7 +1665,43 @@ export default function CheckoutPage() {
                 </Text>
               )}
 
-              <View style={styles.formGrid}>
+              {deliveryAddresses.length > 0 && !shouldShowAddressForm ? (
+                <View style={styles.formRowAction}>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.primary,
+                      },
+                    ]}
+                    onPress={() => setAddressFormVisible(true)}>
+                    <Text style={[styles.confirmButtonText, {color: '#FFFFFF'}]}>
+                      Adicionar endereco
+                    </Text>
+                  </TouchableOpacity>
+                  {hasDeliveryAddress ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.primaryButton,
+                        {
+                          flex: 1,
+                          backgroundColor: theme.primary,
+                          opacity: quoteLoading ? 0.7 : 1,
+                        },
+                      ]}
+                      disabled={quoteLoading}
+                      onPress={requestDeliveryQuote}>
+                      <Text style={[styles.confirmButtonText, {color: '#FFFFFF'}]}>
+                        {quoteLoading ? 'Cotando...' : 'Cotar entrega'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {shouldShowAddressForm ? (
+                <View style={styles.formGrid}>
                 <TextInput
                   style={[
                     styles.formInput,
@@ -1783,13 +1833,32 @@ export default function CheckoutPage() {
                     <Text
                       style={[
                         styles.confirmButtonText,
-                        {color: theme.onPrimary || '#FFFFFF'},
+                        {color: '#FFFFFF'},
                       ]}>
                       {quoteLoading ? 'Cotando...' : 'Cotar entrega'}
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+                {deliveryAddresses.length > 0 ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryButton,
+                      {borderColor: theme.cardBorder},
+                    ]}
+                    onPress={() => {
+                      setAddressFormVisible(false);
+                      setAddressForm({
+                        ...createEmptyAddressForm(),
+                        country: 'BR',
+                      });
+                    }}>
+                    <Text style={[styles.confirmButtonText, {color: theme.text}]}>
+                      Cancelar
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+                </View>
+              ) : null}
 
               {deliveryQuotes.length > 0 ? (
                 <View style={{marginTop: 8}}>
@@ -2286,7 +2355,7 @@ export default function CheckoutPage() {
                     <Text
                       style={[
                         styles.confirmButtonText,
-                        {color: theme.onPrimary || '#FFFFFF'},
+                        {color: '#FFFFFF'},
                       ]}>
                       Confirmar
                     </Text>

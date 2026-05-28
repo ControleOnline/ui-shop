@@ -195,6 +195,7 @@ export default function ShopQuantityControl({
       await openShopCustomize({
         cart,
         navigation,
+        presentation: width < 900 ? 'bottomSheet' : null,
         productId: product?.id || product?.['@id'],
         refreshCart,
       });
@@ -212,6 +213,7 @@ export default function ShopQuantityControl({
     product,
     quantity,
     refreshCart,
+    width,
   ]);
 
   const decrease = useCallback(() => {

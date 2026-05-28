@@ -17,6 +17,8 @@
 - O `SHOP` nao conclui pagamento em dinheiro. Ele apenas registra a escolha do cliente para cobrar na entrega e deixa a confirmacao final para um funcionario em `PDV` ou `MANAGER`.
 - O catalogo mobile nao deve exibir secoes de categorias sem produtos carregados.
 - A busca do shop e instantanea a partir de 3 caracteres e deve reutilizar os resultados do cardapio, sem botao separado de pesquisa.
+- Quando o cliente ja tem enderecos salvos, o formulario de novo endereco deve abrir apenas por acao explicita em "Adicionar endereco".
+- Produtos com grupos ou complementos devem abrir personalizacao antes de entrar no carrinho, mesmo que os grupos venham apenas do backend.
 
 ## Quando usar
 - Prompts sobre storefront, loja, catalogo, carrinho, checkout do cliente, pedidos do cliente, cartoes e experiencia do shop.

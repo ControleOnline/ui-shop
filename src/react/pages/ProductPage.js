@@ -404,7 +404,6 @@ export default function ProductPage() {
                                 cart={cart}
                                 refreshCart={refreshCart}
                                 iconColor={theme.primary}
-                                shouldCheckCustomization={false}
                               />
                             </View>
 
@@ -492,7 +491,6 @@ export default function ProductPage() {
                           cart={cart}
                           refreshCart={refreshCart}
                           iconColor={theme.primary}
-                          shouldCheckCustomization={false}
                         />
                       </View>
 

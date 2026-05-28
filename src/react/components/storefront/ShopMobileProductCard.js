@@ -118,7 +118,6 @@ export default function ShopMobileProductCard({
           iconColor={theme.primary}
           product={product}
           refreshCart={refreshCart}
-          shouldCheckCustomization={false}
           style={mobileProductQuantityStyle({theme})}
           textStyle={mobileProductQuantityTextStyle({theme})}
         />
