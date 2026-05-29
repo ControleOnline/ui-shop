@@ -3,13 +3,13 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import {
   Image,
   Modal,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -54,7 +54,6 @@ import {
   inlineStyle_241_16,
   inlineStyle_255_12,
   inlineStyle_273_14,
-  inlineStyle_282_14,
   inlineStyle_345_10,
   inlineStyle_358_12,
   inlineStyle_369_18,
@@ -80,7 +79,6 @@ import {
   inlineStyle_485_22,
   inlineStyle_490_22,
   inlineStyle_497_18,
-  inlineStyle_508_18,
   inlineStyle_531_18,
   inlineStyle_538_24,
 } from './ShopShell.styles';
@@ -108,9 +106,9 @@ const getAvatarUrl = user => {
 
 export default function ShopShell({
   children,
+  hideHeader = false,
   searchValue = '',
   onSearch,
-  showHomeEntryControls = false,
   showSalesShortcuts = true,
   showBottomCart = null,
   activeHomeEntry = '',
@@ -128,25 +126,32 @@ export default function ShopShell({
   const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
-    hasMultipleHomeOptions,
+    companyConfigs,
     homeEntries,
     loyaltyCouponsEnabled,
     primaryEntryRouteName,
   } = useShopSettings();
 
-  const {user} = authStore.getters;
+  const {isLogged, user} = authStore.getters;
   const authActions = authStore.actions;
 
-  const theme = pickTheme(defaultCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
+  const effectiveCompanyConfigs = useMemo(() => {
+    if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
+      return salesCompany.configs;
+    }
+    return companyConfigs || {};
+  }, [companyConfigs, salesCompany?.configs]);
+  const cardRegistrationEnabled = Boolean(effectiveCompanyConfigs?.['asaas-key']);
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    JSON.parse(localStorage.getItem('config') || '{}')?.themeMode === 'dark',
-  );
-
+  const searchValueRef = useRef('');
   useEffect(() => {
     setSearchTerm(searchValue);
+  }, [searchValue]);
+  useEffect(() => {
+    searchValueRef.current = String(searchValue || '').trim();
   }, [searchValue]);
 
   useLayoutEffect(() => {
@@ -184,25 +189,39 @@ export default function ShopShell({
     : '';
 
   const submitSearch = useCallback(() => {
-    if (onSearch) onSearch(searchTerm);
+    const normalizedTerm = String(searchTerm || '').trim();
+    if (normalizedTerm.length === 0 || normalizedTerm.length >= 3) {
+      onSearch?.(normalizedTerm);
+    }
   }, [onSearch, searchTerm]);
 
-  const toggleDarkMode = useCallback(value => {
-    setDarkMode(value);
-    const config = JSON.parse(localStorage.getItem('config') || '{}');
-    localStorage.setItem(
-      'config',
-      JSON.stringify({
-        ...config,
-        themeMode: value ? 'dark' : 'light',
-      }),
-    );
-  }, []);
+  useEffect(() => {
+    if (!onSearch) {
+      return undefined;
+    }
 
-  const shellBackground = darkMode ? '#0f1720' : theme.background;
-  const surface = darkMode ? '#17212B' : theme.surface;
-  const foreground = darkMode ? '#F8FAFC' : theme.text;
-  const muted = darkMode ? '#93A4B7' : theme.muted;
+    const normalizedTerm = String(searchTerm || '').trim();
+    const currentSearchValue = searchValueRef.current;
+    if (normalizedTerm.length > 0 && normalizedTerm.length < 3) {
+      if (currentSearchValue) {
+        const timeoutId = setTimeout(() => onSearch(''), 250);
+        return () => clearTimeout(timeoutId);
+      }
+      return undefined;
+    }
+
+    if (normalizedTerm === currentSearchValue) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => onSearch(normalizedTerm), 300);
+    return () => clearTimeout(timeoutId);
+  }, [onSearch, searchTerm]);
+
+  const shellBackground = theme.background;
+  const surface = theme.surface;
+  const foreground = theme.text;
+  const muted = theme.muted;
 
   const routeActiveHomeEntry = useMemo(() => {
     if (route?.name === 'ShopFranchiseLocatorPage') {
@@ -220,12 +239,10 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
-  const shouldShowHomeEntryBottomBar =
-    bottomBarEnabled && hasMultipleHomeOptions;
-  const shouldShowHomeEntryTopControl =
-    showHomeEntryControls &&
-    hasMultipleHomeOptions &&
-    !shouldShowHomeEntryBottomBar;
+  const shouldShowHomeEntryBottomBar = Boolean(
+    bottomBarEnabled && homeEntries.length > 1,
+  );
+  const shouldShowHomeEntryTopControl = false;
   const homeEntryBottomOffset =
     typeof showBottomCart === 'boolean' && showBottomCart ? 88 : 14;
 
@@ -264,111 +281,108 @@ export default function ShopShell({
     <View style={inlineStyle_118_10({
       shellBackground: shellBackground,
     })}>
-      <View style={inlineStyle_119_12({
-        theme: theme,
-      })}>
-        <View
-          style={inlineStyle_121_10({
-            isMobile: isMobile,
-            shellPadding: shellPadding,
-          })}>
+      {!hideHeader && (
+        <View style={inlineStyle_119_12({
+          theme: theme,
+        })}>
           <View
-            style={inlineStyle_128_12}>
+            style={inlineStyle_121_10({
+              isMobile: isMobile,
+              shellPadding: shellPadding,
+            })}>
             <View
-              style={inlineStyle_135_14}>
-              <TouchableOpacity
-                onPress={handleNavigateHome}>
-                {logoUrl ? (
-                  <Image
-                    source={{uri: logoUrl}}
-                    style={inlineStyle_146_20({
-                      isMobile: isMobile,
-                    })}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={inlineStyle_155_20({
-                      isMobile: isMobile,
-                    })}>
-                    <Text
-                      style={inlineStyle_164_22({
+              style={inlineStyle_128_12}>
+              <View
+                style={inlineStyle_135_14}>
+                <TouchableOpacity
+                  onPress={handleNavigateHome}>
+                  {logoUrl ? (
+                    <Image
+                      source={{uri: logoUrl}}
+                      style={inlineStyle_146_20({
+                        isMobile: isMobile,
+                      })}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={inlineStyle_155_20({
                         isMobile: isMobile,
                       })}>
-                      {getInitials(defaultCompany?.alias || 'CO')}
+                      <Text
+                        style={inlineStyle_164_22({
+                          isMobile: isMobile,
+                        })}>
+                        {getInitials(defaultCompany?.alias || 'CO')}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                <View style={inlineStyle_175_20}>
+                  <View
+                    style={inlineStyle_177_18}>
+                    <Text
+                      numberOfLines={1}
+                      style={inlineStyle_180_20({
+                        isMobile: isMobile,
+                      })}>
+                      {purchaseCompanyLabel}
                     </Text>
                   </View>
-                )}
-              </TouchableOpacity>
-
-              <View style={inlineStyle_175_20}>
-                <View
-                  style={inlineStyle_177_18}>
                   <Text
                     numberOfLines={1}
-                    style={inlineStyle_180_20({
-                      isMobile: isMobile,
-                    })}>
-                    {purchaseCompanyLabel}
+                    style={inlineStyle_214_18}>
+                    {subtitle}
                   </Text>
                 </View>
-                <Text
-                  numberOfLines={1}
-                  style={inlineStyle_214_18}>
-                  {subtitle}
-                </Text>
+              </View>
+
+              <View style={inlineStyle_224_18}>
+                {!isMobile && (
+                  <TouchableOpacity
+                    onPress={() => setAccountOpen(true)}
+                    style={inlineStyle_228_18}>
+                    <Icon name="notifications" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => setAccountOpen(true)}
+                  style={inlineStyle_241_16}>
+                  <Icon name="account-circle" size={22} color="#fff" />
+                </TouchableOpacity>
               </View>
             </View>
 
-            <View style={inlineStyle_224_18}>
-              {!isMobile && (
-                <TouchableOpacity
-                  onPress={() => setAccountOpen(true)}
-                  style={inlineStyle_228_18}>
-                  <Icon name="notifications" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() => setAccountOpen(true)}
-                style={inlineStyle_241_16}>
-                <Icon name="account-circle" size={22} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
+            {showSearch && (
+              <View
+                style={inlineStyle_255_12}>
+                <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
+                <TextInput
+                  value={searchTerm}
+                  onChangeText={setSearchTerm}
+                  onSubmitEditing={submitSearch}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor="rgba(255,255,255,0.75)"
+                  style={inlineStyle_273_14}
+                />
+              </View>
+            )}
 
-          {showSearch && (
-            <View
-              style={inlineStyle_255_12}>
-              <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
-              <TextInput
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-                onSubmitEditing={submitSearch}
-                placeholder={searchPlaceholder}
-                placeholderTextColor="rgba(255,255,255,0.75)"
-                style={inlineStyle_273_14}
+            {shouldShowHomeEntryTopControl && (
+              <ShopHomeEntryControls
+                entries={homeEntries}
+                activeEntryKey={resolvedActiveHomeEntry}
+                showBottomBar={false}
+                showTopControl
+                theme={theme}
+                onSelect={handleSelectHomeEntry}
               />
-              <TouchableOpacity
-                onPress={submitSearch}
-                style={inlineStyle_282_14}>
-                <Icon name="arrow-forward" size={16} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {shouldShowHomeEntryTopControl && (
-            <ShopHomeEntryControls
-              entries={homeEntries}
-              activeEntryKey={resolvedActiveHomeEntry}
-              showBottomBar={false}
-              showTopControl
-              theme={theme}
-              onSelect={handleSelectHomeEntry}
-            />
-          )}
+            )}
+          </View>
         </View>
-      </View>
-      {children({foreground, surface, theme})}
+      )}
+      {children({foreground, openAccountMenu: () => setAccountOpen(true), surface, theme})}
       {shouldShowHomeEntryBottomBar && (
         <ShopHomeEntryControls
           entries={homeEntries}
@@ -403,38 +417,60 @@ export default function ShopShell({
                   style={inlineStyle_372_18({
                     foreground: foreground,
                   })}>
-                  Minha Conta
+                  Menu
                 </Text>
 
-                <TouchableOpacity
-                  onPress={() => {
-                    setAccountOpen(false);
-                    navigation.navigate('ShopProfilePage');
-                  }}
-                  style={inlineStyle_381_18}>
-                  <Icon name="face" size={22} color={foreground} />
-                  <Text
-                    style={inlineStyle_388_20({
+                {homeEntries.map(entry => (
+                  <TouchableOpacity
+                    key={entry.key}
+                    onPress={() => {
+                      setAccountOpen(false);
+                      handleSelectHomeEntry(entry);
+                    }}
+                    style={inlineStyle_381_18}>
+                    <Icon name={entry.iconName} size={22} color={foreground} />
+                    <Text
+                      style={inlineStyle_388_20({
+                        foreground: foreground,
+                      })}>
+                      {entry.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                {isLogged && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopProfilePage');
+                    }}
+                    style={inlineStyle_381_18}>
+                    <Icon name="face" size={22} color={foreground} />
+                    <Text
+                      style={inlineStyle_388_20({
+                        foreground: foreground,
+                      })}>
+                      Meu Perfil
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {isLogged && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('ShopOrdersPage');
+                    }}
+                    style={inlineStyle_398_18}>
+                    <Text style={inlineStyle_399_24({
                       foreground: foreground,
                     })}>
-                    Meu Perfil
-                  </Text>
-                </TouchableOpacity>
+                      Meus Pedidos
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity
-                  onPress={() => {
-                    setAccountOpen(false);
-                    navigation.navigate('ShopOrdersPage');
-                  }}
-                  style={inlineStyle_398_18}>
-                  <Text style={inlineStyle_399_24({
-                    foreground: foreground,
-                  })}>
-                    Meus Pedidos
-                  </Text>
-                </TouchableOpacity>
-
-                {showSalesShortcuts && (
+                {showSalesShortcuts && cardRegistrationEnabled && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -479,7 +515,7 @@ export default function ShopShell({
                   </TouchableOpacity>
                 )}
 
-                {loyaltyCouponsEnabled && (
+                {loyaltyCouponsEnabled && !homeEntries.some(entry => entry.routeName === 'ShopLoyaltyPage') && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -514,7 +550,7 @@ export default function ShopShell({
 
               <View
                 style={inlineStyle_460_16({
-                  darkMode: darkMode,
+                  darkMode: false,
                   isMobile: isMobile,
                 })}
               />
@@ -548,20 +584,12 @@ export default function ShopShell({
                   {displayName}
                 </Text>
 
-                <View
-                  style={inlineStyle_508_18}>
-                  <Icon
-                    name={darkMode ? 'dark-mode' : 'light-mode'}
-                    size={20}
-                    color={foreground}
-                  />
-                  <Switch value={darkMode} onValueChange={toggleDarkMode} />
-                </View>
-
                 <TouchableOpacity
                   onPress={() => {
                     setAccountOpen(false);
-                    authActions.logOut();
+                    if (isLogged) {
+                      authActions.logOut();
+                    }
                     navigation.reset({
                       index: 0,
                       routes: [{name: 'SignInPage'}],
@@ -570,7 +598,9 @@ export default function ShopShell({
                   style={inlineStyle_531_18({
                     theme: theme,
                   })}>
-                  <Text style={inlineStyle_538_24}>Sair</Text>
+                  <Text style={inlineStyle_538_24}>
+                    {isLogged ? 'Sair' : 'Entrar'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -16,6 +16,10 @@ import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {
+  clearAnonymousCart,
+  updateAnonymousCartProduct,
+} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 
 import {
   formatMoney,
@@ -56,10 +60,13 @@ import {
   inlineStyle_400_12,
   inlineStyle_415_14,
   inlineStyle_424_20,
-  inlineStyle_432_14,
-  inlineStyle_445_18,
   inlineStyle_457_14,
   inlineStyle_467_16,
+  cartSummaryClearBadgeStyle,
+  cartSummaryClearBadgeTextStyle,
+  cartSummaryClearButtonStyle,
+  cartSummaryHeaderRowStyle,
+  cartSummaryTitleWrapStyle,
 } from './CartPage.styles';
 
 import { inlineStyle_185_12, inlineStyle_310_30 } from './CartPage.styles';
@@ -83,8 +90,10 @@ export default function CartPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
   const orderProductsStore = useStore('order_products');
-  const {cart, refreshCart, defaultCompany} = useShopCart({autoRefresh: true});
-  const theme = pickTheme(defaultCompany);
+  const {cart, refreshCart, defaultCompany, salesCompany} = useShopCart({
+    autoRefresh: true,
+  });
+  const theme = pickTheme(salesCompany || defaultCompany);
 
   const [orderProducts, setOrderProducts] = useState([]);
   const [isClearing, setIsClearing] = useState(false);
@@ -92,6 +101,14 @@ export default function CartPage() {
   const isMobile = width < 980;
 
   const reloadRows = React.useCallback(() => {
+    if (cart?.anonymous) {
+      const localRows = Array.isArray(cart.orderProducts)
+        ? cart.orderProducts
+        : [];
+      setOrderProducts(localRows);
+      return Promise.resolve(localRows);
+    }
+
     if (!cart?.id) {
       setOrderProducts([]);
       return Promise.resolve([]);
@@ -106,7 +123,7 @@ export default function CartPage() {
         setOrderProducts(data || []);
         return data || [];
       });
-  }, [cart?.id, orderProductsStore.actions]);
+  }, [cart, cart?.id, orderProductsStore.actions]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -122,8 +139,11 @@ export default function CartPage() {
   const total = useMemo(
     () =>
       rows.reduce(
-        (sum, row) =>
-          sum + Number(row?.total ?? row?.quantity * row?.price ?? 0),
+        (sum, row) => {
+          const computedTotal =
+            Number(row?.quantity || 0) * Number(row?.price || 0);
+          return sum + Number(row?.total ?? computedTotal);
+        },
         0,
       ),
     [rows],
@@ -131,6 +151,17 @@ export default function CartPage() {
 
   const handleRemoveRow = async row => {
     if (!row?.id) return;
+    if (cart?.anonymous) {
+      updateAnonymousCartProduct({
+        providerId: cart.providerId,
+        product: row.product,
+        quantity: 0,
+      });
+      await refreshCart();
+      await reloadRows();
+      return;
+    }
+
     await orderProductsStore.actions.remove(row.id);
     await refreshCart();
     await reloadRows();
@@ -142,6 +173,13 @@ export default function CartPage() {
     const clearAction = async () => {
       setIsClearing(true);
       try {
+        if (cart?.anonymous) {
+          clearAnonymousCart(cart.providerId);
+          await refreshCart();
+          await reloadRows();
+          return;
+        }
+
         await Promise.all(
           rows
             .filter(item => item?.id)
@@ -175,6 +213,17 @@ export default function CartPage() {
     );
   };
 
+  const handleCheckout = () => {
+    if (cart?.id) {
+      navigation.navigate('ShopCheckoutPage');
+      return;
+    }
+
+    navigation.navigate('SignInPage', {
+      redirectRoute: 'ShopCheckoutPage',
+    });
+  };
+
   return (
     <ShopShell
       onSearch={query =>
@@ -189,23 +238,51 @@ export default function CartPage() {
               style={inlineStyle_144_14({
                 theme: theme,
               })}>
-              <Text
-                style={inlineStyle_153_16({
-                  theme: theme,
-                })}>
-                CARRINHO
-              </Text>
-              <Text
-                style={inlineStyle_157_16({
-                  theme: theme,
-                })}>
-                Seu pedido
-              </Text>
-              <Text style={inlineStyle_165_20({
-                theme: theme,
-              })}>
-                {itemsCount} item(ns) no carrinho
-              </Text>
+              <View style={cartSummaryHeaderRowStyle}>
+                <View style={cartSummaryTitleWrapStyle}>
+                  <Text
+                    style={inlineStyle_153_16({
+                      theme: theme,
+                    })}>
+                    CARRINHO
+                  </Text>
+                  <Text
+                    style={inlineStyle_157_16({
+                      theme: theme,
+                    })}>
+                    Seu pedido
+                  </Text>
+                  <Text style={inlineStyle_165_20({
+                    theme: theme,
+                  })}>
+                    {itemsCount} item(ns) no carrinho
+                  </Text>
+                </View>
+                {rows.length > 0 ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    disabled={isClearing}
+                    onPress={handleClearCart}
+                    style={cartSummaryClearButtonStyle({theme})}>
+                    {isClearing ? (
+                      <ActivityIndicator color={theme.danger} />
+                    ) : (
+                      <>
+                        <Icon
+                          name="delete-sweep"
+                          size={21}
+                          color={theme.danger}
+                        />
+                        <View style={cartSummaryClearBadgeStyle({theme})}>
+                          <Text style={cartSummaryClearBadgeTextStyle({theme})}>
+                            {itemsCount}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
 
             {rows.length === 0 ? (
@@ -244,8 +321,10 @@ export default function CartPage() {
                     theme: theme,
                   })}>
                   {rows.map(row => {
+                    const computedRowTotal =
+                      Number(row?.quantity || 0) * Number(row?.price || 0);
                     const rowTotal = Number(
-                      row?.total ?? row?.quantity * row?.price ?? 0,
+                      row?.total ?? computedRowTotal,
                     );
                     const groupedComponents = groupOrderProductComponents(row);
                     return (
@@ -391,27 +470,7 @@ export default function CartPage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleClearCart}
-              disabled={isClearing || rows.length === 0}
-              style={inlineStyle_432_14({
-                rows: rows,
-                theme: theme,
-              })}>
-              {isClearing ? (
-                <ActivityIndicator color={theme.danger} />
-              ) : (
-                <Text
-                  style={inlineStyle_445_18({
-                    rows: rows,
-                    theme: theme,
-                  })}>
-                  Limpar carrinho
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ShopCheckoutPage')}
+              onPress={handleCheckout}
               disabled={rows.length === 0}
               style={inlineStyle_457_14({
                 rows: rows,

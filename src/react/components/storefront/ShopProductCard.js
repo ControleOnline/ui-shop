@@ -3,12 +3,11 @@ import {Image, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
-import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 
 import {
   formatMoney,
   getImageFromRelations,
-  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -31,15 +30,24 @@ import {
 
 import {inlineStyle_143_12} from './ShopProductCard.styles';
 
-export default function ShopProductCard({product, compact = false, company = null}) {
+export default function ShopProductCard({
+  cart = null,
+  compact = false,
+  company = null,
+  defaultCompany = null,
+  product,
+  refreshCart = null,
+}) {
   const navigation = useNavigation();
-  const {cart, refreshCart, defaultCompany} = useShopCart();
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = String(product?.id || '');
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-  const requiresCustomization = product?.type === 'custom' || hasInlineGroups;
+  const requiresCustomization =
+    product?.type === 'custom' ||
+    hasInlineGroups ||
+    product?.hasCustomizationGroups === true;
   const openProductDetails = () =>
     navigation.navigate('ShopProductPage', {
       id: productId,
@@ -124,12 +132,12 @@ export default function ShopProductCard({product, compact = false, company = nul
         {requiresCustomization ? (
           <TouchableOpacity
             onPress={async () => {
-              try {
-                await refreshCart?.();
-              } catch {}
-              navigation.navigate('CustomizeScreen', {
-                productId: normalizeId(product?.id || product?.['@id']),
+              await openShopCustomize({
+                cart,
+                navigation,
+                productId: product?.id || product?.['@id'],
                 redirectToCart: true,
+                refreshCart,
               });
             }}
             style={inlineStyle_140_12({

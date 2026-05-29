@@ -13,6 +13,10 @@ import {
 const isConfigMap = value =>
   value && typeof value === 'object' && !Array.isArray(value);
 
+const hasShopConfigEntries = configs =>
+  isConfigMap(configs) &&
+  Object.keys(configs).some(key => String(key).startsWith('shop-'));
+
 export default function useShopSettings() {
   const peopleStore = useStore('people');
   const configsStore = useStore('configs');
@@ -27,24 +31,33 @@ export default function useShopSettings() {
   );
 
   const companyConfigs = useMemo(() => {
+    const defaultCompanyConfigs = isConfigMap(defaultCompany?.configs)
+      ? defaultCompany.configs
+      : {};
+
     if (
       defaultCompanyId &&
       currentCompanyId &&
       defaultCompanyId === currentCompanyId &&
       isConfigMap(runtimeConfigs)
     ) {
-      return runtimeConfigs;
+      return {
+        ...defaultCompanyConfigs,
+        ...runtimeConfigs,
+      };
     }
 
-    if (!defaultCompanyId && isConfigMap(runtimeConfigs)) {
-      return runtimeConfigs;
+    if (
+      isConfigMap(runtimeConfigs) &&
+      (!defaultCompanyId || hasShopConfigEntries(runtimeConfigs))
+    ) {
+      return {
+        ...defaultCompanyConfigs,
+        ...runtimeConfigs,
+      };
     }
 
-    if (isConfigMap(defaultCompany?.configs)) {
-      return defaultCompany.configs;
-    }
-
-    return {};
+    return defaultCompanyConfigs;
   }, [
     currentCompanyId,
     defaultCompany?.configs,

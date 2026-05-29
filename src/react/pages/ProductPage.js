@@ -23,6 +23,7 @@ import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/componen
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
@@ -150,12 +151,12 @@ export default function ProductPage() {
           }
 
           const baseFilter = {
-            parentProduct: `/products/${nextProductId}`,
+            product: nextProductId,
             itemsPerPage: 1,
           };
 
           const groupFilters = providerId
-            ? {...baseFilter, people: providerId}
+            ? {...baseFilter, company: providerId}
             : baseFilter;
 
           const response = await productGroupStore.actions.getItems(groupFilters);
@@ -204,16 +205,18 @@ export default function ProductPage() {
   );
   const productDescription = String(product?.description || '').trim();
   const detailsCopy = productDescription || 'Sem descricao adicional para este item.';
-  const handleOpenCustomize = useCallback(async () => {
-    try {
-      await refreshCart?.();
-    } catch {}
-
-    navigation.navigate('CustomizeScreen', {
-      productId: normalizeId(product?.id || product?.['@id']),
-      redirectToCart: true,
-    });
-  }, [navigation, product, refreshCart]);
+  const handleOpenCustomize = useCallback(
+    () =>
+      openShopCustomize({
+        cart,
+        navigation,
+        presentation: isMobile ? 'bottomSheet' : null,
+        productId: product?.id || product?.['@id'],
+        redirectToCart: true,
+        refreshCart,
+      }),
+    [cart, isMobile, navigation, product, refreshCart],
+  );
 
   if (!salesPageEnabled) {
     return (
@@ -401,7 +404,6 @@ export default function ProductPage() {
                                 cart={cart}
                                 refreshCart={refreshCart}
                                 iconColor={theme.primary}
-                                defaultQuantity={1}
                               />
                             </View>
 
@@ -489,7 +491,6 @@ export default function ProductPage() {
                           cart={cart}
                           refreshCart={refreshCart}
                           iconColor={theme.primary}
-                          defaultQuantity={1}
                         />
                       </View>
 

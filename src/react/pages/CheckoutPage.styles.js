@@ -7,6 +7,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  backButton: {
+    minHeight: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    marginBottom: 10,
+  },
+  backButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
   methodCard: {
     borderRadius: 14,
     borderWidth: 1,
@@ -123,6 +138,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  skeletonStack: {
+    marginTop: 10,
+    gap: 10,
+  },
+  formGrid: {
+    marginTop: 10,
+    gap: 8,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  formRowAction: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  formInput: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  secondaryButton: {
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  primaryButton: {
+    minHeight: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  quoteCard: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+  },
+  quoteTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quoteMeta: {
+    marginTop: 4,
+    fontSize: 12,
   },
 });
 

@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -211,14 +212,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     padding: 10,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    elevation: 6,
+    ...Platform.select({
+      web: {boxShadow: '0 6px 12px rgba(15,23,42,0.16)'},
+      ios: {
+        shadowColor: '#0F172A',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: {
+          width: 0,
+          height: 6,
+        },
+      },
+      android: {elevation: 6},
+    }),
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -252,14 +258,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     padding: 10,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    elevation: 8,
+    ...Platform.select({
+      web: {boxShadow: '0 6px 12px rgba(15,23,42,0.16)'},
+      ios: {
+        shadowColor: '#0F172A',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: {
+          width: 0,
+          height: 6,
+        },
+      },
+      android: {elevation: 8},
+    }),
   },
   bottomBarItem: {
     flex: 1,

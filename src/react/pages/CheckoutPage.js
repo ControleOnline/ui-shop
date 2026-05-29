@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -10,15 +9,19 @@ import {
   View,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useStore} from '@store';
+import {api} from '@controleonline/ui-common/src/api';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
+import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
   buildWalletIdsForGateway,
   filterDeviceConfigsByCompany,
+  getPaymentGatewayFromConfigs,
   isOrderChargeOnDeliveryEnabled,
   resolveRemotePaymentDeviceOptions,
 } from '@controleonline/ui-common/src/react/utils/paymentDevices';
@@ -37,6 +40,15 @@ import {
   parseMoneyInputValue,
   resolveCashPaymentDetails,
 } from '@controleonline/ui-common/src/react/utils/cashPayment';
+import {
+  buildAddressOptionSummary,
+  createEmptyAddressForm,
+  normalizePostalCodeInput,
+} from '@controleonline/ui-common/src/react/utils/entityDisplay';
+import {
+  normalizeEntityId,
+  toEntityIri,
+} from '@controleonline/ui-common/src/react/utils/commercialDocumentOrders';
 import styles from './CheckoutPage.styles';
 
 import {
@@ -96,16 +108,60 @@ const normalizeText = value =>
     .trim()
     .toLowerCase();
 
-const normalizeEntityId = value => {
-  if (!value) {
-    return '';
+const normalizeActionResult = response => {
+  if (Array.isArray(response?.member)) {
+    return response.member[0] || null;
   }
 
-  if (typeof value === 'object') {
-    return normalizeEntityId(value?.['@id'] || value?.id);
+  if (Array.isArray(response?.['hydra:member'])) {
+    return response['hydra:member'][0] || null;
   }
 
-  return String(value).replace(/\D+/g, '').trim();
+  if (response?.result && typeof response.result === 'object') {
+    return response.result;
+  }
+
+  if (response?.data && typeof response.data === 'object') {
+    return response.data;
+  }
+
+  return response || null;
+};
+
+const extractQuotePayload = response => {
+  const result = normalizeActionResult(response);
+  const data = result?.data && typeof result.data === 'object'
+    ? result.data
+    : result;
+
+  return data || {};
+};
+
+const extractQuotesFromResponse = response => {
+  const data = extractQuotePayload(response);
+  return Array.isArray(data?.quotes) ? data.quotes : [];
+};
+
+const getQuotePrice = quote => {
+  const price = Number(quote?.price);
+  return Number.isFinite(price) ? price : 0;
+};
+
+const formatApiError = error => {
+  if (!error) {
+    return 'Nao foi possivel concluir a solicitacao.';
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  return (
+    error?.message ||
+    error?.errmsg ||
+    error?.data?.message ||
+    'Nao foi possivel concluir a solicitacao.'
+  );
 };
 
 const parseInvoiceOtherInformations = value => {
@@ -223,6 +279,34 @@ const findReusableInvoiceForPaymentType = (
   );
 };
 
+const buildDeliveryPaymentLabel = payment => {
+  const kind = detectPaymentOptionKind(payment);
+  const label = getPaymentOptionLabel(payment);
+
+  if (kind === 'pix') {
+    return 'Pix na entrega';
+  }
+
+  if (kind === 'card') {
+    return `${label} na entrega`;
+  }
+
+  return `${label} na entrega`;
+};
+
+const getActionResult = response =>
+  response?.result && typeof response.result === 'object'
+    ? response.result
+    : response;
+
+const CheckoutSkeletonRows = ({theme}) => (
+  <View style={styles.skeletonStack}>
+    <ShopSkeleton height={18} width="48%" theme={{theme: {colors: theme}}} />
+    <ShopSkeleton height={14} width="86%" theme={{theme: {colors: theme}}} />
+    <ShopSkeleton height={46} radius={12} theme={{theme: {colors: theme}}} />
+  </View>
+);
+
 export default function CheckoutPage() {
   const navigation = useNavigation();
   const {
@@ -235,8 +319,9 @@ export default function CheckoutPage() {
   const {
     chargeOnDeliveryEnabled: shopChargeOnDeliveryEnabled,
     companyConfigs: settingsCompanyConfigs,
+    deliveryFeeEnabled,
+    deliveryFeeValue,
   } = useShopSettings();
-  const theme = pickTheme(defaultCompany);
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
   const walletPaymentTypeActions = walletPaymentTypeStore.actions;
@@ -250,10 +335,15 @@ export default function CheckoutPage() {
   const asaasActions = asaasStore.actions;
   const deviceConfigStore = useStore('device_config');
   const deviceConfigActions = deviceConfigStore.actions;
+  const addressStore = useStore('address');
+  const addressActions = addressStore.actions;
+  const ordersStore = useStore('orders');
+  const ordersActions = ordersStore.actions;
 
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [deliveryPaymentTypes, setDeliveryPaymentTypes] = useState([]);
   const [companyDeviceConfigs, setCompanyDeviceConfigs] = useState([]);
+  const [deliveryAddresses, setDeliveryAddresses] = useState([]);
   const [cards, setCards] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -269,11 +359,24 @@ export default function CheckoutPage() {
   const [deliveryChangeForValue, setDeliveryChangeForValue] = useState('');
   const [selectedDeliveryPaymentType, setSelectedDeliveryPaymentType] =
     useState(null);
+  const [selectedDeliveryOption, setSelectedDeliveryOption] = useState(null);
+  const [addressForm, setAddressForm] = useState({
+    ...createEmptyAddressForm(),
+    country: 'BR',
+  });
+  const [addressFormVisible, setAddressFormVisible] = useState(false);
+  const [addressOptionsLoading, setAddressOptionsLoading] = useState(true);
+  const [addressSaveLoading, setAddressSaveLoading] = useState(false);
+  const [addressSelectingId, setAddressSelectingId] = useState('');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [deliveryQuotes, setDeliveryQuotes] = useState([]);
+  const [selectedDeliveryQuote, setSelectedDeliveryQuote] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
   const sellerCompany = salesCompany || defaultCompany || null;
   const sellerCompanyId = sellerCompany?.id || null;
+  const theme = pickTheme(sellerCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -295,14 +398,29 @@ export default function CheckoutPage() {
       isOrderChargeOnDeliveryEnabled(effectiveCompanyConfigs),
     [effectiveCompanyConfigs, shopChargeOnDeliveryEnabled],
   );
+  const asaasConfigured = Boolean(effectiveCompanyConfigs?.['asaas-key']);
+  const asaasPixConfigured = Boolean(
+    effectiveCompanyConfigs?.['asaas-key'] &&
+      effectiveCompanyConfigs?.['asaas-receiver-pix-key'],
+  );
 
   const hasCart = Boolean(cart?.id);
+  const cartAddressDestination = cart?.addressDestination || null;
+  const cartAddressDestinationIri = toEntityIri(
+    cartAddressDestination,
+    'addresses',
+  );
+  const hasDeliveryAddress = Boolean(cartAddressDestinationIri);
   const cartItems = Array.isArray(cart?.orderProducts) ? cart.orderProducts : [];
   const itemsCount = cartItems.reduce(
     (sum, item) => sum + Number(item?.quantity || 0),
     0,
   );
   const cartTotal = Number(cart?.price || 0);
+  const configuredDeliveryFee = deliveryFeeEnabled ? Number(deliveryFeeValue || 0) : 0;
+  const quotedDeliveryFee = getQuotePrice(selectedDeliveryQuote);
+  const deliveryFee = quotedDeliveryFee > 0 ? quotedDeliveryFee : configuredDeliveryFee;
+  const financialTotal = cartTotal + deliveryFee;
   const paidAmount = useMemo(
     () =>
       invoices.reduce((sum, currentInvoice) => {
@@ -315,8 +433,8 @@ export default function CheckoutPage() {
     [invoices],
   );
   const pendingAmount = useMemo(
-    () => Math.max(cartTotal - paidAmount, 0),
-    [cartTotal, paidAmount],
+    () => Math.max(financialTotal - paidAmount, 0),
+    [financialTotal, paidAmount],
   );
   const changeForAmount = useMemo(
     () => parseMoneyInputValue(deliveryChangeForValue),
@@ -330,24 +448,48 @@ export default function CheckoutPage() {
       }),
     [changeForAmount, pendingAmount],
   );
+  const selectedDeliveryAddress = useMemo(() => {
+    if (cartAddressDestination && typeof cartAddressDestination === 'object') {
+      return cartAddressDestination;
+    }
+
+    return (
+      deliveryAddresses.find(
+        address =>
+          toEntityIri(address, 'addresses') === cartAddressDestinationIri,
+      ) || null
+    );
+  }, [cartAddressDestination, cartAddressDestinationIri, deliveryAddresses]);
+  const selectedDeliveryAddressSummary = useMemo(
+    () =>
+      selectedDeliveryAddress
+        ? buildAddressOptionSummary(selectedDeliveryAddress)
+        : null,
+    [selectedDeliveryAddress],
+  );
+  const shouldShowAddressForm =
+    !addressOptionsLoading &&
+    (deliveryAddresses.length === 0 || addressFormVisible);
 
   const cardPaymentTypes = useMemo(
     () =>
       paymentTypes.filter(
         item =>
           detectPaymentOptionKind(item) === 'card' &&
+          asaasConfigured &&
           isIntegratedPaymentOption(item),
       ),
-    [paymentTypes],
+    [asaasConfigured, paymentTypes],
   );
   const pixPaymentTypes = useMemo(
     () =>
       paymentTypes.filter(
         item =>
           detectPaymentOptionKind(item) === 'pix' &&
+          asaasPixConfigured &&
           isIntegratedPaymentOption(item),
       ),
-    [paymentTypes],
+    [asaasPixConfigured, paymentTypes],
   );
   const paymentMethodChips = useMemo(() => {
     const chips = [];
@@ -391,34 +533,53 @@ export default function CheckoutPage() {
       }),
     [companyDeviceConfigs, effectiveCompanyConfigs],
   );
-  const defaultDeliveryDevice = useMemo(
-    () => remotePaymentDevices[0] || null,
-    [remotePaymentDevices],
-  );
   const deliveryCashPayment = useMemo(
     () => deliveryPaymentTypes.find(isCashPaymentOption) || null,
     [deliveryPaymentTypes],
   );
-  const deliveryMachinePayment = useMemo(
-    () =>
-      deliveryPaymentTypes.find(
-        item =>
-          isIntegratedPaymentOption(item) && !isCashPaymentOption(item),
-      ) || null,
-    [deliveryPaymentTypes],
-  );
+  const deliveryDeviceOptionsByWalletId = useMemo(() => {
+    const map = {};
+
+    remotePaymentDevices.forEach(device => {
+      const walletId = normalizeEntityId(
+        effectiveCompanyConfigs?.[`pos-${device.gateway}-wallet`],
+      );
+
+      if (!walletId) {
+        return;
+      }
+
+      map[walletId] = [...(map[walletId] || []), device];
+    });
+
+    return map;
+  }, [effectiveCompanyConfigs, remotePaymentDevices]);
   const deliveryModeOptions = useMemo(() => {
     const options = [];
 
-    if (deliveryMachinePayment) {
-      options.push({
-        key: 'machine',
-        label: 'Maquininha na entrega',
-        description:
-          'O cliente vai pagar quando o motoboy chegar com a maquininha.',
-        paymentType: deliveryMachinePayment,
+    deliveryPaymentTypes
+      .filter(
+        item =>
+          isIntegratedPaymentOption(item) && !isCashPaymentOption(item),
+      )
+      .forEach(paymentType => {
+        const paymentTypeId = getPaymentOptionId(paymentType);
+        const walletId = getPaymentOptionWalletId(paymentType);
+        const deviceOptions = deliveryDeviceOptionsByWalletId[walletId] || [];
+
+        deviceOptions.forEach(device => {
+          const label = buildDeliveryPaymentLabel(paymentType);
+
+          options.push({
+            key: `device-${device.deviceId}-${paymentTypeId}`,
+            label,
+            description: `${label} via ${device.alias || device.gatewayLabel}.`,
+            paymentMode: detectPaymentOptionKind(paymentType),
+            paymentType,
+            targetDevice: device,
+          });
+        });
       });
-    }
 
     if (deliveryCashPayment) {
       options.push({
@@ -426,12 +587,14 @@ export default function CheckoutPage() {
         label: 'Dinheiro',
         description:
           'O cliente informa para quanto precisa de troco e o motoboy leva o valor.',
+        paymentMode: 'cash',
         paymentType: deliveryCashPayment,
+        targetDevice: null,
       });
     }
 
     return options;
-  }, [deliveryCashPayment, deliveryMachinePayment]);
+  }, [deliveryCashPayment, deliveryDeviceOptionsByWalletId, deliveryPaymentTypes]);
   const deliveryModeLabels = useMemo(
     () => deliveryModeOptions.map(item => item.label).filter(Boolean),
     [deliveryModeOptions],
@@ -452,28 +615,274 @@ export default function CheckoutPage() {
     [cardPaymentTypes, paymentTypes, pixPaymentTypes],
   );
 
+  const handleAddressFormChange = useCallback((field, value) => {
+    setAddressForm(current => ({
+      ...current,
+      [field]: field === 'cep' ? normalizePostalCodeInput(value) : value,
+    }));
+  }, []);
+
+  const handleBackFromCheckout = useCallback(() => {
+    if (navigation.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('ShopCartPage');
+  }, [navigation]);
+
+  const updateCartDeliveryAddress = useCallback(
+    async addressIri => {
+      if (!cart?.id) {
+        throw new Error('Carrinho nao encontrado para atualizar a entrega.');
+      }
+
+      const clientIri = toEntityIri(currentCompany, 'people');
+      const providerIri = toEntityIri(sellerCompany, 'people');
+
+      if (!clientIri) {
+        throw new Error('Cliente nao encontrado para atualizar a entrega.');
+      }
+
+      const savedOrder = await ordersActions.save({
+        id: cart.id,
+        '@id': cart?.['@id'],
+        addressDestination: addressIri,
+        client: clientIri,
+        payer: clientIri,
+        provider: providerIri || undefined,
+      });
+
+      if (savedOrder) {
+        if (typeof ordersActions.syncOrder === 'function') {
+          ordersActions.syncOrder(savedOrder);
+        } else if (typeof ordersActions.setItem === 'function') {
+          ordersActions.setItem(savedOrder);
+        }
+      }
+
+      setDeliveryQuotes([]);
+      setSelectedDeliveryQuote(null);
+      await refreshCart();
+
+      return savedOrder;
+    },
+    [
+      cart?.id,
+      cart?.['@id'],
+      currentCompany,
+      ordersActions,
+      refreshCart,
+      sellerCompany,
+    ],
+  );
+
+  const handleSelectDeliveryAddress = useCallback(
+    async address => {
+      const addressIri = toEntityIri(address, 'addresses');
+      const addressId = normalizeEntityId(address);
+
+      if (!addressIri) {
+        setError('Nao foi possivel identificar o endereco selecionado.');
+        return;
+      }
+
+      if (addressIri === cartAddressDestinationIri) {
+        return;
+      }
+
+      setError('');
+      setMessage('');
+
+      try {
+        setAddressSelectingId(addressId);
+        await updateCartDeliveryAddress(addressIri);
+        setAddressFormVisible(false);
+        setMessage('Endereco de entrega selecionado.');
+      } catch (e) {
+        setError(formatApiError(e));
+      } finally {
+        setAddressSelectingId('');
+      }
+    },
+    [cartAddressDestinationIri, updateCartDeliveryAddress],
+  );
+
+  const saveDeliveryAddress = useCallback(async () => {
+    setError('');
+    setMessage('');
+
+    if (!cart?.id) {
+      setError('Carrinho nao encontrado para atualizar a entrega.');
+      return;
+    }
+
+    const clientIri = toEntityIri(currentCompany, 'people');
+
+    if (!clientIri) {
+      setError('Cliente nao encontrado para cadastrar o endereco.');
+      return;
+    }
+
+    const street = String(addressForm.street || '').trim();
+    const district = String(addressForm.district || '').trim();
+    const city = String(addressForm.city || '').trim();
+    const state = String(addressForm.state || '').trim();
+    const country = String(addressForm.country || 'BR').trim();
+    const number = String(addressForm.number ?? '').replace(/\D+/g, '').trim();
+    const cep = normalizePostalCodeInput(addressForm.cep);
+    const complement = String(addressForm.complement || '').trim();
+    const nickname = String(addressForm.nickname || 'Entrega').trim();
+
+    if (!street || !district || !city || !state || !country || !number || !cep) {
+      setError('Rua, numero, bairro, cidade, estado, pais e CEP sao obrigatorios.');
+      return;
+    }
+
+    try {
+      setAddressSaveLoading(true);
+
+      const savedAddress = normalizeActionResult(
+        await addressActions.save({
+          street,
+          district,
+          city,
+          state,
+          country,
+          number: Number(number),
+          cep,
+          nickname,
+          complement,
+          people: clientIri,
+        }),
+      );
+      const savedAddressIri = toEntityIri(savedAddress, 'addresses');
+
+      if (!savedAddressIri) {
+        throw new Error('Endereco criado sem identificador valido.');
+      }
+
+      await updateCartDeliveryAddress(savedAddressIri);
+      setDeliveryAddresses(current => [
+        savedAddress,
+        ...current.filter(
+          address =>
+            toEntityIri(address, 'addresses') !== savedAddressIri,
+        ),
+      ]);
+      setAddressForm({
+        ...createEmptyAddressForm(),
+        country: 'BR',
+      });
+      setAddressFormVisible(false);
+      setMessage('Endereco de entrega salvo no pedido.');
+    } catch (e) {
+      setError(formatApiError(e));
+    } finally {
+      setAddressSaveLoading(false);
+    }
+  }, [
+    addressActions,
+    addressForm.cep,
+    addressForm.city,
+    addressForm.complement,
+    addressForm.country,
+    addressForm.district,
+    addressForm.nickname,
+    addressForm.number,
+    addressForm.state,
+    addressForm.street,
+    cart?.id,
+    currentCompany,
+    updateCartDeliveryAddress,
+  ]);
+
+  const loadDeliveryQuotes = useCallback(async () => {
+    if (!cart?.id) {
+      return [];
+    }
+
+    const response = await api.fetch(`orders/${cart.id}/logistic`, {
+      method: 'GET',
+    });
+    const quotes = extractQuotesFromResponse(response);
+    setDeliveryQuotes(quotes);
+    setSelectedDeliveryQuote(current => {
+      if (!current?.id) {
+        return quotes.find(item => getQuotePrice(item) > 0) || null;
+      }
+
+      return quotes.find(item => item?.id === current.id) || current;
+    });
+    return quotes;
+  }, [cart?.id]);
+
+  const requestDeliveryQuote = useCallback(async () => {
+    setError('');
+    setMessage('');
+
+    if (!cart?.id) {
+      setError('Carrinho nao encontrado para cotar entrega.');
+      return;
+    }
+
+    if (!cartAddressDestinationIri) {
+      setError('Salve o endereco de entrega antes de cotar.');
+      return;
+    }
+
+    try {
+      setQuoteLoading(true);
+      const response = await api.fetch(`orders/${cart.id}/logistic/quote`, {
+        method: 'POST',
+      });
+      const result = normalizeActionResult(response);
+      if (String(result?.errno ?? '0') !== '0') {
+        throw result || response;
+      }
+
+      const quotes = extractQuotesFromResponse(response);
+      if (quotes.length > 0) {
+        setDeliveryQuotes(quotes);
+        setSelectedDeliveryQuote(quotes.find(item => getQuotePrice(item) > 0) || null);
+      } else {
+        await loadDeliveryQuotes();
+      }
+      setMessage('Cotacao de entrega solicitada.');
+    } catch (e) {
+      setError(formatApiError(e));
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [cart?.id, cartAddressDestinationIri, loadDeliveryQuotes]);
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setAddressOptionsLoading(true);
     setError('');
     setMessage('');
 
     try {
       const refreshedCart = await refreshCart();
       const resolvedCart = refreshedCart?.id ? refreshedCart : cart;
+      const clientIri = toEntityIri(currentCompany, 'people');
 
       const [
         paymentTypeResponse,
         cardsResponse,
         statusResponse,
         invoicesResponse,
+        addressesResponse,
       ] = await Promise.all([
         sellerCompanyId
           ? walletPaymentTypeActions.getItems({
-              company: sellerCompanyId,
+              people: `/people/${sellerCompanyId}`,
               itemsPerPage: 200,
             })
           : Promise.resolve([]),
-        cardActions.getItems({itemsPerPage: 200}),
+        asaasConfigured
+          ? cardActions.getItems({itemsPerPage: 200})
+          : Promise.resolve([]),
         statusActions.getItems({
           context: 'invoice',
           itemsPerPage: 200,
@@ -485,6 +894,12 @@ export default function CheckoutPage() {
               itemsPerPage: 50,
             })
           : Promise.resolve([]),
+        clientIri
+          ? addressActions.getItems({
+              people: clientIri,
+              itemsPerPage: 50,
+            }).catch(() => [])
+          : Promise.resolve([]),
       ]);
 
       const fetchedPaymentTypes = extractItems(paymentTypeResponse);
@@ -493,10 +908,12 @@ export default function CheckoutPage() {
       const fetchedInvoices = sortInvoicesByDateDesc(
         extractItems(invoicesResponse),
       );
+      const fetchedAddresses = extractItems(addressesResponse);
 
       setPaymentTypes(fetchedPaymentTypes);
       setCards(fetchedCards);
       setInvoices(fetchedInvoices);
+      setDeliveryAddresses(fetchedAddresses);
       setSelectedCard(
         previous =>
           fetchedCards.find(item => item?.id === previous?.id) ||
@@ -504,17 +921,26 @@ export default function CheckoutPage() {
           null,
       );
       setPendingStatus(pickPendingStatus(fetchedStatuses));
+
+      if (resolvedCart?.id) {
+        await loadDeliveryQuotes().catch(() => {});
+      }
     } catch (e) {
       setError(
         e?.message || 'Não foi possível carregar os dados de pagamento.',
       );
     } finally {
       setIsLoading(false);
+      setAddressOptionsLoading(false);
     }
   }, [
+    addressActions,
+    asaasConfigured,
     cardActions,
     cart,
+    currentCompany,
     invoiceActions,
+    loadDeliveryQuotes,
     refreshCart,
     sellerCompanyId,
     statusActions,
@@ -526,6 +952,14 @@ export default function CheckoutPage() {
       loadData();
     }, [loadData]),
   );
+
+  useEffect(() => {
+    if (addressOptionsLoading) {
+      return;
+    }
+
+    setAddressFormVisible(deliveryAddresses.length === 0);
+  }, [addressOptionsLoading, deliveryAddresses.length]);
 
   useFocusEffect(
     useCallback(() => {
@@ -575,11 +1009,30 @@ export default function CheckoutPage() {
       return undefined;
     }
 
-    const walletIds = buildWalletIdsForGateway({
-      gateway: defaultDeliveryDevice?.gateway,
-      companyConfigs: effectiveCompanyConfigs,
-      includeCashWallet: true,
-    });
+    const deliveryGateways = [
+      ...new Set(
+        [
+          ...remotePaymentDevices.map(device => device.gateway),
+          getPaymentGatewayFromConfigs(effectiveCompanyConfigs),
+        ].filter(Boolean),
+      ),
+    ];
+    const walletIds = [
+      ...new Set([
+        ...deliveryGateways.flatMap(gateway =>
+          buildWalletIdsForGateway({
+            gateway,
+            companyConfigs: effectiveCompanyConfigs,
+            includeCashWallet: false,
+          }),
+        ),
+        ...buildWalletIdsForGateway({
+          gateway: null,
+          companyConfigs: effectiveCompanyConfigs,
+          includeCashWallet: true,
+        }),
+      ]),
+    ];
 
     if (!walletIds.length) {
       setDeliveryPaymentTypes([]);
@@ -590,7 +1043,7 @@ export default function CheckoutPage() {
 
     walletPaymentTypeActions
       .getItems({
-        company: sellerCompanyId,
+        people: `/people/${sellerCompanyId}`,
         wallet: walletIds,
         itemsPerPage: 200,
       })
@@ -610,8 +1063,8 @@ export default function CheckoutPage() {
     };
   }, [
     chargeOnDeliveryEnabled,
-    defaultDeliveryDevice?.gateway,
     effectiveCompanyConfigs,
+    remotePaymentDevices,
     sellerCompanyId,
     walletPaymentTypeActions,
   ]);
@@ -625,6 +1078,12 @@ export default function CheckoutPage() {
         throw new Error('Carrinho não encontrado para checkout.');
       }
 
+      if (!cartAddressDestinationIri) {
+        throw new Error(
+          'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
+        );
+      }
+
       if (pendingAmount <= 0.009) {
         throw new Error('Este pedido ja foi pago.');
       }
@@ -636,7 +1095,10 @@ export default function CheckoutPage() {
           })
         : null;
 
-      if (reusableInvoice?.id) {
+      if (
+        reusableInvoice?.id &&
+        Math.abs(Number(reusableInvoice?.price || 0) - Number(price || 0)) < 0.01
+      ) {
         return reusableInvoice;
       }
 
@@ -663,8 +1125,27 @@ export default function CheckoutPage() {
         payload.status = pendingStatus['@id'];
       }
 
-      if (additionalInfo && typeof additionalInfo === 'object') {
-        payload.otherInformations = additionalInfo;
+      const invoiceInfo =
+        additionalInfo && typeof additionalInfo === 'object'
+          ? {...additionalInfo}
+          : {};
+
+      if (deliveryFee > 0) {
+        invoiceInfo.deliveryFee = deliveryFee;
+        invoiceInfo.orderSubtotal = cartTotal;
+        invoiceInfo.orderTotal = financialTotal;
+      }
+
+      if (selectedDeliveryQuote?.id) {
+        invoiceInfo.deliveryQuoteOrderId = selectedDeliveryQuote.id;
+        invoiceInfo.deliveryProvider =
+          selectedDeliveryQuote.providerKey || selectedDeliveryQuote.app || null;
+        invoiceInfo.deliveryProviderLabel =
+          selectedDeliveryQuote.providerLabel || null;
+      }
+
+      if (Object.keys(invoiceInfo).length > 0) {
+        payload.otherInformations = invoiceInfo;
       }
 
       const createdInvoice = await invoiceActions.save(payload);
@@ -679,13 +1160,18 @@ export default function CheckoutPage() {
     [
       cart?.['@id'],
       cart?.id,
+      cartAddressDestinationIri,
       currentCompany?.id,
+      deliveryFee,
+      financialTotal,
       hasCart,
       invoiceActions,
       invoices,
       pendingAmount,
       pendingStatus,
       sellerCompanyId,
+      selectedDeliveryQuote,
+      cartTotal,
     ],
   );
 
@@ -698,34 +1184,47 @@ export default function CheckoutPage() {
   );
 
   const buildDeliveryPaymentMetadata = useCallback(
-    ({selectedPaymentType, changeFor = 0, changeAmount = 0}) => ({
-      channel: 'delivery',
-      paymentLabel: isCashPaymentOption(selectedPaymentType)
-        ? 'Dinheiro'
-        : 'Maquininha na entrega',
-      paymentMode: isCashPaymentOption(selectedPaymentType) ? 'cash' : 'machine',
-      needsChange: Number(changeAmount || 0) > 0.009,
-      changeFor:
-        Number(changeFor || 0) > 0 ? Number(changeFor) : null,
-      changeAmount: Number(changeAmount || 0) > 0 ? Number(changeAmount) : 0,
-      targetDeviceId: null,
-      targetDeviceLabel: null,
-      targetGateway: defaultDeliveryDevice?.gateway || null,
-    }),
-    [defaultDeliveryDevice?.gateway],
+    ({deliveryOption, changeFor = 0, changeAmount = 0}) => {
+      const selectedPaymentType = deliveryOption?.paymentType;
+      const targetDevice = deliveryOption?.targetDevice || null;
+      const paymentMode =
+        deliveryOption?.paymentMode ||
+        (isCashPaymentOption(selectedPaymentType)
+          ? 'cash'
+          : detectPaymentOptionKind(selectedPaymentType));
+
+      return {
+        channel: 'delivery',
+        paymentLabel:
+          deliveryOption?.label || buildDeliveryPaymentLabel(selectedPaymentType),
+        paymentMode,
+        needsChange: Number(changeAmount || 0) > 0.009,
+        changeFor:
+          Number(changeFor || 0) > 0 ? Number(changeFor) : null,
+        changeAmount: Number(changeAmount || 0) > 0 ? Number(changeAmount) : 0,
+        targetDeviceId: targetDevice?.deviceId || null,
+        targetDeviceLabel: targetDevice?.alias || null,
+        targetGateway: targetDevice?.gateway || null,
+        deliveryQuoteOrderId: selectedDeliveryQuote?.id || null,
+        deliveryProvider:
+          selectedDeliveryQuote?.providerKey || selectedDeliveryQuote?.app || null,
+      };
+    },
+    [selectedDeliveryQuote],
   );
 
   const finalizeDeliveryRegistration = useCallback(
-    async (selectedPaymentType, {changeFor = 0, changeAmount = 0} = {}) => {
+    async (deliveryOption, {changeFor = 0, changeAmount = 0} = {}) => {
       setError('');
       setMessage('');
       setPixData(null);
       setIsProcessing(true);
 
       try {
+        const selectedPaymentType = deliveryOption?.paymentType || null;
         await ensureInvoiceForPaymentType(selectedPaymentType, {
           additionalInfo: buildDeliveryPaymentMetadata({
-            selectedPaymentType,
+            deliveryOption,
             changeFor,
             changeAmount,
           }),
@@ -733,38 +1232,43 @@ export default function CheckoutPage() {
 
         const orderId = String(cart?.id || '');
         if (orderId) {
+          const confirmResponse = await api.fetch(`orders/${orderId}/confirm`, {
+            method: 'POST',
+          });
+          const confirmResult = getActionResult(confirmResponse);
+          if (String(confirmResult?.errno ?? '0') !== '0') {
+            throw confirmResult;
+          }
           navigation.navigate('ShopOrderDetailsPage', {id: orderId});
           return;
         }
 
         setMessage(
-          `Pedido registrado para cobrar na entrega via ${
-            isCashPaymentOption(selectedPaymentType)
-              ? 'dinheiro'
-              : 'maquininha'
-          }.`,
+          `Pedido registrado para cobrar na entrega via ${deliveryOption?.label || 'pagamento na entrega'}.`,
         );
       } catch (e) {
         setError(
-          e?.message ||
+          formatApiError(e) ||
             'Nao foi possivel registrar a cobranca para pagamento na entrega.',
         );
       } finally {
         setIsProcessing(false);
         setSelectedDeliveryPaymentType(null);
+        setSelectedDeliveryOption(null);
       }
     },
     [
       buildDeliveryPaymentMetadata,
       cart?.id,
-      defaultDeliveryDevice?.gateway,
       ensureInvoiceForPaymentType,
       navigation,
     ],
   );
 
   const startDeliveryPayment = useCallback(
-    async selectedPaymentType => {
+    async deliveryOption => {
+      const selectedPaymentType = deliveryOption?.paymentType || null;
+
       if (!selectedPaymentType) {
         setError(
           'Nao foi possivel identificar o meio de pagamento da entrega.',
@@ -774,6 +1278,7 @@ export default function CheckoutPage() {
 
       setDeliveryModeModalVisible(false);
       setSelectedDeliveryPaymentType(selectedPaymentType);
+      setSelectedDeliveryOption(deliveryOption);
 
       if (isCashPaymentOption(selectedPaymentType)) {
         setDeliveryChangeForValue(formatMoneyInputValue(pendingAmount));
@@ -781,7 +1286,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      await finalizeDeliveryRegistration(selectedPaymentType);
+      await finalizeDeliveryRegistration(deliveryOption);
     },
     [finalizeDeliveryRegistration, pendingAmount],
   );
@@ -856,6 +1361,13 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!hasDeliveryAddress) {
+      setError(
+        'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
+      );
+      return;
+    }
+
     if (deliveryModeOptions.length === 0) {
       setError(
         'A loja ainda nao configurou maquininha ou dinheiro para cobrar na entrega.',
@@ -864,7 +1376,7 @@ export default function CheckoutPage() {
     }
 
     if (deliveryModeOptions.length === 1) {
-      await startDeliveryPayment(deliveryModeOptions[0].paymentType);
+      await startDeliveryPayment(deliveryModeOptions[0]);
       return;
     }
 
@@ -872,12 +1384,13 @@ export default function CheckoutPage() {
   }, [
     chargeOnDeliveryEnabled,
     deliveryModeOptions,
+    hasDeliveryAddress,
     startDeliveryPayment,
   ]);
 
   const handleSelectDeliveryMode = useCallback(
     async option => {
-      await startDeliveryPayment(option?.paymentType || null);
+      await startDeliveryPayment(option || null);
     },
     [startDeliveryPayment],
   );
@@ -907,19 +1420,21 @@ export default function CheckoutPage() {
     }
 
     setDeliveryChangeModalVisible(false);
-    await finalizeDeliveryRegistration(selectedDeliveryPaymentType, {
+    await finalizeDeliveryRegistration(selectedDeliveryOption, {
       changeFor: cashPaymentDetails.receivedAmount,
       changeAmount: cashPaymentDetails.changeAmount,
     });
   }, [
     cashPaymentDetails,
     finalizeDeliveryRegistration,
+    selectedDeliveryOption,
     selectedDeliveryPaymentType,
   ]);
 
   const checkoutBlocked = isLoading || isProcessing || !hasCart || !itemsCount;
+  const paymentCheckoutBlocked = checkoutBlocked || !hasDeliveryAddress;
   const deliveryCheckoutBlocked =
-    checkoutBlocked ||
+    paymentCheckoutBlocked ||
     pendingAmount <= 0.009 ||
     deliveryModeOptions.length === 0;
   const checkoutActions = useMemo(
@@ -931,7 +1446,7 @@ export default function CheckoutPage() {
             icon: 'qr-code-scanner',
             variant: 'success',
             loading: isProcessing,
-            disabled: checkoutBlocked || pendingAmount <= 0.009,
+            disabled: paymentCheckoutBlocked || pendingAmount <= 0.009,
             onPress: handleGeneratePix,
           }
         : null,
@@ -943,7 +1458,7 @@ export default function CheckoutPage() {
             variant: 'primary',
             loading: isProcessing,
             disabled:
-              checkoutBlocked ||
+              paymentCheckoutBlocked ||
               pendingAmount <= 0.009 ||
               !selectedCard?.id,
             onPress: handlePayWithCard,
@@ -964,12 +1479,12 @@ export default function CheckoutPage() {
     [
       cardPaymentTypes.length,
       chargeOnDeliveryEnabled,
-      checkoutBlocked,
       deliveryCheckoutBlocked,
       handleChargeOnDelivery,
       handleGeneratePix,
       handlePayWithCard,
       isProcessing,
+      paymentCheckoutBlocked,
       pendingAmount,
       pixPaymentTypes.length,
       selectedCard?.id,
@@ -989,6 +1504,22 @@ export default function CheckoutPage() {
               inlineStyle_371_12,
               {paddingBottom: 232},
             ]}>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={handleBackFromCheckout}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                },
+              ]}>
+              <Icon name="arrow-back" size={19} color={theme.primary} />
+              <Text style={[styles.backButtonText, {color: theme.primary}]}>
+                Voltar ao carrinho
+              </Text>
+            </TouchableOpacity>
+
             <View
               style={inlineStyle_331_14({
                 theme: theme,
@@ -1015,8 +1546,384 @@ export default function CheckoutPage() {
                 style={inlineStyle_355_16({
                   theme: theme,
                 })}>
-                {formatMoney(cartTotal)}
+                {formatMoney(financialTotal)}
               </Text>
+            </View>
+
+            {deliveryFee > 0 && (
+              <View
+                style={inlineStyle_366_14({
+                  theme: theme,
+                })}>
+                <Text
+                  style={inlineStyle_375_16({
+                    theme: theme,
+                  })}>
+                  Resumo da entrega
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Produtos: {formatMoney(cartTotal)}
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Entrega: {formatMoney(deliveryFee)}
+                </Text>
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.text},
+                  ]}>
+                  Total a cobrar: {formatMoney(financialTotal)}
+                </Text>
+              </View>
+            )}
+
+            <View
+              style={inlineStyle_366_14({
+                theme: theme,
+              })}>
+              <Text
+                style={inlineStyle_375_16({
+                  theme: theme,
+                })}>
+                Entrega
+              </Text>
+              <Text
+                style={[
+                  styles.methodCardHint,
+                  {color: theme.text},
+                ]}>
+                Informe o endereco para cotar entrega. Se nenhuma cotacao for
+                selecionada, o checkout usa a taxa fixa configurada na loja.
+              </Text>
+
+              {selectedDeliveryAddressSummary ? (
+                <View
+                  style={[
+                    styles.quoteCard,
+                    {
+                      borderColor: theme.primary,
+                      backgroundColor: `${theme.primary}10`,
+                    },
+                  ]}>
+                  <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                    Endereco selecionado
+                  </Text>
+                  <Text style={[styles.quoteMeta, {color: theme.text}]}>
+                    {selectedDeliveryAddressSummary.primary || 'Endereco sem nome'}
+                  </Text>
+                  {!!selectedDeliveryAddressSummary.secondary && (
+                    <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                      {selectedDeliveryAddressSummary.secondary}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.primary},
+                  ]}>
+                  Selecione ou cadastre um endereco para liberar o pagamento.
+                </Text>
+              )}
+
+              {addressOptionsLoading ? (
+                <CheckoutSkeletonRows theme={theme} />
+              ) : deliveryAddresses.length > 0 ? (
+                <View style={{marginTop: 8}}>
+                  {deliveryAddresses.map(address => {
+                    const addressIri = toEntityIri(address, 'addresses');
+                    const addressId = normalizeEntityId(address);
+                    const summary = buildAddressOptionSummary(address);
+                    const isSelected = addressIri === cartAddressDestinationIri;
+                    const isSelecting = addressSelectingId === addressId;
+
+                    return (
+                      <TouchableOpacity
+                        key={addressIri || addressId || summary.primary}
+                        style={[
+                          styles.quoteCard,
+                          {
+                            borderColor: isSelected
+                              ? theme.primary
+                              : theme.cardBorder,
+                            backgroundColor: isSelected
+                              ? `${theme.primary}12`
+                              : theme.background,
+                            opacity: isSelecting ? 0.7 : 1,
+                          },
+                        ]}
+                        disabled={addressSaveLoading || !!addressSelectingId}
+                        onPress={() => handleSelectDeliveryAddress(address)}>
+                        <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                          {summary.primary || `Endereco #${addressId || '--'}`}
+                        </Text>
+                        {!!summary.secondary && (
+                          <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                            {summary.secondary}
+                          </Text>
+                        )}
+                        {isSelected || isSelecting ? (
+                          <Text
+                            style={[
+                              styles.quoteMeta,
+                              {color: isSelected ? theme.primary : theme.muted},
+                            ]}>
+                            {isSelecting ? 'Selecionando...' : 'Selecionado'}
+                          </Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.methodCardHint,
+                    {color: theme.muted},
+                  ]}>
+                  Nenhum endereco cadastrado para este cliente.
+                </Text>
+              )}
+
+              {deliveryAddresses.length > 0 && !shouldShowAddressForm ? (
+                <View style={styles.formRowAction}>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.primary,
+                      },
+                    ]}
+                    onPress={() => setAddressFormVisible(true)}>
+                    <Text style={[styles.confirmButtonText, {color: '#FFFFFF'}]}>
+                      Adicionar endereco
+                    </Text>
+                  </TouchableOpacity>
+                  {hasDeliveryAddress ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.primaryButton,
+                        {
+                          flex: 1,
+                          backgroundColor: theme.primary,
+                          opacity: quoteLoading ? 0.7 : 1,
+                        },
+                      ]}
+                      disabled={quoteLoading}
+                      onPress={requestDeliveryQuote}>
+                      <Text style={[styles.confirmButtonText, {color: '#FFFFFF'}]}>
+                        {quoteLoading ? 'Cotando...' : 'Cotar entrega'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {shouldShowAddressForm ? (
+                <View style={styles.formGrid}>
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Apelido do endereco"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.nickname}
+                  onChangeText={value => handleAddressFormChange('nickname', value)}
+                />
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="CEP"
+                    placeholderTextColor={theme.muted}
+                    keyboardType="numeric"
+                    value={addressForm.cep}
+                    onChangeText={value => handleAddressFormChange('cep', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {width: 112, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Numero"
+                    placeholderTextColor={theme.muted}
+                    keyboardType="numeric"
+                    value={String(addressForm.number || '')}
+                    onChangeText={value => handleAddressFormChange('number', value)}
+                  />
+                </View>
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Rua"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.street}
+                  onChangeText={value => handleAddressFormChange('street', value)}
+                />
+                <TextInput
+                  style={[
+                    styles.formInput,
+                    {borderColor: theme.cardBorder, color: theme.text},
+                  ]}
+                  placeholder="Complemento"
+                  placeholderTextColor={theme.muted}
+                  value={addressForm.complement}
+                  onChangeText={value => handleAddressFormChange('complement', value)}
+                />
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Bairro"
+                    placeholderTextColor={theme.muted}
+                    value={addressForm.district}
+                    onChangeText={value => handleAddressFormChange('district', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Cidade"
+                    placeholderTextColor={theme.muted}
+                    value={addressForm.city}
+                    onChangeText={value => handleAddressFormChange('city', value)}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="UF"
+                    placeholderTextColor={theme.muted}
+                    autoCapitalize="characters"
+                    value={addressForm.state}
+                    onChangeText={value => handleAddressFormChange('state', value)}
+                  />
+                  <TextInput
+                    style={[
+                      styles.formInput,
+                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
+                    ]}
+                    placeholder="Pais"
+                    placeholderTextColor={theme.muted}
+                    autoCapitalize="characters"
+                    value={addressForm.country}
+                    onChangeText={value => handleAddressFormChange('country', value)}
+                  />
+                </View>
+
+                <View style={styles.formRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryButton,
+                      {
+                        flex: 1,
+                        borderColor: theme.cardBorder,
+                        opacity: addressSaveLoading ? 0.7 : 1,
+                      },
+                    ]}
+                    disabled={addressSaveLoading}
+                    onPress={saveDeliveryAddress}>
+                    <Text style={[styles.confirmButtonText, {color: theme.text}]}>
+                      {addressSaveLoading ? 'Salvando...' : 'Salvar endereco'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.primary,
+                        opacity: quoteLoading ? 0.7 : 1,
+                      },
+                    ]}
+                    disabled={quoteLoading}
+                    onPress={requestDeliveryQuote}>
+                    <Text
+                      style={[
+                        styles.confirmButtonText,
+                        {color: '#FFFFFF'},
+                      ]}>
+                      {quoteLoading ? 'Cotando...' : 'Cotar entrega'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {deliveryAddresses.length > 0 ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryButton,
+                      {borderColor: theme.cardBorder},
+                    ]}
+                    onPress={() => {
+                      setAddressFormVisible(false);
+                      setAddressForm({
+                        ...createEmptyAddressForm(),
+                        country: 'BR',
+                      });
+                    }}>
+                    <Text style={[styles.confirmButtonText, {color: theme.text}]}>
+                      Cancelar
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+                </View>
+              ) : null}
+
+              {deliveryQuotes.length > 0 ? (
+                <View style={{marginTop: 8}}>
+                  {deliveryQuotes.map(quote => {
+                    const quotePrice = getQuotePrice(quote);
+                    const isSelected = selectedDeliveryQuote?.id === quote?.id;
+                    const providerLabel =
+                      quote?.providerLabel || quote?.providerKey || quote?.app || 'Entrega';
+
+                    return (
+                      <TouchableOpacity
+                        key={quote?.id || providerLabel}
+                        style={[
+                          styles.quoteCard,
+                          {
+                            borderColor: isSelected ? theme.primary : theme.cardBorder,
+                            backgroundColor: isSelected
+                              ? `${theme.primary}12`
+                              : theme.background,
+                          },
+                        ]}
+                        disabled={quotePrice <= 0}
+                        onPress={() => setSelectedDeliveryQuote(quote)}>
+                        <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                          {providerLabel}
+                        </Text>
+                        <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                          {quotePrice > 0
+                            ? `Valor: ${formatMoney(quotePrice)}`
+                            : quote?.quoteStateLabel || 'Aguardando cotacao'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
             </View>
 
             <View
@@ -1032,7 +1939,7 @@ export default function CheckoutPage() {
 
               {isLoading ? (
                 <View style={inlineStyle_380_22}>
-                  <ActivityIndicator color={theme.primary} />
+                  <CheckoutSkeletonRows theme={theme} />
                 </View>
               ) : paymentMethodChips.length > 0 ? (
                 <View style={inlineStyle_385_18}>
@@ -1124,17 +2031,12 @@ export default function CheckoutPage() {
                     {color: theme.muted},
                   ]}>
                   No Shop, o cliente apenas informa se vai pagar agora ou na
-                  entrega. Se for na entrega, ele escolhe maquininha ou
-                  dinheiro.
+                  entrega. Se for na entrega, ele escolhe uma das formas
+                  liberadas pela loja.
                 </Text>
 
                 {loadingRemoteDevices ? (
-                  <View style={styles.loadingRow}>
-                    <ActivityIndicator color={theme.primary} />
-                    <Text style={[styles.methodCardHint, {color: theme.text}]}>
-                      Carregando opcoes de pagamento na entrega...
-                    </Text>
-                  </View>
+                  <CheckoutSkeletonRows theme={theme} />
                 ) : deliveryModeLabels.length > 0 ? (
                   <>
                     <Text
@@ -1142,8 +2044,8 @@ export default function CheckoutPage() {
                         styles.methodCardHint,
                         {color: theme.text},
                       ]}>
-                      O cliente escolhe se quer pagar com maquininha ou em
-                      dinheiro quando o motoboy chegar.
+                      O cliente escolhe uma forma liberada para cobrar quando o
+                      motoboy chegar.
                     </Text>
                     <Text
                       style={[
@@ -1159,13 +2061,14 @@ export default function CheckoutPage() {
                       styles.methodCardHint,
                       {color: theme.text},
                     ]}>
-                    Configure maquininha remota e/ou dinheiro na empresa para
+                    Configure devices de cobranca e/ou dinheiro na empresa para
                     usar o pagamento na entrega.
                   </Text>
                 )}
               </View>
             )}
 
+            {cardPaymentTypes.length > 0 && (
             <View
               style={inlineStyle_429_14({
                 theme: theme,
@@ -1231,6 +2134,7 @@ export default function CheckoutPage() {
                 })
               )}
             </View>
+            )}
 
             {!!pixData?.payload && (
               <View
@@ -1333,8 +2237,7 @@ export default function CheckoutPage() {
                     styles.modalSubtitle,
                     {color: theme.muted},
                   ]}>
-                  Escolha se vai pagar ao motoboy com maquininha ou em
-                  dinheiro.
+                  Escolha como o cliente vai pagar ao motoboy na entrega.
                 </Text>
 
                 {deliveryModeOptions.map(option => (
@@ -1476,7 +2379,7 @@ export default function CheckoutPage() {
                     <Text
                       style={[
                         styles.confirmButtonText,
-                        {color: theme.onPrimary || '#FFFFFF'},
+                        {color: '#FFFFFF'},
                       ]}>
                       Confirmar
                     </Text>
@@ -1491,7 +2394,7 @@ export default function CheckoutPage() {
             paidAmount={paidAmount}
             pendingAmount={pendingAmount}
             theme={theme}
-            totalAmount={cartTotal}
+            totalAmount={financialTotal}
           />
         </View>
       )}

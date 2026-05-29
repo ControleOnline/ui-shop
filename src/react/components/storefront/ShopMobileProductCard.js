@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
-import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 import {
   formatMoney,
   getImageFromRelations,
@@ -28,15 +28,23 @@ import {
   mobileProductQuantityTextStyle,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductCard.styles';
 
-export default function ShopMobileProductCard({company = null, product = null}) {
+export default function ShopMobileProductCard({
+  cart = null,
+  company = null,
+  defaultCompany = null,
+  product = null,
+  refreshCart = null,
+}) {
   const navigation = useNavigation();
-  const {cart, refreshCart, defaultCompany} = useShopCart();
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = normalizeId(product?.id || product?.['@id']);
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-  const requiresCustomization = product?.type === 'custom' || hasInlineGroups;
+  const requiresCustomization =
+    product?.type === 'custom' ||
+    hasInlineGroups ||
+    product?.hasCustomizationGroups === true;
 
   const openDetails = () => {
     if (!productId) {
@@ -46,16 +54,15 @@ export default function ShopMobileProductCard({company = null, product = null}) 
     navigation.navigate('ShopProductPage', {id: productId});
   };
 
-  const openCustomize = async () => {
-    try {
-      await refreshCart?.();
-    } catch {}
-
-    navigation.navigate('CustomizeScreen', {
+  const openCustomize = () =>
+    openShopCustomize({
+      cart,
+      navigation,
+      presentation: 'bottomSheet',
       productId,
       redirectToCart: true,
+      refreshCart,
     });
-  };
 
   return (
     <TouchableOpacity

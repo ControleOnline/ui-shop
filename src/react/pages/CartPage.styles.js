@@ -50,6 +50,48 @@ export const inlineStyle_165_20 = (
   fontSize: 13,
 });
 
+export const cartSummaryHeaderRowStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+};
+
+export const cartSummaryTitleWrapStyle = {
+  flex: 1,
+  minWidth: 0,
+};
+
+export const cartSummaryClearButtonStyle = ({theme}) => ({
+  minWidth: 48,
+  height: 48,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: `${theme.danger}26`,
+  backgroundColor: `${theme.danger}12`,
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+export const cartSummaryClearBadgeStyle = ({theme}) => ({
+  position: 'absolute',
+  right: -6,
+  top: -6,
+  minWidth: 20,
+  height: 20,
+  borderRadius: 10,
+  paddingHorizontal: 5,
+  backgroundColor: theme.primary,
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+export const cartSummaryClearBadgeTextStyle = () => ({
+  color: '#fff',
+  fontSize: 11,
+  fontWeight: '900',
+});
+
 export const inlineStyle_172_16 = (
   {
     theme: theme,

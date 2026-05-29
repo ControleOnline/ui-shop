@@ -1,5 +1,6 @@
 import React, {useMemo} from 'react';
-import {Image, Text, View} from 'react-native';
+import {Image, Text, TouchableOpacity, View} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {
   buildFileUrl,
@@ -10,7 +11,6 @@ import {getShopCategoryFile} from '@controleonline/ui-shop/src/react/utils/shopC
 import {resolveShopSalesCompanyAddress} from '@controleonline/ui-shop/src/react/utils/shopSalesCompany';
 import {
   mobileStoreCardStyle,
-  mobileStoreCoverFallbackTextStyle,
   mobileStoreCoverImageStyle,
   mobileStoreCoverStyle,
   mobileStoreLogoFallbackTextStyle,
@@ -20,6 +20,7 @@ import {
   mobileStoreMetaPillTextStyle,
   mobileStoreMetaRowStyle,
   mobileStoreNameStyle,
+  mobileStoreMenuButtonStyle,
   mobileStorePanelStyle,
   mobileStoreSubtitleStyle,
   mobileStoreTextColumnStyle,
@@ -90,6 +91,7 @@ const resolveCoverSource = (company, categories) => {
 export default function ShopMobileStoreHeader({
   categories = [],
   company = null,
+  onOpenMenu = null,
 }) {
   const theme = pickTheme(company);
   const coverSource = useMemo(
@@ -104,21 +106,17 @@ export default function ShopMobileStoreHeader({
 
   return (
     <View style={mobileStorePanelStyle}>
-      <View style={mobileStoreCoverStyle({theme})}>
-        {coverSource ? (
+      {coverSource ? (
+        <View style={mobileStoreCoverStyle({theme})}>
           <Image
             resizeMode="cover"
             source={coverSource}
             style={mobileStoreCoverImageStyle}
           />
-        ) : (
-          <Text style={mobileStoreCoverFallbackTextStyle({theme})}>
-            {storeName}
-          </Text>
-        )}
-      </View>
+        </View>
+      ) : null}
 
-      <View style={mobileStoreCardStyle({theme})}>
+      <View style={mobileStoreCardStyle({hasCover: Boolean(coverSource), theme})}>
         {logoUrl ? (
           <Image
             resizeMode="cover"
@@ -154,6 +152,13 @@ export default function ShopMobileStoreHeader({
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onOpenMenu}
+          style={mobileStoreMenuButtonStyle({theme})}>
+          <Icon name="menu" size={22} color={theme.primary} />
+        </TouchableOpacity>
       </View>
     </View>
   );

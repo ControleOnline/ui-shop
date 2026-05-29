@@ -5,6 +5,8 @@ import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
+import {updateAnonymousCartProduct} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
+import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 
 const productGroupRequirementCache = new Map();
 
@@ -41,6 +43,7 @@ export default function ShopQuantityControl({
   textStyle,
   iconColor = '#1f95c6',
   defaultQuantity = 0,
+  shouldCheckCustomization = true,
 }) {
   const navigation = useNavigation();
   const orderProductsStore = useStore('order_products');
@@ -77,6 +80,14 @@ export default function ShopQuantityControl({
           if (!activeCart?.id && refreshCart) {
             activeCart = await refreshCart();
           }
+          if (activeCart?.anonymous) {
+            updateAnonymousCartProduct({
+              providerId: activeCart.providerId || salesCompany?.id,
+              product,
+              quantity: nextQuantity,
+            });
+            return;
+          }
           if (!activeCart?.id) return;
 
           const targetId =
@@ -111,6 +122,7 @@ export default function ShopQuantityControl({
       orderProductActions,
       product,
       refreshCart,
+      salesCompany?.id,
     ],
   );
 
@@ -126,11 +138,23 @@ export default function ShopQuantityControl({
       return false;
     }
 
+    if (!shouldCheckCustomization) {
+      return false;
+    }
+
     const providerId = salesCompany?.id || '';
     const inlineHasGroups =
       Array.isArray(product?.productGroups) && product.productGroups.length > 0;
-    if ((!providerId && inlineHasGroups) || product?.type === 'custom') {
+    if (
+      product?.hasCustomizationGroups === true ||
+      (!providerId && inlineHasGroups) ||
+      product?.type === 'custom'
+    ) {
       return true;
+    }
+
+    if (product?.customizationGroupsLoaded === true) {
+      return false;
     }
 
     const productId = normalizeId(product?.id || product?.['@id']);
@@ -144,12 +168,12 @@ export default function ShopQuantityControl({
     }
 
     const baseFilter = {
-      parentProduct: `/products/${productId}`,
+      product: productId,
       itemsPerPage: 1,
     };
 
     const groupFilters = providerId
-      ? {...baseFilter, people: providerId}
+      ? {...baseFilter, company: providerId}
       : baseFilter;
 
     const response = await productGroupStore.actions.getItems(groupFilters);
@@ -164,6 +188,7 @@ export default function ShopQuantityControl({
     product,
     productGroupStore.actions,
     salesCompany?.id,
+    shouldCheckCustomization,
   ]);
 
   const increase = useCallback(async () => {
@@ -175,11 +200,12 @@ export default function ShopQuantityControl({
     }
 
     if (requiresCustomization) {
-      try {
-        await refreshCart?.();
-      } catch {}
-      navigation.navigate('CustomizeScreen', {
-        productId: normalizeId(product?.id || product?.['@id']),
+      await openShopCustomize({
+        cart,
+        navigation,
+        presentation: width < 900 ? 'bottomSheet' : null,
+        productId: product?.id || product?.['@id'],
+        refreshCart,
       });
       return;
     }
@@ -189,11 +215,13 @@ export default function ShopQuantityControl({
     persist(next);
   }, [
     ensureCustomizationRequired,
+    cart,
     navigation,
     persist,
     product,
     quantity,
     refreshCart,
+    width,
   ]);
 
   const decrease = useCallback(() => {

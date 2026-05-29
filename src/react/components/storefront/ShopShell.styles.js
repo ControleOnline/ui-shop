@@ -152,6 +152,9 @@ export const inlineStyle_273_14 = {
   color: '#fff',
   fontSize: 13,
   minHeight: 36,
+  outlineColor: 'transparent',
+  outlineStyle: 'none',
+  outlineWidth: 0,
 };
 
 export const inlineStyle_282_14 = {
