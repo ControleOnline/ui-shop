@@ -1,3 +1,16 @@
+/*
+ * Contract imported from AGENTS.md
+ * ## Escopo
+ * - `ui-shop` e o modulo React da vitrine e do fluxo de escolha de produtos.
+ * - Esta pagina e a entrada do produto na loja e da configuracao de compra.
+ *
+ * ## Estado
+ * - Se existir `src/vue`, ela e apenas legado e nao deve receber este contrato.
+ *
+ * ## Limites
+ * - Nao mover pagamento operacional para esta tela.
+ * - Manter aqui apenas a experiencia da vitrine e a customizacao do produto.
+ */
 import React, {useCallback, useMemo, useState} from 'react';
 
 import {
