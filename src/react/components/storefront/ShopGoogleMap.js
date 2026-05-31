@@ -345,7 +345,8 @@ export default function ShopGoogleMap({
           fullscreenControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          zoomControl: true,
+          zoomControl: false,
+          disableDefaultUI: true,
         });
 
         const infoWindow = new google.maps.InfoWindow({maxWidth: 320});
