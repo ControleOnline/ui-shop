@@ -229,7 +229,7 @@ export default function ShopLoyaltyPage() {
             </Text>
             {cardData?.card?.id ? (
               <Text style={[styles.cardMeta, {color: theme.muted}]}>
-                Cartao #{cardData.card.id}
+                Cartão #{cardData.card.id}
               </Text>
             ) : null}
           </View>
@@ -243,7 +243,7 @@ export default function ShopLoyaltyPage() {
                 styles.rewardBadgeText,
                 {color: theme.onPrimary},
               ]}>
-              premio
+              prêmio
             </Text>
           </View>
         </View>
@@ -330,7 +330,7 @@ export default function ShopLoyaltyPage() {
           <Text style={[styles.summaryHelp, {color: theme.muted}]}>
             {remainingSales > 0
               ? `Faltam ${remainingSales} pedido(s) para liberar o brinde.`
-              : 'Brinde liberado para o proximo pedido.'}
+              : 'Brinde liberado para o próximo pedido.'}
           </Text>
         )}
       </>
@@ -355,7 +355,7 @@ export default function ShopLoyaltyPage() {
               theme={theme}
               iconName="loyalty"
               title="Fidelidade desativada"
-              description="A tela de acompanhamento esta escondida porque os cupons de fidelidade nao estao ativos para esta empresa."
+              description="A tela de acompanhamento está escondida porque os cupons de fidelidade não estão ativos para esta empresa."
               primaryActionLabel={
                 primaryEntryRouteName && primaryEntryRouteName !== 'ShopLoyaltyPage'
                   ? 'Voltar para o shop'
@@ -389,17 +389,17 @@ export default function ShopLoyaltyPage() {
                     {color: 'rgba(255,255,255,0.78)'},
                   ]}>
                   Cada pedido pago com produtos participantes ganha um carimbo.
-                  Ao completar o cartao, o brinde entra no proximo carrinho.
+                  Ao completar o cartão, o brinde entra no próximo carrinho.
                 </Text>
               </View>
 
               <View style={styles.loyaltyToolbar}>
                 <View style={styles.toolbarTitleGroup}>
                   <Text style={[styles.toolbarTitle, {color: theme.text}]}>
-                    {showHistory ? 'Ultimos cartoes' : 'Cartao atual'}
+                    {showHistory ? 'Últimos cartões' : 'Cartão atual'}
                   </Text>
                   <Text style={[styles.toolbarMeta, {color: theme.muted}]}>
-                    {loyaltyCards.length} cartao(oes) carregado(s)
+                    {loyaltyCards.length} cartão(ões) carregado(s)
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -410,7 +410,7 @@ export default function ShopLoyaltyPage() {
                     {borderColor: theme.primary},
                   ]}>
                   <Text style={[styles.historyButtonText, {color: theme.primary}]}>
-                    {showHistory ? 'Ver atual' : 'Ver ultimos'}
+                    {showHistory ? 'Ver atual' : 'Ver últimos'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -425,7 +425,7 @@ export default function ShopLoyaltyPage() {
                     },
                   ]}>
                   <Text style={[styles.summaryHelp, {color: theme.muted}]}>
-                    Carregando cartoes de fidelidade.
+                    Carregando cartões de fidelidade.
                   </Text>
                 </View>
               ) : loyaltyCards.length > 0 ? (
@@ -457,7 +457,7 @@ export default function ShopLoyaltyPage() {
                     stamps: [],
                   })}
                   <Text style={[styles.summaryHelp, {color: theme.muted}]}>
-                    Nenhum cartao aberto foi encontrado para este cliente.
+                    Nenhum cartão aberto foi encontrado para este cliente.
                   </Text>
                 </View>
               )}
@@ -504,7 +504,7 @@ export default function ShopLoyaltyPage() {
                     Brinde configurado
                   </Text>
                   <Text style={[styles.infoMeta, {color: theme.muted}]}>
-                    Produto liberado ao bater a meta fake
+                    Produto liberado ao bater a meta
                   </Text>
                   <Text style={[styles.giftTitle, {color: theme.primary}]}>
                     {giftProduct
