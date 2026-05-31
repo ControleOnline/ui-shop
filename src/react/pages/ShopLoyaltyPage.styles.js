@@ -5,7 +5,7 @@ export default StyleSheet.create({
     flex: 1,
   },
   pageContent: {
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   hero: {
     marginHorizontal: 14,
