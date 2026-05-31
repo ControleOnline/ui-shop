@@ -4,6 +4,12 @@ import {Image, Linking, Platform, Text, View} from 'react-native';
 import styles from './ShopNativeMap.styles';
 
 const getNativeMapComponents = () => {
+  // No Android, não usar MapView nativo pois requer API key no AndroidManifest.xml
+  // Em vez disso, usar WebView com chave dinâmica do banco de dados
+  if (Platform.OS === 'android') {
+    return null;
+  }
+
   try {
     return require('react-native-maps');
   } catch {
