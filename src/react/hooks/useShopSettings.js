@@ -77,7 +77,7 @@ export default function useShopSettings() {
       entries.push({
         key: SHOP_HOME_OPTION_SALES,
         label: 'Compras',
-        description: 'Cardapio, categorias e produtos',
+        description: 'Cardápio, categorias e produtos',
         iconName: 'storefront',
         routeName: 'ShopIndex',
       });
@@ -87,7 +87,7 @@ export default function useShopSettings() {
       entries.push({
         key: SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
         label: 'Franquias',
-        description: 'Mapa e enderecos das unidades',
+        description: 'Mapa e endereços das unidades',
         iconName: 'place',
         routeName: 'ShopFranchiseLocatorPage',
       });
@@ -97,7 +97,7 @@ export default function useShopSettings() {
       entries.push({
         key: SHOP_HOME_OPTION_LOYALTY,
         label: 'Fidelidade',
-        description: 'Cartao fidelidade e brindes',
+        description: 'Cartão fidelidade e brindes',
         iconName: 'loyalty',
         routeName: 'ShopLoyaltyPage',
       });
