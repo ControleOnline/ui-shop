@@ -89,6 +89,12 @@ const SALES_FLOW_ROUTE_NAMES = new Set([
   'ShopProductPage',
 ]);
 
+const HOME_ENTRY_ROUTE_NAMES = new Set([
+  'ShopIndex',
+  'ShopFranchiseLocatorPage',
+  'ShopLoyaltyPage',
+]);
+
 const getSession = () => {
   try {
     return JSON.parse(localStorage.getItem('session') || '{}');
@@ -237,6 +243,10 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
+  const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
+  const showHomeAction =
+    !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
+  const menuIconName = isMobile || isHomeEntryRoute ? 'menu' : 'account-circle';
 
   const handleSelectHomeEntry = useCallback(
     entry => {
@@ -331,7 +341,15 @@ export default function ShopShell({
               </View>
 
               <View style={inlineStyle_224_18}>
-                {!isMobile && (
+                {showHomeAction && (
+                  <TouchableOpacity
+                    accessibilityLabel="Voltar ao inicio do shop"
+                    onPress={handleNavigateHome}
+                    style={inlineStyle_228_18}>
+                    <Icon name="home" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                {!isMobile && !showHomeAction && (
                   <TouchableOpacity
                     onPress={() => setAccountOpen(true)}
                     style={inlineStyle_228_18}>
@@ -339,9 +357,10 @@ export default function ShopShell({
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
+                  accessibilityLabel="Abrir menu do shop"
                   onPress={() => setAccountOpen(true)}
                   style={inlineStyle_241_16}>
-                  <Icon name="account-circle" size={22} color="#fff" />
+                  <Icon name={menuIconName} size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
             </View>
