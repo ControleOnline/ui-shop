@@ -147,6 +147,15 @@ const getQuotePrice = quote => {
   return Number.isFinite(price) ? price : 0;
 };
 
+const hasQuotePrice = quote =>
+  quote?.price !== null &&
+  quote?.price !== undefined &&
+  quote?.price !== '' &&
+  Number.isFinite(Number(quote.price));
+
+const isSelectableDeliveryQuote = quote =>
+  quote?.available !== false && hasQuotePrice(quote);
+
 const formatApiError = error => {
   if (!error) {
     return 'Nao foi possivel concluir a solicitacao.';
@@ -421,7 +430,8 @@ export default function CheckoutPage() {
     ? Number(deliveryFeeValue || 0)
     : 0;
   const quotedDeliveryFee = getQuotePrice(selectedDeliveryQuote);
-  const deliveryFee = quotedDeliveryFee > 0
+  const hasSelectedDeliveryQuote = isSelectableDeliveryQuote(selectedDeliveryQuote);
+  const deliveryFee = hasSelectedDeliveryQuote
     ? quotedDeliveryFee
     : configuredDeliveryFee;
   const deliveryFeeProviderLabel =
@@ -430,7 +440,7 @@ export default function CheckoutPage() {
     selectedDeliveryQuote?.app ||
     'cotacao';
   let deliveryFeeSourceLabel = 'Nenhuma taxa de entrega aplicada no momento.';
-  if (quotedDeliveryFee > 0) {
+  if (hasSelectedDeliveryQuote) {
     deliveryFeeSourceLabel = `Cotacao selecionada: ${deliveryFeeProviderLabel}.`;
   } else if (configuredDeliveryFee > 0) {
     deliveryFeeSourceLabel = 'Taxa fixa configurada pela loja.';
@@ -810,7 +820,7 @@ export default function CheckoutPage() {
     setDeliveryQuotes(quotes);
     setSelectedDeliveryQuote(current => {
       if (!current?.id) {
-        return quotes.find(item => getQuotePrice(item) > 0) || null;
+        return quotes.find(isSelectableDeliveryQuote) || null;
       }
 
       return quotes.find(item => item?.id === current.id) || current;
@@ -845,7 +855,7 @@ export default function CheckoutPage() {
       const quotes = extractQuotesFromResponse(response);
       if (quotes.length > 0) {
         setDeliveryQuotes(quotes);
-        setSelectedDeliveryQuote(quotes.find(item => getQuotePrice(item) > 0) || null);
+        setSelectedDeliveryQuote(quotes.find(isSelectableDeliveryQuote) || null);
       } else {
         await loadDeliveryQuotes();
       }
@@ -1864,6 +1874,7 @@ export default function CheckoutPage() {
                 <View style={{marginTop: 8}}>
                   {deliveryQuotes.map(quote => {
                     const quotePrice = getQuotePrice(quote);
+                    const canSelectQuote = isSelectableDeliveryQuote(quote);
                     const isSelected = selectedDeliveryQuote?.id === quote?.id;
                     const providerLabel =
                       quote?.providerLabel || quote?.providerKey || quote?.app || 'Entrega';
@@ -1880,13 +1891,13 @@ export default function CheckoutPage() {
                               : theme.background,
                           },
                         ]}
-                        disabled={quotePrice <= 0}
+                        disabled={!canSelectQuote}
                         onPress={() => setSelectedDeliveryQuote(quote)}>
                         <Text style={[styles.quoteTitle, {color: theme.text}]}>
                           {providerLabel}
                         </Text>
                         <Text style={[styles.quoteMeta, {color: theme.muted}]}>
-                          {quotePrice > 0
+                          {canSelectQuote
                             ? `Valor: ${formatMoney(quotePrice)}`
                             : quote?.quoteStateLabel || 'Aguardando cotacao'}
                         </Text>
