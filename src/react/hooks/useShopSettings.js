@@ -110,10 +110,7 @@ export default function useShopSettings() {
     settings.salesPageEnabled,
   ]);
 
-  const primaryEntryRouteName =
-    homeEntries.find(entry => entry.key === settings.primaryEntry)?.routeName ||
-    homeEntries[0]?.routeName ||
-    'HomePage';
+  const primaryEntryRouteName = homeEntries[0]?.routeName || 'HomePage';
 
   return {
     ...settings,

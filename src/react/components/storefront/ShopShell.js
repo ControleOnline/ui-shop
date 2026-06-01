@@ -23,7 +23,6 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/storefront/ShopHomeEntryControls';
 
 import {
   buildFileUrl,
@@ -125,7 +124,6 @@ export default function ShopShell({
   const authStore = useStore('auth');
   const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
-    bottomBarEnabled,
     companyConfigs,
     homeEntries,
     loyaltyCouponsEnabled,
@@ -239,12 +237,6 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
-  const shouldShowHomeEntryBottomBar = Boolean(
-    bottomBarEnabled && homeEntries.length > 1,
-  );
-  const shouldShowHomeEntryTopControl = false;
-  const homeEntryBottomOffset =
-    typeof showBottomCart === 'boolean' && showBottomCart ? 88 : 14;
 
   const handleSelectHomeEntry = useCallback(
     entry => {
@@ -369,31 +361,10 @@ export default function ShopShell({
               </View>
             )}
 
-            {shouldShowHomeEntryTopControl && (
-              <ShopHomeEntryControls
-                entries={homeEntries}
-                activeEntryKey={resolvedActiveHomeEntry}
-                showBottomBar={false}
-                showTopControl
-                theme={theme}
-                onSelect={handleSelectHomeEntry}
-              />
-            )}
           </View>
         </View>
       )}
       {children({foreground, openAccountMenu: () => setAccountOpen(true), surface, theme})}
-      {shouldShowHomeEntryBottomBar && (
-        <ShopHomeEntryControls
-          entries={homeEntries}
-          activeEntryKey={resolvedActiveHomeEntry}
-          bottomOffset={homeEntryBottomOffset}
-          showBottomBar
-          showTopControl={false}
-          theme={theme}
-          onSelect={handleSelectHomeEntry}
-        />
-      )}
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({

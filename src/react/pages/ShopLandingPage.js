@@ -20,26 +20,10 @@ export default function ShopLandingPage() {
     defaultCompany,
     franchiseLocatorEnabled,
     loyaltyCouponsEnabled,
-    primaryEntry,
     salesPageEnabled,
   } = useShopSettings();
   const theme = pickTheme(defaultCompany);
   const resolvedPrimaryEntry = (() => {
-    if (salesPageEnabled && primaryEntry === SHOP_HOME_OPTION_SALES) {
-      return SHOP_HOME_OPTION_SALES;
-    }
-
-    if (
-      franchiseLocatorEnabled &&
-      primaryEntry === SHOP_HOME_OPTION_FRANCHISE_LOCATOR
-    ) {
-      return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
-    }
-
-    if (loyaltyCouponsEnabled && primaryEntry === SHOP_HOME_OPTION_LOYALTY) {
-      return SHOP_HOME_OPTION_LOYALTY;
-    }
-
     if (salesPageEnabled) {
       return SHOP_HOME_OPTION_SALES;
     }
