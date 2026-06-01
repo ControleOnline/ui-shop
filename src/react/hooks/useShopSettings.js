@@ -69,6 +69,9 @@ export default function useShopSettings() {
     () => resolveShopSettings(companyConfigs),
     [companyConfigs],
   );
+  const franchiseLocatorEnabled =
+    settings.franchiseLocatorEnabled &&
+    settings.visibleFranchiseCompanyIds.length > 0;
 
   const homeEntries = useMemo(() => {
     const entries = [];
@@ -83,7 +86,7 @@ export default function useShopSettings() {
       });
     }
 
-    if (settings.franchiseLocatorEnabled) {
+    if (franchiseLocatorEnabled) {
       entries.push({
         key: SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
         label: 'Franquias',
@@ -105,7 +108,7 @@ export default function useShopSettings() {
 
     return entries;
   }, [
-    settings.franchiseLocatorEnabled,
+    franchiseLocatorEnabled,
     settings.loyaltyCouponsEnabled,
     settings.salesPageEnabled,
   ]);
@@ -114,6 +117,7 @@ export default function useShopSettings() {
 
   return {
     ...settings,
+    franchiseLocatorEnabled,
     companyConfigs,
     currentCompany,
     defaultCompany,

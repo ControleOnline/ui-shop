@@ -18,26 +18,10 @@ export default function ShopLandingPage() {
   const navigation = useNavigation();
   const {
     defaultCompany,
-    franchiseLocatorEnabled,
-    loyaltyCouponsEnabled,
-    salesPageEnabled,
+    homeEntries,
   } = useShopSettings();
   const theme = pickTheme(defaultCompany);
-  const resolvedPrimaryEntry = (() => {
-    if (salesPageEnabled) {
-      return SHOP_HOME_OPTION_SALES;
-    }
-
-    if (franchiseLocatorEnabled) {
-      return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
-    }
-
-    if (loyaltyCouponsEnabled) {
-      return SHOP_HOME_OPTION_LOYALTY;
-    }
-
-    return '';
-  })();
+  const resolvedPrimaryEntry = homeEntries[0]?.key || '';
   const shouldRenderSales = resolvedPrimaryEntry === SHOP_HOME_OPTION_SALES;
 
   useLayoutEffect(() => {

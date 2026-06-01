@@ -15,7 +15,9 @@ import ShopGoogleMap from '@controleonline/ui-shop/src/react/components/storefro
 import ShopNativeMap, {
   HAS_NATIVE_MAP_SUPPORT,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopNativeMap';
+import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
@@ -48,99 +50,6 @@ const getNativeWebView = () => {
 };
 
 const NativeWebView = getNativeWebView();
-
-const buildFakeAddress = ({
-  city = 'Sao Paulo',
-  district,
-  id,
-  latitude,
-  longitude,
-  nickname,
-  number,
-  openingHours,
-  searchFor,
-  state = 'SP',
-  street,
-}) => ({
-  id,
-  latitude,
-  longitude,
-  nickname,
-  number,
-  openingHours,
-  searchFor:
-    searchFor || `${street}, ${number} - ${district}, ${city} - ${state}`,
-  street: {
-    district: {
-      city: {
-        city,
-        state: {
-          state,
-          uf: state,
-        },
-      },
-      district,
-    },
-    street,
-  },
-});
-
-const FALLBACK_DIRECTORY = [
-  {
-    id: 990001,
-    alias: 'Franquia Paulista',
-    name: 'Franquia Paulista',
-    phone: [{ddd: '11', phone: '3171-5780'}],
-    shopAddresses: [
-      buildFakeAddress({
-        id: 991001,
-        nickname: 'Paulista',
-        street: 'Avenida Paulista',
-        number: '1578',
-        district: 'Bela Vista',
-        latitude: -23.561399,
-        longitude: -46.656571,
-        openingHours: 'Seg a Dom • 10h as 22h',
-      }),
-    ],
-  },
-  {
-    id: 990002,
-    alias: 'Franquia Pinheiros',
-    name: 'Franquia Pinheiros',
-    phone: [{ddd: '11', phone: '3062-2452'}],
-    shopAddresses: [
-      buildFakeAddress({
-        id: 991002,
-        nickname: 'Pinheiros',
-        street: 'Rua dos Pinheiros',
-        number: '452',
-        district: 'Pinheiros',
-        latitude: -23.567727,
-        longitude: -46.692425,
-        openingHours: 'Seg a Sab • 11h as 23h',
-      }),
-    ],
-  },
-  {
-    id: 990003,
-    alias: 'Franquia Moema',
-    name: 'Franquia Moema',
-    phone: [{ddd: '11', phone: '5044-3103'}],
-    shopAddresses: [
-      buildFakeAddress({
-        id: 991003,
-        nickname: 'Moema',
-        street: 'Avenida Ibirapuera',
-        number: '3103',
-        district: 'Moema',
-        latitude: -23.603774,
-        longitude: -46.664482,
-        openingHours: 'Seg a Dom • 10h as 21h',
-      }),
-    ],
-  },
-];
 
 const normalizeCoordinate = value => {
   if (value === null || value === undefined || value === '') {
@@ -671,9 +580,13 @@ export default function ShopFranchiseLocatorPage() {
     franchisePinIconUrl,
     googleMapsApiKey,
     primaryEntryRouteName,
+    salesPageEnabled,
     visibleFranchiseAddressIds,
     visibleFranchiseCompanyIds,
   } = useShopSettings();
+  const {salesCompany, selectSalesCompany} = useShopSalesCompany({
+    loadOptions: false,
+  });
   const theme = pickTheme(defaultCompany);
   const mapHeight = Math.max(height - (Platform.OS === 'web' ? 118 : 150), 420);
 
@@ -721,7 +634,7 @@ export default function ShopFranchiseLocatorPage() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!franchiseLocatorEnabled) {
+      if (!franchiseLocatorEnabled || !googleMapsApiKey) {
         setUserCoordinates(null);
         return undefined;
       }
@@ -752,32 +665,29 @@ export default function ShopFranchiseLocatorPage() {
       return () => {
         isMounted = false;
       };
-    }, [franchiseLocatorEnabled]),
+    }, [franchiseLocatorEnabled, googleMapsApiKey]),
   );
 
   const configuredDirectory = useMemo(() => {
-    if (visibleFranchiseAddressIds.length === 0) {
+    if (visibleFranchiseCompanyIds.length === 0) {
       return [];
     }
+
+    const visibleCompanyIdSet = new Set(visibleFranchiseCompanyIds);
+    const visibleAddressIdSet = new Set(visibleFranchiseAddressIds);
 
     return directory
       .map(company => {
         const companyId = normalizeShopEntityId(company);
 
-        if (
-          visibleFranchiseCompanyIds.length > 0 &&
-          !visibleFranchiseCompanyIds.includes(companyId)
-        ) {
+        if (!visibleCompanyIdSet.has(companyId)) {
           return null;
         }
 
         const addresses = (company?.shopAddresses || []).filter(address =>
-          visibleFranchiseAddressIds.includes(normalizeShopEntityId(address)),
+          visibleAddressIdSet.size === 0 ||
+          visibleAddressIdSet.has(normalizeShopEntityId(address)),
         );
-
-        if (addresses.length === 0) {
-          return null;
-        }
 
         return {
           ...company,
@@ -787,29 +697,7 @@ export default function ShopFranchiseLocatorPage() {
       .filter(Boolean);
   }, [directory, visibleFranchiseAddressIds, visibleFranchiseCompanyIds]);
 
-  const hasConfiguredAddresses = useMemo(
-    () =>
-      configuredDirectory.some(
-        company =>
-          Array.isArray(company?.shopAddresses) && company.shopAddresses.length > 0,
-      ),
-    [configuredDirectory],
-  );
-
-  const effectiveDirectory = useMemo(
-    () => {
-      if (hasConfiguredAddresses) {
-        return configuredDirectory;
-      }
-
-      if (isLoading) {
-        return [];
-      }
-
-      return FALLBACK_DIRECTORY;
-    },
-    [configuredDirectory, hasConfiguredAddresses, isLoading],
-  );
+  const effectiveDirectory = configuredDirectory;
 
   const flattenedAddressRecords = useMemo(
     () =>
@@ -826,6 +714,11 @@ export default function ShopFranchiseLocatorPage() {
   );
 
   useEffect(() => {
+    if (!googleMapsApiKey) {
+      setIsResolvingCoordinates(false);
+      return undefined;
+    }
+
     const unresolvedRecords = flattenedAddressRecords.filter(record => {
       if (!record.addressId || record.rawCoordinates) {
         return false;
@@ -968,6 +861,21 @@ export default function ShopFranchiseLocatorPage() {
       }),
     [googleMapsApiKey, markerPayloads, theme, userCoordinates],
   );
+  const selectedCompanyId = normalizeShopEntityId(salesCompany);
+  const shouldRenderFranchiseList =
+    effectiveDirectory.length > 0 &&
+    (!googleMapsApiKey || (!isResolvingCoordinates && markerPayloads.length === 0));
+
+  const handleSelectFranchise = useCallback(
+    company => {
+      selectSalesCompany(company);
+
+      if (salesPageEnabled) {
+        navigation.navigate('ShopIndex');
+      }
+    },
+    [navigation, salesPageEnabled, selectSalesCompany],
+  );
 
   const handleNativeNavigation = useCallback(request => {
     const url = String(request?.url || '');
@@ -995,7 +903,7 @@ export default function ShopFranchiseLocatorPage() {
       showHomeEntryControls={false}
       showSalesShortcuts={false}
       showSearch={false}
-      subtitle="Mapa das unidades">
+      subtitle={googleMapsApiKey ? 'Mapa das unidades' : 'Escolha uma unidade'}>
       {() => {
         if (!franchiseLocatorEnabled) {
           return (
@@ -1020,7 +928,7 @@ export default function ShopFranchiseLocatorPage() {
           );
         }
 
-        if (isLoading || isResolvingCoordinates) {
+        if (isLoading) {
           return (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
@@ -1028,25 +936,39 @@ export default function ShopFranchiseLocatorPage() {
           );
         }
 
-        if (markerPayloads.length === 0) {
+        if (effectiveDirectory.length === 0) {
           return (
             <ShopFeatureState
               theme={theme}
-              iconName="map"
-              title="Mapa indisponivel no momento"
-              description="Nao foi possivel posicionar as unidades no mapa."
+              iconName="place"
+              title="Nenhuma franquia disponivel"
+              description="Nenhuma franquia foi configurada para aparecer no shop desta empresa."
             />
           );
         }
 
-        if (Platform.OS === 'web' && !googleMapsApiKey) {
+        if (shouldRenderFranchiseList) {
           return (
-            <ShopFeatureState
+            <ShopSalesCompanySelector
+              companies={effectiveDirectory}
+              description={
+                googleMapsApiKey
+                  ? 'Nao foi possivel posicionar as unidades no mapa. Selecione uma franquia na lista para continuar.'
+                  : 'Selecione a franquia que vai atender o pedido.'
+              }
+              onSelect={handleSelectFranchise}
+              selectedCompanyId={selectedCompanyId}
               theme={theme}
-              iconName="map"
-              title="Mapa indisponivel no momento"
-              description="No momento nao foi possivel carregar o mapa das unidades."
+              title="Escolha a franquia para comprar"
             />
+          );
+        }
+
+        if (isResolvingCoordinates) {
+          return (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
           );
         }
 
