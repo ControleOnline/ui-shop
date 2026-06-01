@@ -174,7 +174,7 @@ export default function useShopCatalogState({
           categories: nextCategories,
           routeCategoryId: mode === 'category' ? routeCategoryId : '',
           preferredCategoryId: mode === 'default' ? activeCategoryId : '',
-          storageKey,
+          storageKey: mode === 'default' ? '' : storageKey,
         });
 
         setIsBatchCatalogLoaded(true);
@@ -211,7 +211,7 @@ export default function useShopCatalogState({
               categories: nextCategories,
               routeCategoryId: mode === 'category' ? routeCategoryId : '',
               preferredCategoryId: mode === 'default' ? activeCategoryId : '',
-              storageKey,
+              storageKey: mode === 'default' ? '' : storageKey,
             });
 
             setIsBatchCatalogLoaded(false);

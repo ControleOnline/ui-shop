@@ -127,6 +127,7 @@ export default function ShopMobileCatalog({
   useEffect(() => {
     if (
       initialScrollDoneRef.current ||
+      mode === 'default' ||
       mode === 'search' ||
       !activeCategoryId ||
       !visibleCategoryIdsKey
