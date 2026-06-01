@@ -797,12 +797,14 @@ export default function CheckoutPage() {
     updateCartDeliveryAddress,
   ]);
 
-  const loadDeliveryQuotes = useCallback(async () => {
-    if (!cart?.id) {
+  const loadDeliveryQuotes = useCallback(async orderId => {
+    const targetOrderId = normalizeEntityId(orderId || cart?.id);
+
+    if (!targetOrderId) {
       return [];
     }
 
-    const response = await api.fetch(`orders/${cart.id}/logistic`, {
+    const response = await api.fetch(`orders/${targetOrderId}/logistic`, {
       method: 'GET',
     });
     const quotes = extractQuotesFromResponse(response);
@@ -923,7 +925,7 @@ export default function CheckoutPage() {
       setPendingStatus(pickPendingStatus(fetchedStatuses));
 
       if (resolvedCart?.id) {
-        await loadDeliveryQuotes().catch(() => {});
+        await loadDeliveryQuotes(resolvedCart.id).catch(() => {});
       }
     } catch (e) {
       setError(

@@ -47,7 +47,9 @@ export default function OrdersPage() {
       }
 
       ordersStore.actions.getItems({
+        app: 'SHOP',
         client: currentCompany.id,
+        orderType: 'sale',
         provider: salesCompany?.id || defaultCompany.id,
         page: 1,
         itemsPerPage: 24,
