@@ -417,9 +417,27 @@ export default function CheckoutPage() {
     0,
   );
   const cartTotal = Number(cart?.price || 0);
-  const configuredDeliveryFee = deliveryFeeEnabled ? Number(deliveryFeeValue || 0) : 0;
+  const configuredDeliveryFee = deliveryFeeEnabled
+    ? Number(deliveryFeeValue || 0)
+    : 0;
   const quotedDeliveryFee = getQuotePrice(selectedDeliveryQuote);
-  const deliveryFee = quotedDeliveryFee > 0 ? quotedDeliveryFee : configuredDeliveryFee;
+  const deliveryFee = quotedDeliveryFee > 0
+    ? quotedDeliveryFee
+    : configuredDeliveryFee;
+  const deliveryFeeProviderLabel =
+    selectedDeliveryQuote?.providerLabel ||
+    selectedDeliveryQuote?.providerKey ||
+    selectedDeliveryQuote?.app ||
+    'cotacao';
+  let deliveryFeeSourceLabel = 'Nenhuma taxa de entrega aplicada no momento.';
+  if (quotedDeliveryFee > 0) {
+    deliveryFeeSourceLabel = `Cotacao selecionada: ${deliveryFeeProviderLabel}.`;
+  } else if (configuredDeliveryFee > 0) {
+    deliveryFeeSourceLabel = 'Taxa fixa configurada pela loja.';
+  } else if (deliveryQuotes.length > 0) {
+    deliveryFeeSourceLabel =
+      'Selecione uma cotacao disponivel para aplicar a taxa.';
+  }
   const financialTotal = cartTotal + deliveryFee;
   const paidAmount = useMemo(
     () =>
@@ -447,25 +465,6 @@ export default function CheckoutPage() {
         totalAmount: pendingAmount,
       }),
     [changeForAmount, pendingAmount],
-  );
-  const selectedDeliveryAddress = useMemo(() => {
-    if (cartAddressDestination && typeof cartAddressDestination === 'object') {
-      return cartAddressDestination;
-    }
-
-    return (
-      deliveryAddresses.find(
-        address =>
-          toEntityIri(address, 'addresses') === cartAddressDestinationIri,
-      ) || null
-    );
-  }, [cartAddressDestination, cartAddressDestinationIri, deliveryAddresses]);
-  const selectedDeliveryAddressSummary = useMemo(
-    () =>
-      selectedDeliveryAddress
-        ? buildAddressOptionSummary(selectedDeliveryAddress)
-        : null,
-    [selectedDeliveryAddress],
   );
   const shouldShowAddressForm =
     !addressOptionsLoading &&
@@ -1597,37 +1596,7 @@ export default function CheckoutPage() {
                 })}>
                 Entrega
               </Text>
-              <Text
-                style={[
-                  styles.methodCardHint,
-                  {color: theme.text},
-                ]}>
-                Informe o endereco para cotar entrega. Se nenhuma cotacao for
-                selecionada, o checkout usa a taxa fixa configurada na loja.
-              </Text>
-
-              {selectedDeliveryAddressSummary ? (
-                <View
-                  style={[
-                    styles.quoteCard,
-                    {
-                      borderColor: theme.primary,
-                      backgroundColor: `${theme.primary}10`,
-                    },
-                  ]}>
-                  <Text style={[styles.quoteTitle, {color: theme.text}]}>
-                    Endereco selecionado
-                  </Text>
-                  <Text style={[styles.quoteMeta, {color: theme.text}]}>
-                    {selectedDeliveryAddressSummary.primary || 'Endereco sem nome'}
-                  </Text>
-                  {!!selectedDeliveryAddressSummary.secondary && (
-                    <Text style={[styles.quoteMeta, {color: theme.muted}]}>
-                      {selectedDeliveryAddressSummary.secondary}
-                    </Text>
-                  )}
-                </View>
-              ) : (
+              {!hasDeliveryAddress ? (
                 <Text
                   style={[
                     styles.methodCardHint,
@@ -1635,7 +1604,7 @@ export default function CheckoutPage() {
                   ]}>
                   Selecione ou cadastre um endereco para liberar o pagamento.
                 </Text>
-              )}
+              ) : null}
 
               {addressOptionsLoading ? (
                 <CheckoutSkeletonRows theme={theme} />
@@ -1926,6 +1895,27 @@ export default function CheckoutPage() {
                   })}
                 </View>
               ) : null}
+
+              {hasDeliveryAddress ? (
+                <View
+                  style={[
+                    styles.quoteCard,
+                    {
+                      borderColor: theme.cardBorder,
+                      backgroundColor: theme.background,
+                    },
+                  ]}>
+                  <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                    Valor da entrega
+                  </Text>
+                  <Text style={[styles.quoteMeta, {color: theme.primary}]}>
+                    {formatMoney(deliveryFee)}
+                  </Text>
+                  <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                    {deliveryFeeSourceLabel}
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <View
@@ -2027,16 +2017,6 @@ export default function CheckoutPage() {
                   </View>
                 </View>
 
-                <Text
-                  style={[
-                    styles.methodCardMeta,
-                    {color: theme.muted},
-                  ]}>
-                  No Shop, o cliente apenas informa se vai pagar agora ou na
-                  entrega. Se for na entrega, ele escolhe uma das formas
-                  liberadas pela loja.
-                </Text>
-
                 {loadingRemoteDevices ? (
                   <CheckoutSkeletonRows theme={theme} />
                 ) : deliveryModeLabels.length > 0 ? (
@@ -2046,8 +2026,8 @@ export default function CheckoutPage() {
                         styles.methodCardHint,
                         {color: theme.text},
                       ]}>
-                      O cliente escolhe uma forma liberada para cobrar quando o
-                      motoboy chegar.
+                      Escolha uma forma liberada para pagar quando o pedido
+                      chegar.
                     </Text>
                     <Text
                       style={[
