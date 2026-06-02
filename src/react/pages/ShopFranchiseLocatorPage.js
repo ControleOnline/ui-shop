@@ -256,14 +256,14 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
             html, body {
               margin: 0;
               height: 100%;
-              background: ${theme?.surface || '#ffffff'};
+              background: ${theme?.surface};
               font-family: Arial, sans-serif;
             }
             body {
               display: flex;
               align-items: center;
               justify-content: center;
-              color: ${theme?.text || '#0f1720'};
+              color: ${theme?.text};
             }
           </style>
         </head>
@@ -274,7 +274,7 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
 
   const markerPayloadsJson = safeJsonForHtml(markerPayloads);
   const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
-  const routeColor = theme?.primary || '#0ea5e9';
+  const routeColor = theme?.primary;
 
   return `
     <!DOCTYPE html>

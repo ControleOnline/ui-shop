@@ -58,7 +58,7 @@ export default function ShopCategorySidebar({
             theme: company,
           })}>
           <Icon
-            color={company?.theme?.colors?.primary || '#0E7490'}
+            color={company?.theme?.colors?.primary}
             name={compact ? 'keyboard-double-arrow-right' : 'keyboard-double-arrow-left'}
             size={18}
           />

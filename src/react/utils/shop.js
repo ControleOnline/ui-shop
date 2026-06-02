@@ -110,15 +110,15 @@ const resolveReadableColor = ({
 
 export const pickTheme = company => {
   const companyColors = company?.theme?.colors || {};
-  const background = companyColors.background || '#F3F7FB';
-  const surface = companyColors.surface || '#ffffff';
+  const background = companyColors.background;
+  const surface = companyColors.surface;
   const textBackgrounds = [surface, background];
-  const primary = companyColors.primary || '#0E7490';
+  const primary = companyColors.primary;
 
   return {
-    header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
+    header: companyColors['header-primary'] || companyColors.primary,
     primary,
-    accent: companyColors.accent || companyColors.secondary || '#F59E0B',
+    accent: companyColors.accent || companyColors.secondary,
     background,
     surface,
     text: resolveReadableColor({
@@ -126,27 +126,27 @@ export const pickTheme = company => {
       candidates: ['#111827', '#F8FAFC'],
       fallback: '#111827',
       minimumRatio: 4.5,
-      preferred: companyColors['text-primary'] || '#111827',
+      preferred: companyColors['text-primary'],
     }),
     muted: resolveReadableColor({
       backgrounds: textBackgrounds,
       candidates: ['#475569', '#CBD5E1', '#64748b'],
       fallback: '#64748b',
       minimumRatio: 3,
-      preferred: companyColors['text-secondary'] || '#64748b',
+      preferred: companyColors['text-secondary'],
     }),
-    cardBorder: companyColors.border || '#D7E1EC',
+    cardBorder: companyColors.border,
     onPrimary: resolveReadableColor({
       backgrounds: [primary],
       candidates: ['#ffffff', '#111827'],
       fallback: '#ffffff',
       minimumRatio: 4.5,
-      preferred: companyColors['text-on-primary'] || '#ffffff',
+      preferred: companyColors['text-on-primary'],
     }),
-    success: companyColors.success || '#22C55E',
-    danger: companyColors.danger || '#EF4444',
-    darkCard: companyColors['card-dark'] || '#163042',
-    darkBorder: companyColors['card-dark-border'] || '#406179',
+    success: companyColors.success,
+    danger: companyColors.danger,
+    darkCard: companyColors['card-dark'],
+    darkBorder: companyColors['card-dark-border'],
   };
 };
 
