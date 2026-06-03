@@ -5,7 +5,6 @@
  * - Esta pagina e a entrada do produto na loja e da configuracao de compra.
  *
  * ## Estado
- * - Se existir `src/vue`, ela e apenas legado e nao deve receber este contrato.
  *
  * ## Limites
  * - Nao mover pagamento operacional para esta tela.
