@@ -23,6 +23,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
+import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/storefront/ShopHomeEntryControls';
 
 import {
   buildFileUrl,
@@ -117,6 +118,7 @@ export default function ShopShell({
   showSalesShortcuts = true,
   showBottomCart = null,
   activeHomeEntry = '',
+  showHomeEntryControls = false,
   showSearch = true,
   subtitle = 'Cardapio digital',
   searchPlaceholder = 'Busque pratos, bebidas ou categorias',
@@ -130,6 +132,7 @@ export default function ShopShell({
   const authStore = useStore('auth');
   const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
+    bottomBarEnabled,
     companyConfigs,
     homeEntries,
     loyaltyCouponsEnabled,
@@ -247,6 +250,12 @@ export default function ShopShell({
   const showHomeAction =
     !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
   const menuIconName = isMobile || isHomeEntryRoute ? 'menu' : 'account-circle';
+  const showConfiguredBottomBar =
+    showHomeEntryControls && bottomBarEnabled && homeEntries.length > 1;
+  const bottomBarOffset = showBottomCart === true ? 88 : 18;
+  const publicHomeRouteName =
+    homeEntries.find(entry => entry.routeName !== 'ShopLoyaltyPage')?.routeName ||
+    'HomePage';
 
   const handleSelectHomeEntry = useCallback(
     entry => {
@@ -277,6 +286,28 @@ export default function ShopShell({
     primaryEntryRouteName,
     resolvedActiveHomeEntry,
     route?.name,
+  ]);
+
+  const navigateToSignIn = useCallback(
+    () =>
+      navigation.navigate('SignInPage', {
+        redirectRoute: route?.name || primaryEntryRouteName || 'HomePage',
+      }),
+    [navigation, primaryEntryRouteName, route?.name],
+  );
+
+  const openAccountMenu = useCallback(() => {
+    if (!isLogged && (showConfiguredBottomBar || homeEntries.length <= 1)) {
+      navigateToSignIn();
+      return;
+    }
+
+    setAccountOpen(true);
+  }, [
+    homeEntries.length,
+    isLogged,
+    navigateToSignIn,
+    showConfiguredBottomBar,
   ]);
 
   return (
@@ -358,7 +389,7 @@ export default function ShopShell({
                 )}
                 <TouchableOpacity
                   accessibilityLabel="Abrir menu do shop"
-                  onPress={() => setAccountOpen(true)}
+                  onPress={openAccountMenu}
                   style={inlineStyle_241_16}>
                   <Icon name={menuIconName} size={22} color="#fff" />
                 </TouchableOpacity>
@@ -383,7 +414,21 @@ export default function ShopShell({
           </View>
         </View>
       )}
-      {children({foreground, openAccountMenu: () => setAccountOpen(true), surface, theme})}
+      {children({
+        foreground,
+        openAccountMenu,
+        surface,
+        theme,
+      })}
+      <ShopHomeEntryControls
+        activeEntryKey={resolvedActiveHomeEntry}
+        bottomOffset={bottomBarOffset}
+        entries={homeEntries}
+        onSelect={handleSelectHomeEntry}
+        showBottomBar={showConfiguredBottomBar}
+        showTopControl={false}
+        theme={theme}
+      />
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({
@@ -579,11 +624,13 @@ export default function ShopShell({
                     setAccountOpen(false);
                     if (isLogged) {
                       authActions.logOut();
+                      navigation.reset({
+                        index: 0,
+                        routes: [{name: publicHomeRouteName}],
+                      });
+                      return;
                     }
-                    navigation.reset({
-                      index: 0,
-                      routes: [{name: 'SignInPage'}],
-                    });
+                    navigateToSignIn();
                   }}
                   style={inlineStyle_531_18({
                     theme: theme,
@@ -592,6 +639,21 @@ export default function ShopShell({
                     {isLogged ? 'Sair' : 'Entrar'}
                   </Text>
                 </TouchableOpacity>
+                {!isLogged && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('CreateAccount', {
+                        redirectRoute:
+                          route?.name || primaryEntryRouteName || 'HomePage',
+                      });
+                    }}
+                    style={inlineStyle_531_18({
+                      theme: theme,
+                    })}>
+                    <Text style={inlineStyle_538_24}>Criar conta</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </TouchableOpacity>

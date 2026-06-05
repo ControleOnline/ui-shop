@@ -110,15 +110,15 @@ const resolveReadableColor = ({
 
 export const pickTheme = company => {
   const companyColors = company?.theme?.colors || {};
-  const background = companyColors.background;
-  const surface = companyColors.surface;
+  const background = companyColors.background || '#F3F7FB';
+  const surface = companyColors.surface || '#ffffff';
   const textBackgrounds = [surface, background];
-  const primary = companyColors.primary;
+  const primary = companyColors.primary || '#0E7490';
 
   return {
-    header: companyColors['header-primary'] || companyColors.primary,
+    header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
     primary,
-    accent: companyColors.accent || companyColors.secondary,
+    accent: companyColors.accent || companyColors.secondary || '#F59E0B',
     background,
     surface,
     text: resolveReadableColor({
@@ -126,27 +126,27 @@ export const pickTheme = company => {
       candidates: ['#111827', '#F8FAFC'],
       fallback: '#111827',
       minimumRatio: 4.5,
-      preferred: companyColors['text-primary'],
+      preferred: companyColors['text-primary'] || '#111827',
     }),
     muted: resolveReadableColor({
       backgrounds: textBackgrounds,
       candidates: ['#475569', '#CBD5E1', '#64748b'],
       fallback: '#64748b',
       minimumRatio: 3,
-      preferred: companyColors['text-secondary'],
+      preferred: companyColors['text-secondary'] || '#64748b',
     }),
-    cardBorder: companyColors.border,
+    cardBorder: companyColors.border || '#D7E1EC',
     onPrimary: resolveReadableColor({
       backgrounds: [primary],
       candidates: ['#ffffff', '#111827'],
       fallback: '#ffffff',
       minimumRatio: 4.5,
-      preferred: companyColors['text-on-primary'],
+      preferred: companyColors['text-on-primary'] || '#ffffff',
     }),
-    success: companyColors.success,
-    danger: companyColors.danger,
-    darkCard: companyColors['card-dark'],
-    darkBorder: companyColors['card-dark-border'],
+    success: companyColors.success || '#22C55E',
+    danger: companyColors.danger || '#EF4444',
+    darkCard: companyColors['card-dark'] || '#163042',
+    darkBorder: companyColors['card-dark-border'] || '#406179',
   };
 };
 

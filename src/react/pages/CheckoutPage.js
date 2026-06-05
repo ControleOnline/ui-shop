@@ -318,6 +318,8 @@ const CheckoutSkeletonRows = ({theme}) => (
 
 export default function CheckoutPage() {
   const navigation = useNavigation();
+  const authStore = useStore('auth');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {
     cart,
     currentCompany,
@@ -868,6 +870,10 @@ export default function CheckoutPage() {
   }, [cart?.id, cartAddressDestinationIri, loadDeliveryQuotes]);
 
   const loadData = useCallback(async () => {
+    if (!sessionChecked || !isLogged) {
+      return;
+    }
+
     setIsLoading(true);
     setAddressOptionsLoading(true);
     setError('');
@@ -950,18 +956,23 @@ export default function CheckoutPage() {
     cardActions,
     cart,
     currentCompany,
+    isLogged,
     invoiceActions,
     loadDeliveryQuotes,
     refreshCart,
     sellerCompanyId,
+    sessionChecked,
     statusActions,
     walletPaymentTypeActions,
   ]);
-
   useFocusEffect(
     useCallback(() => {
+      if (!sessionChecked || !isLogged) {
+        return;
+      }
+
       loadData();
-    }, [loadData]),
+    }, [isLogged, loadData, sessionChecked]),
   );
 
   useEffect(() => {
@@ -975,6 +986,12 @@ export default function CheckoutPage() {
   useFocusEffect(
     useCallback(() => {
       if (!sellerCompanyId || !chargeOnDeliveryEnabled) {
+        setCompanyDeviceConfigs([]);
+        setLoadingRemoteDevices(false);
+        return undefined;
+      }
+
+      if (!sessionChecked || !isLogged) {
         setCompanyDeviceConfigs([]);
         setLoadingRemoteDevices(false);
         return undefined;
@@ -1011,11 +1028,22 @@ export default function CheckoutPage() {
       return () => {
         isMounted = false;
       };
-    }, [chargeOnDeliveryEnabled, deviceConfigActions, sellerCompanyId]),
+    }, [
+      chargeOnDeliveryEnabled,
+      deviceConfigActions,
+      isLogged,
+      sellerCompanyId,
+      sessionChecked,
+    ]),
   );
 
   useEffect(() => {
-    if (!sellerCompanyId || !chargeOnDeliveryEnabled) {
+    if (
+      !sellerCompanyId ||
+      !chargeOnDeliveryEnabled ||
+      !sessionChecked ||
+      !isLogged
+    ) {
       setDeliveryPaymentTypes([]);
       return undefined;
     }
@@ -1075,8 +1103,10 @@ export default function CheckoutPage() {
   }, [
     chargeOnDeliveryEnabled,
     effectiveCompanyConfigs,
+    isLogged,
     remotePaymentDevices,
     sellerCompanyId,
+    sessionChecked,
     walletPaymentTypeActions,
   ]);
 

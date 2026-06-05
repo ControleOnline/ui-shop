@@ -23,7 +23,7 @@ export default function HomePage({navigation}) {
       <View style={styles.loadingContainer}>
         <ActivityIndicator
           size="large"
-          color={colors['primary']}
+          color={colors?.primary || '#28B34B'}
         />
         <Text style={styles.loadingText}>Carregando...</Text>
       </View>

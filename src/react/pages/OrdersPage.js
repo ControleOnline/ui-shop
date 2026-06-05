@@ -34,8 +34,10 @@ export default function OrdersPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
   const [layoutWidth, setLayoutWidth] = useState(width);
+  const authStore = useStore('auth');
   const ordersStore = useStore('orders');
   const peopleStore = useStore('people');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {currentCompany, defaultCompany} = peopleStore.getters;
   const {defaultCompany: shellCompany, salesCompany} = useShopCart();
   const theme = pickTheme(shellCompany);
@@ -43,6 +45,10 @@ export default function OrdersPage() {
   useFocusEffect(
     useCallback(() => {
       if (!currentCompany?.id || !(salesCompany?.id || defaultCompany?.id)) {
+        return;
+      }
+
+      if (!sessionChecked || !isLogged) {
         return;
       }
 
@@ -57,8 +63,10 @@ export default function OrdersPage() {
     }, [
       currentCompany?.id,
       defaultCompany?.id,
+      isLogged,
       ordersStore.actions,
       salesCompany?.id,
+      sessionChecked,
     ]),
   );
 

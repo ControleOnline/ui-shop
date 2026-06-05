@@ -18,8 +18,10 @@ const hasShopConfigEntries = configs =>
   Object.keys(configs).some(key => String(key).startsWith('shop-'));
 
 export default function useShopSettings() {
+  const authStore = useStore('auth');
   const peopleStore = useStore('people');
   const configsStore = useStore('configs');
+  const {isLogged} = authStore.getters;
   const {defaultCompany, currentCompany} = peopleStore.getters;
   const {items: runtimeConfigs} = configsStore.getters;
 
@@ -36,6 +38,7 @@ export default function useShopSettings() {
       : {};
 
     if (
+      isLogged &&
       defaultCompanyId &&
       currentCompanyId &&
       defaultCompanyId === currentCompanyId &&
@@ -48,6 +51,7 @@ export default function useShopSettings() {
     }
 
     if (
+      isLogged &&
       isConfigMap(runtimeConfigs) &&
       (!defaultCompanyId || hasShopConfigEntries(runtimeConfigs))
     ) {
@@ -62,6 +66,7 @@ export default function useShopSettings() {
     currentCompanyId,
     defaultCompany?.configs,
     defaultCompanyId,
+    isLogged,
     runtimeConfigs,
   ]);
 

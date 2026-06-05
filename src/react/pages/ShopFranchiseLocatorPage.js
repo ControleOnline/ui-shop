@@ -256,14 +256,14 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
             html, body {
               margin: 0;
               height: 100%;
-              background: ${theme?.surface};
+              background: ${theme?.surface || '#ffffff'};
               font-family: Arial, sans-serif;
             }
             body {
               display: flex;
               align-items: center;
               justify-content: center;
-              color: ${theme?.text};
+              color: ${theme?.text || '#0f1720'};
             }
           </style>
         </head>
@@ -274,7 +274,7 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
 
   const markerPayloadsJson = safeJsonForHtml(markerPayloads);
   const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
-  const routeColor = theme?.primary;
+  const routeColor = theme?.primary || '#0ea5e9';
 
   return `
     <!DOCTYPE html>
@@ -437,7 +437,7 @@ const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
               fullscreenControl: false,
               clickableIcons: false,
               gestureHandling: 'greedy',
-              zoomControl: true,
+              zoomControl: false,
             });
 
             var bounds = new window.google.maps.LatLngBounds();
@@ -900,7 +900,7 @@ export default function ShopFranchiseLocatorPage() {
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_FRANCHISE_LOCATOR}
       showBottomCart={false}
-      showHomeEntryControls={false}
+      showHomeEntryControls
       showSalesShortcuts={false}
       showSearch={false}
       subtitle={googleMapsApiKey ? 'Mapa das unidades' : 'Escolha uma unidade'}>

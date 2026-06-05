@@ -50,10 +50,14 @@ const isPaidSale = order => {
   return status === 'paid' || realStatus === 'paid' || realStatus === 'closed';
 };
 
+const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
+
 export default function ShopLoyaltyPage() {
   const navigation = useNavigation();
+  const authStore = useStore('auth');
   const productsStore = useStore('products');
   const ordersStore = useStore('orders');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {
     defaultCompany,
     loyaltyCouponsEnabled,
@@ -79,7 +83,12 @@ export default function ShopLoyaltyPage() {
   useEffect(() => {
     let cancelled = false;
 
-    if (!loyaltyCouponsEnabled || loyaltyProductIds.length === 0) {
+    if (
+      !sessionChecked ||
+      !isLogged ||
+      !loyaltyCouponsEnabled ||
+      loyaltyProductIds.length === 0
+    ) {
       setParticipantProducts([]);
       return undefined;
     }
@@ -87,7 +96,10 @@ export default function ShopLoyaltyPage() {
     Promise.all(
       loyaltyProductIds.slice(0, 6).map(async productId => {
         try {
-          return await productsStore.actions.get(productId);
+          return await productsStore.actions.get({
+            id: productId,
+            ...silentStoreMeta,
+          });
         } catch {
           return {id: productId};
         }
@@ -101,18 +113,29 @@ export default function ShopLoyaltyPage() {
     return () => {
       cancelled = true;
     };
-  }, [loyaltyCouponsEnabled, loyaltyProductIds, productsStore.actions]);
+  }, [
+    isLogged,
+    loyaltyCouponsEnabled,
+    loyaltyProductIds,
+    productsStore.actions,
+    sessionChecked,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!loyaltyCouponsEnabled || !loyaltyGiftProductId) {
+    if (
+      !sessionChecked ||
+      !isLogged ||
+      !loyaltyCouponsEnabled ||
+      !loyaltyGiftProductId
+    ) {
       setGiftProduct(null);
       return undefined;
     }
 
     productsStore.actions
-      .get(loyaltyGiftProductId)
+      .get({id: loyaltyGiftProductId, ...silentStoreMeta})
       .then(product => {
         if (!cancelled) {
           setGiftProduct(product || {id: loyaltyGiftProductId});
@@ -127,13 +150,25 @@ export default function ShopLoyaltyPage() {
     return () => {
       cancelled = true;
     };
-  }, [loyaltyCouponsEnabled, loyaltyGiftProductId, productsStore.actions]);
+  }, [
+    isLogged,
+    loyaltyCouponsEnabled,
+    loyaltyGiftProductId,
+    productsStore.actions,
+    sessionChecked,
+  ]);
 
   const loadLoyaltyCards = useCallback(async () => {
     const providerId = normalizeId(salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id);
     const clientId = normalizeId(currentCompany?.id);
 
-    if (!loyaltyCouponsEnabled || !providerId || !clientId) {
+    if (
+      !sessionChecked ||
+      !isLogged ||
+      !loyaltyCouponsEnabled ||
+      !providerId ||
+      !clientId
+    ) {
       setLoyaltyCards([]);
       return;
     }
@@ -192,11 +227,13 @@ export default function ShopLoyaltyPage() {
     cartDefaultCompany?.id,
     currentCompany?.id,
     defaultCompany?.id,
+    isLogged,
     loyaltyCouponsEnabled,
     loyaltyRequiredSales,
     ordersStore.actions,
     refreshCart,
     salesCompany?.id,
+    sessionChecked,
     showHistory,
   ]);
 
@@ -341,7 +378,7 @@ export default function ShopLoyaltyPage() {
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_LOYALTY}
       showBottomCart={false}
-      showHomeEntryControls={false}
+      showHomeEntryControls
       showSalesShortcuts={false}
       showSearch={false}
       subtitle="Programa de fidelidade">

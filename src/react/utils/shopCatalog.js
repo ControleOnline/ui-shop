@@ -1,6 +1,8 @@
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
+import {api} from '@controleonline/ui-common/src/api';
 
 const SHOP_CATALOG_CATEGORY_STORAGE_PREFIX = 'shop-purchases-active-category';
+const shopCatalogProductCache = new Map();
 const SHOP_CATEGORY_DESCRIPTION_BY_NAME = {
   'lanches gyros':
     'Assinaturas e itens principais do Gyros, com organizacao clara de cardapio e preco canonico.',
@@ -31,6 +33,96 @@ const readStorageItem = storageKey => {
   } catch {
     return '';
   }
+};
+
+export const normalizeShopCatalogProductsByCategoryId = payload => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(payload).map(([categoryId, products]) => [
+      String(categoryId || ''),
+      Array.isArray(products) ? products.filter(Boolean) : [],
+    ]),
+  );
+};
+
+export const getShopCatalogProducts = catalog =>
+  Object.values(
+    normalizeShopCatalogProductsByCategoryId(catalog?.productsByCategoryId),
+  ).flat();
+
+export const hasShopProductCustomizationGroups = product =>
+  product?.type === 'custom' ||
+  product?.hasCustomizationGroups === true ||
+  (Array.isArray(product?.productGroups) && product.productGroups.length > 0);
+
+export const rememberShopCatalogProduct = product => {
+  const productId = normalizeId(product?.id || product?.['@id']);
+
+  if (productId) {
+    shopCatalogProductCache.set(productId, product);
+  }
+
+  return productId;
+};
+
+export const getRememberedShopCatalogProduct = productId =>
+  shopCatalogProductCache.get(normalizeId(productId)) || null;
+
+export const fetchShopCatalog = ({
+  companyId,
+  context = 'products',
+  productTypes = [],
+} = {}) => {
+  const normalizedCompanyId = normalizeId(companyId);
+
+  if (!normalizedCompanyId) {
+    return Promise.resolve(null);
+  }
+
+  return api.fetch('products/shop-catalog', {
+    params: {
+      company: normalizedCompanyId,
+      context,
+      ...(productTypes.length > 0 ? {type: productTypes} : {}),
+    },
+  });
+};
+
+export const fetchShopCatalogProduct = async ({
+  companyId,
+  productId,
+  productTypes = [],
+} = {}) => {
+  const normalizedProductId = normalizeId(productId);
+
+  if (!normalizedProductId) {
+    return null;
+  }
+
+  const cachedProduct = getRememberedShopCatalogProduct(normalizedProductId);
+  if (cachedProduct) {
+    return cachedProduct;
+  }
+
+  const catalog = await fetchShopCatalog({
+    companyId,
+    productTypes,
+  });
+
+  const catalogProduct =
+    getShopCatalogProducts(catalog).find(
+      product =>
+        normalizeId(product?.id || product?.['@id']) === normalizedProductId,
+    ) || null;
+
+  if (catalogProduct) {
+    rememberShopCatalogProduct(catalogProduct);
+  }
+
+  return catalogProduct;
 };
 
 // Build a stable storage key per default company and active sales company.

@@ -22,7 +22,7 @@ const createStyles = colors =>
       marginTop: 6,
     },
     activeText: {
-      color: colors?.primary,
+      color: colors?.primary || '#28B34B',
       fontWeight: 'bold',
     },
   });

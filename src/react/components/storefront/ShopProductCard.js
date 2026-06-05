@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
+import {rememberShopCatalogProduct} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
 import {
   formatMoney,
@@ -48,10 +49,13 @@ export default function ShopProductCard({
     product?.type === 'custom' ||
     hasInlineGroups ||
     product?.hasCustomizationGroups === true;
-  const openProductDetails = () =>
+  const openProductDetails = () => {
+    rememberShopCatalogProduct(product);
+
     navigation.navigate('ShopProductPage', {
       id: productId,
     });
+  };
 
   return (
     <View

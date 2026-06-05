@@ -99,6 +99,8 @@ const initialForm = {
 
 export default function CardsPage() {
   const navigation = useNavigation();
+  const authStore = useStore('auth');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {defaultCompany, currentCompany, salesCompany} = useShopCart();
   const {companyConfigs} = useShopSettings();
   const theme = pickTheme(salesCompany || defaultCompany);
@@ -121,7 +123,7 @@ export default function CardsPage() {
   const [form, setForm] = useState(initialForm);
 
   const loadCards = useCallback(async () => {
-    if (!cardRegistrationEnabled) {
+    if (!sessionChecked || !isLogged || !cardRegistrationEnabled) {
       setCards([]);
       return;
     }
@@ -136,17 +138,21 @@ export default function CardsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cardActions, cardRegistrationEnabled]);
+  }, [cardActions, cardRegistrationEnabled, isLogged, sessionChecked]);
 
   useFocusEffect(
     useCallback(() => {
+      if (!sessionChecked || !isLogged) {
+        return;
+      }
+
       loadCards();
       setForm(previous => ({
         ...previous,
         name: previous.name || getHolderName(currentCompany),
         document: previous.document || getCompanyDocument(currentCompany),
       }));
-    }, [currentCompany, loadCards]),
+    }, [currentCompany, isLogged, loadCards, sessionChecked]),
   );
 
   const numberDigits = useMemo(() => digitsOnly(form.number), [form.number]);

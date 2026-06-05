@@ -14,6 +14,7 @@ import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 const normalizeCollection = payload => (Array.isArray(payload) ? payload.filter(Boolean) : []);
+const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
 
 const normalizeId = value =>
   String(value?.id || value?.['@id'] || value || '')
@@ -200,6 +201,7 @@ export default function useShopCatalogState({
             order: {name: 'ASC'},
             context: 'products',
             company: salesCompany.id,
+            ...silentStoreMeta,
           })
           .then(data => {
             if (!isMounted) {
@@ -297,6 +299,7 @@ export default function useShopCatalogState({
           itemsPerPage: 500,
           'order[product]': 'ASC',
           company: salesCompany.id,
+          ...silentStoreMeta,
         }),
       ),
     )
@@ -387,6 +390,7 @@ export default function useShopCatalogState({
         itemsPerPage: 500,
         'order[product]': 'ASC',
         company: salesCompany.id,
+        ...silentStoreMeta,
       })
       .then(data => {
         if (isMounted) {
@@ -445,6 +449,7 @@ export default function useShopCatalogState({
         type: catalogProductTypes,
         'order[product]': 'ASC',
         product: normalizedSearchQuery,
+        ...silentStoreMeta,
       }),
       categoriesStore.actions.getItems({
         itemsPerPage: 24,
@@ -454,6 +459,7 @@ export default function useShopCatalogState({
         context: 'products',
         company: salesCompany.id,
         name: normalizedSearchQuery,
+        ...silentStoreMeta,
       }),
     ])
       .then(([productResults, categoryResults]) => {

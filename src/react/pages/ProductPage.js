@@ -39,6 +39,11 @@ import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCus
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
+import {
+  fetchShopCatalogProduct,
+  getRememberedShopCatalogProduct,
+  hasShopProductCustomizationGroups,
+} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
 import {
   buildFileUrl,
@@ -87,6 +92,8 @@ const extractItems = response => {
   return [];
 };
 
+const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
+
 export default function ProductPage() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -100,7 +107,12 @@ export default function ProductPage() {
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
   const [isCheckingGroups, setIsCheckingGroups] = useState(false);
   const {cart, refreshCart, defaultCompany} = useShopCart();
-  const {franchiseLocatorEnabled, salesPageEnabled} = useShopSettings();
+  const {
+    catalogProductTypes,
+    franchiseLocatorEnabled,
+    salesPageEnabled,
+  } = useShopSettings();
+  const catalogProductTypesKey = catalogProductTypes.join('|');
   const {
     isLoading: isLoadingSalesCompanies,
     requiresCompanySelection,
@@ -138,11 +150,35 @@ export default function ProductPage() {
         return;
       }
 
-      setIsCheckingGroups(true);
-      productsStore.actions
-        .get(productId)
-        .then(async result => {
-          const nextProduct = result || {};
+      let isMounted = true;
+
+      const loadProduct = async () => {
+        setIsCheckingGroups(true);
+
+        try {
+          let nextProduct = {};
+          const cachedProduct = getRememberedShopCatalogProduct(productId);
+
+          try {
+            nextProduct =
+              (await productsStore.actions.get({
+                id: productId,
+                ...silentStoreMeta,
+              })) || {};
+          } catch {
+            nextProduct =
+              cachedProduct ||
+              (await fetchShopCatalogProduct({
+                companyId: salesCompany.id,
+                productId,
+                productTypes: catalogProductTypes,
+              }).catch(() => null)) || {};
+          }
+
+          if (!isMounted) {
+            return;
+          }
+
           setProduct(nextProduct);
           productsStore.actions.setItem(nextProduct);
 
@@ -150,15 +186,11 @@ export default function ProductPage() {
             nextProduct?.id || nextProduct?.['@id'],
           );
           const providerId = salesCompany?.id || '';
-          const inlineHasGroups =
-            Array.isArray(nextProduct?.productGroups) &&
-            nextProduct.productGroups.length > 0;
+          const inlineRequiresCustomization =
+            hasShopProductCustomizationGroups(nextProduct);
 
-          if (!nextProductId) {
-            setHasCustomizationGroups(
-              (!providerId && inlineHasGroups) ||
-                nextProduct?.type === 'custom',
-            );
+          if (!nextProductId || nextProduct?.customizationGroupsLoaded === true) {
+            setHasCustomizationGroups(inlineRequiresCustomization);
             return;
           }
 
@@ -168,24 +200,45 @@ export default function ProductPage() {
           };
 
           const groupFilters = providerId
-            ? {...baseFilter, company: providerId}
-            : baseFilter;
+            ? {...baseFilter, company: providerId, ...silentStoreMeta}
+            : {...baseFilter, ...silentStoreMeta};
 
-          const response = await productGroupStore.actions.getItems(groupFilters);
-          const groups = extractItems(response);
+          try {
+            const response = await productGroupStore.actions.getItems(groupFilters);
+            const groups = extractItems(response);
 
-          setHasCustomizationGroups(
-            (!providerId && inlineHasGroups) ||
-              nextProduct?.type === 'custom' ||
-              groups.length > 0,
-          );
-        })
-        .catch(() => {
-          setHasCustomizationGroups(false);
-        })
-        .finally(() => {
-          setIsCheckingGroups(false);
-        });
+            if (isMounted) {
+              setHasCustomizationGroups(
+                inlineRequiresCustomization || groups.length > 0,
+              );
+            }
+          } catch {
+            const catalogProduct = await fetchShopCatalogProduct({
+              companyId: salesCompany.id,
+              productId: nextProductId,
+              productTypes: catalogProductTypes,
+            }).catch(() => null);
+
+            if (isMounted) {
+              setHasCustomizationGroups(
+                inlineRequiresCustomization ||
+                  hasShopProductCustomizationGroups(catalogProduct),
+              );
+            }
+          }
+        } catch {
+          if (isMounted) {
+            setProduct({});
+            setHasCustomizationGroups(false);
+          }
+        } finally {
+          if (isMounted) {
+            setIsCheckingGroups(false);
+          }
+        }
+      };
+
+      loadProduct();
 
       if (salesCompany?.id) {
         categoriesStore.actions.getItems({
@@ -195,12 +248,18 @@ export default function ProductPage() {
           order: {name: 'ASC'},
           context: 'products',
           company: salesCompany.id,
+          ...silentStoreMeta,
         });
       } else {
         categoriesStore.actions.setItems([]);
       }
+
+      return () => {
+        isMounted = false;
+      };
     }, [
       categoriesStore.actions,
+      catalogProductTypesKey,
       productGroupStore.actions,
       productId,
       productsStore.actions,
