@@ -118,7 +118,7 @@ export const pickTheme = company => {
   return {
     header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
     primary,
-    accent: companyColors.accent || companyColors.secondary || '#F59E0B',
+    accent: companyColors.accent || companyColors.secondary || '#e67e22',
     background,
     surface,
     text: resolveReadableColor({
@@ -143,8 +143,8 @@ export const pickTheme = company => {
       minimumRatio: 4.5,
       preferred: companyColors['text-on-primary'] || '#ffffff',
     }),
-    success: companyColors.success || '#22C55E',
-    danger: companyColors.danger || '#EF4444',
+    success: companyColors.success || '#10b981',
+    danger: companyColors.danger || '#c10015',
     darkCard: companyColors['card-dark'] || '#163042',
     darkBorder: companyColors['card-dark-border'] || '#406179',
   };
