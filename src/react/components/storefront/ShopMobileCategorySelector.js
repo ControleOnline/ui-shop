@@ -1,5 +1,6 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -41,9 +42,14 @@ export default function ShopMobileCategorySelector({
   activeCategoryId = '',
   categories = [],
   company = null,
+  hasMoreCategories = false,
+  isLoadingMoreCategories = false,
+  onLoadMoreCategories = null,
   onSelect = null,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [listHeight, setListHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
   const theme = pickTheme(company);
   const activeCategory = useMemo(
     () =>
@@ -56,6 +62,48 @@ export default function ShopMobileCategorySelector({
       null,
     [activeCategoryId, categories],
   );
+
+  const handleScroll = useCallback(
+    event => {
+      if (!hasMoreCategories || isLoadingMoreCategories) {
+        return;
+      }
+
+      const scrollY = Number(event?.nativeEvent?.contentOffset?.y || 0);
+      const viewportHeight = Number(
+        event?.nativeEvent?.layoutMeasurement?.height || 0,
+      );
+      const scrollContentHeight = Number(
+        event?.nativeEvent?.contentSize?.height || 0,
+      );
+
+      if (
+        viewportHeight > 0 &&
+        scrollContentHeight > 0 &&
+        scrollY + viewportHeight >= scrollContentHeight - 96
+      ) {
+        onLoadMoreCategories?.();
+      }
+    },
+    [hasMoreCategories, isLoadingMoreCategories, onLoadMoreCategories],
+  );
+
+  useEffect(() => {
+    if (!isOpen || !hasMoreCategories || isLoadingMoreCategories) {
+      return;
+    }
+
+    if (listHeight > 0 && contentHeight > 0 && contentHeight <= listHeight + 72) {
+      onLoadMoreCategories?.();
+    }
+  }, [
+    contentHeight,
+    hasMoreCategories,
+    isLoadingMoreCategories,
+    isOpen,
+    listHeight,
+    onLoadMoreCategories,
+  ]);
 
   const handleSelect = category => {
     setIsOpen(false);
@@ -103,7 +151,15 @@ export default function ShopMobileCategorySelector({
 
                 <ScrollView
                   keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={mobileCategoryModalContentStyle}>
+                  contentContainerStyle={mobileCategoryModalContentStyle}
+                  onContentSizeChange={(_, height) =>
+                    setContentHeight(height || 0)
+                  }
+                  onLayout={event =>
+                    setListHeight(event?.nativeEvent?.layout?.height || 0)
+                  }
+                  onScroll={handleScroll}
+                  scrollEventThrottle={80}>
                   {categories.map(category => {
                     const categoryId = String(
                       category?.id || category?.['@id'] || '',
@@ -158,6 +214,21 @@ export default function ShopMobileCategorySelector({
                       </TouchableOpacity>
                     );
                   })}
+
+                  {isLoadingMoreCategories ? (
+                    <View
+                      style={{
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 14,
+                        gap: 10,
+                      }}>
+                      <ActivityIndicator color={theme.primary} />
+                      <Text style={mobileCategoryModalOptionSubtitleStyle({theme})}>
+                        Carregando mais categorias
+                      </Text>
+                    </View>
+                  ) : null}
                 </ScrollView>
               </View>
             </TouchableWithoutFeedback>

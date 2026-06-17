@@ -1,5 +1,6 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -14,10 +15,7 @@ import ShopMobileProductCard from '@controleonline/ui-shop/src/react/components/
 import ShopMobileProductSection from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductSection';
 import ShopMobileStoreHeader from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileStoreHeader';
 import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
-import {
-  buildFileUrl,
-  pickTheme,
-} from '@controleonline/ui-shop/src/react/utils/shop';
+import {buildFileUrl, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {getShopCategoryFile} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 import {
   mobileCatalogCategoryCardImageStyle,
@@ -39,105 +37,54 @@ const getCategoryId = category => String(category?.id || category?.['@id'] || ''
 
 export default function ShopMobileCatalog({
   activeCategoryId = '',
+  activeCategory = null,
   cart = null,
   categories = [],
   company = null,
   defaultCompany = null,
+  hasMoreCategories = false,
+  hasMoreProducts = false,
   isLoadingCatalog = false,
+  isLoadingMoreCategories = false,
+  isLoadingMoreProducts = false,
   mode = 'default',
+  onLoadMoreCategories = null,
+  onLoadMoreProducts = null,
   onOpenMenu = null,
   onSearch = null,
   onSelectCategory = null,
-  productsByCategoryId = {},
+  productTotalItems = 0,
+  products = [],
   refreshCart = null,
   searchProducts = [],
   searchValue = '',
 }) {
   const theme = pickTheme(company);
-  const scrollRef = useRef(null);
-  const sectionPositionsRef = useRef({});
-  const initialScrollDoneRef = useRef(false);
-  const searchValueRef = useRef('');
-  const [visibleCategoryId, setVisibleCategoryId] = useState(activeCategoryId);
   const [searchTerm, setSearchTerm] = useState(searchValue);
-  const visibleCategories = useMemo(() => {
-    const categoryList = Array.isArray(categories) ? categories : [];
-    const loadedCategoryIds = Object.keys(productsByCategoryId || {});
-
-    if (mode === 'search') {
-      return [];
-    }
-
-    if (isLoadingCatalog || loadedCategoryIds.length === 0) {
-      return categoryList;
-    }
-
-    return categoryList.filter(category => {
-      const categoryId = getCategoryId(category);
-      return (productsByCategoryId?.[categoryId] || []).length > 0;
-    });
-  }, [categories, isLoadingCatalog, mode, productsByCategoryId]);
-  const visibleCategoryIdsKey = useMemo(
-    () => visibleCategories.map(category => getCategoryId(category)).join('|'),
-    [visibleCategories],
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [categoryStripWidth, setCategoryStripWidth] = useState(0);
+  const [categoryStripContentWidth, setCategoryStripContentWidth] = useState(0);
+  const visibleCategories = useMemo(
+    () => (Array.isArray(categories) ? categories.filter(Boolean) : []),
+    [categories],
+  );
+  const resolvedActiveCategory = useMemo(
+    () =>
+      activeCategory ||
+      visibleCategories.find(
+        category =>
+          String(category?.id || category?.['@id'] || '') ===
+          String(activeCategoryId || ''),
+      ) ||
+      visibleCategories[0] ||
+      null,
+    [activeCategory, activeCategoryId, visibleCategories],
   );
 
   useEffect(() => {
     setSearchTerm(searchValue);
   }, [searchValue]);
-  useEffect(() => {
-    searchValueRef.current = String(searchValue || '').trim();
-  }, [searchValue]);
-
-  useEffect(() => {
-    if (visibleCategoryId || !activeCategoryId) {
-      return;
-    }
-
-    setVisibleCategoryId(activeCategoryId);
-  }, [activeCategoryId, visibleCategoryId]);
-
-  useEffect(() => {
-    if (mode === 'search' || visibleCategories.length === 0) {
-      return;
-    }
-
-    const hasVisibleCategory = visibleCategories.some(
-      category => getCategoryId(category) === String(visibleCategoryId || ''),
-    );
-
-    if (!hasVisibleCategory) {
-      setVisibleCategoryId(getCategoryId(visibleCategories[0]));
-    }
-  }, [mode, visibleCategories, visibleCategoryId]);
-
-  const scrollToCategory = useCallback(categoryId => {
-    const y = sectionPositionsRef.current[categoryId];
-
-    if (typeof y !== 'number') {
-      return;
-    }
-
-    scrollRef.current?.scrollTo({
-      y: Math.max(y - 120, 0),
-      animated: true,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (
-      initialScrollDoneRef.current ||
-      mode === 'default' ||
-      mode === 'search' ||
-      !activeCategoryId ||
-      !visibleCategoryIdsKey
-    ) {
-      return;
-    }
-
-    initialScrollDoneRef.current = true;
-    setTimeout(() => scrollToCategory(activeCategoryId), 180);
-  }, [activeCategoryId, mode, scrollToCategory, visibleCategoryIdsKey]);
 
   const handleSelectCategory = useCallback(
     category => {
@@ -147,11 +94,9 @@ export default function ShopMobileCatalog({
         return;
       }
 
-      setVisibleCategoryId(categoryId);
       onSelectCategory?.(category);
-      setTimeout(() => scrollToCategory(categoryId), 80);
     },
-    [onSelectCategory, scrollToCategory],
+    [onSelectCategory],
   );
 
   const handleSubmitSearch = useCallback(() => {
@@ -167,42 +112,101 @@ export default function ShopMobileCatalog({
     }
 
     const normalizedTerm = String(searchTerm || '').trim();
-    const currentSearchValue = searchValueRef.current;
     if (normalizedTerm.length > 0 && normalizedTerm.length < 3) {
-      if (currentSearchValue) {
-        const timeoutId = setTimeout(() => onSearch(''), 250);
-        return () => clearTimeout(timeoutId);
-      }
-      return undefined;
-    }
-
-    if (normalizedTerm === currentSearchValue) {
-      return undefined;
+      const timeoutId = setTimeout(() => onSearch(''), 250);
+      return () => clearTimeout(timeoutId);
     }
 
     const timeoutId = setTimeout(() => onSearch(normalizedTerm), 300);
     return () => clearTimeout(timeoutId);
   }, [onSearch, searchTerm]);
 
-  const handleScroll = useCallback(event => {
-    const scrollY = Number(event?.nativeEvent?.contentOffset?.y || 0);
-    const categoryEntries = Object.entries(sectionPositionsRef.current)
-      .filter(([, y]) => typeof y === 'number')
-      .sort((left, right) => left[1] - right[1]);
-    const currentEntry = categoryEntries
-      .filter(([, y]) => y <= scrollY + 170)
-      .pop();
+  const handleRootScroll = useCallback(
+    event => {
+      if (mode === 'search' || !hasMoreProducts || isLoadingMoreProducts) {
+        return;
+      }
 
-    if (currentEntry?.[0]) {
-      setVisibleCategoryId(currentEntry[0]);
+      const scrollY = Number(event?.nativeEvent?.contentOffset?.y || 0);
+      const viewport = Number(event?.nativeEvent?.layoutMeasurement?.height || 0);
+      const content = Number(event?.nativeEvent?.contentSize?.height || 0);
+
+      if (viewport > 0 && content > 0 && scrollY + viewport >= content - 220) {
+        onLoadMoreProducts?.();
+      }
+    },
+    [hasMoreProducts, isLoadingMoreProducts, mode, onLoadMoreProducts],
+  );
+
+  useEffect(() => {
+    if (
+      mode === 'search' ||
+      !hasMoreProducts ||
+      isLoadingMoreProducts ||
+      !viewportHeight ||
+      !contentHeight
+    ) {
+      return;
     }
-  }, []);
+
+    if (contentHeight <= viewportHeight + 180) {
+      onLoadMoreProducts?.();
+    }
+  }, [
+    contentHeight,
+    hasMoreProducts,
+    isLoadingMoreProducts,
+    mode,
+    onLoadMoreProducts,
+    viewportHeight,
+  ]);
+
+  const handleCategoryStripScroll = useCallback(
+    event => {
+      if (mode === 'search' || !hasMoreCategories || isLoadingMoreCategories) {
+        return;
+      }
+
+      const scrollX = Number(event?.nativeEvent?.contentOffset?.x || 0);
+      const viewport = Number(event?.nativeEvent?.layoutMeasurement?.width || 0);
+      const content = Number(event?.nativeEvent?.contentSize?.width || 0);
+
+      if (viewport > 0 && content > 0 && scrollX + viewport >= content - 96) {
+        onLoadMoreCategories?.();
+      }
+    },
+    [hasMoreCategories, isLoadingMoreCategories, mode, onLoadMoreCategories],
+  );
+
+  useEffect(() => {
+    if (
+      mode === 'search' ||
+      !hasMoreCategories ||
+      isLoadingMoreCategories ||
+      !categoryStripWidth ||
+      !categoryStripContentWidth
+    ) {
+      return;
+    }
+
+    if (categoryStripContentWidth <= categoryStripWidth + 72) {
+      onLoadMoreCategories?.();
+    }
+  }, [
+    categoryStripContentWidth,
+    categoryStripWidth,
+    hasMoreCategories,
+    isLoadingMoreCategories,
+    mode,
+    onLoadMoreCategories,
+  ]);
 
   return (
     <ScrollView
-      ref={scrollRef}
       keyboardShouldPersistTaps="handled"
-      onScroll={handleScroll}
+      onContentSizeChange={(_, height) => setContentHeight(height || 0)}
+      onLayout={event => setViewportHeight(event?.nativeEvent?.layout?.height || 0)}
+      onScroll={handleRootScroll}
       scrollEventThrottle={80}
       stickyHeaderIndices={[1]}
       style={mobileCatalogRootStyle({theme})}>
@@ -212,12 +216,20 @@ export default function ShopMobileCatalog({
         onOpenMenu={onOpenMenu}
       />
 
-      {isLoadingCatalog && visibleCategories.length === 0 ? (
+      {mode !== 'search' && isLoadingCatalog && visibleCategories.length === 0 ? (
         <View style={mobileCatalogCategoryStickyStyle({theme})}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={mobileCatalogCategoryListContentStyle}>
+            contentContainerStyle={mobileCatalogCategoryListContentStyle}
+            onContentSizeChange={(_, width) =>
+              setCategoryStripContentWidth(width || 0)
+            }
+            onLayout={event =>
+              setCategoryStripWidth(event?.nativeEvent?.layout?.width || 0)
+            }
+            onScroll={handleCategoryStripScroll}
+            scrollEventThrottle={80}>
             {[0, 1, 2, 3].map(item => (
               <View
                 key={`mobile-category-skeleton-${item}`}
@@ -228,19 +240,25 @@ export default function ShopMobileCatalog({
             ))}
           </ScrollView>
         </View>
-      ) : visibleCategories.length > 0 ? (
+      ) : mode !== 'search' && visibleCategories.length > 0 ? (
         <View style={mobileCatalogCategoryStickyStyle({theme})}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={mobileCatalogCategoryListContentStyle}>
+            contentContainerStyle={mobileCatalogCategoryListContentStyle}
+            onContentSizeChange={(_, width) =>
+              setCategoryStripContentWidth(width || 0)
+            }
+            onLayout={event =>
+              setCategoryStripWidth(event?.nativeEvent?.layout?.width || 0)
+            }
+            onScroll={handleCategoryStripScroll}
+            scrollEventThrottle={80}>
             {visibleCategories.map(category => {
               const categoryId = getCategoryId(category);
-              const isActive = String(visibleCategoryId || '') === categoryId;
+              const isActive = String(activeCategoryId || '') === categoryId;
               const categoryFile = getShopCategoryFile(category);
-              const imageUrl = categoryFile
-                ? buildFileUrl(categoryFile, company)
-                : '';
+              const imageUrl = categoryFile ? buildFileUrl(categoryFile, company) : '';
 
               return (
                 <TouchableOpacity
@@ -263,6 +281,28 @@ export default function ShopMobileCatalog({
                 </TouchableOpacity>
               );
             })}
+
+            {isLoadingMoreCategories ? (
+              <View
+                style={[
+                  mobileCatalogCategoryCardStyle({isActive: false, theme}),
+                  {
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  },
+                ]}>
+                <ActivityIndicator color={theme.primary} />
+                <Text
+                  numberOfLines={1}
+                  style={mobileCatalogCategoryCardTextStyle({
+                    isActive: false,
+                    theme,
+                  })}>
+                  Mais categorias
+                </Text>
+              </View>
+            ) : null}
           </ScrollView>
         </View>
       ) : null}
@@ -283,11 +323,14 @@ export default function ShopMobileCatalog({
           </View>
         </View>
 
-        {visibleCategories.length > 0 ? (
+        {mode !== 'search' && visibleCategories.length > 0 ? (
           <ShopMobileCategorySelector
-            activeCategoryId={visibleCategoryId || activeCategoryId}
+            activeCategoryId={activeCategoryId}
             categories={visibleCategories}
             company={company}
+            hasMoreCategories={hasMoreCategories}
+            isLoadingMoreCategories={isLoadingMoreCategories}
+            onLoadMoreCategories={onLoadMoreCategories}
             onSelect={handleSelectCategory}
           />
         ) : null}
@@ -299,6 +342,16 @@ export default function ShopMobileCatalog({
             <Text style={mobileCatalogSearchResultsTitleStyle({theme})}>
               Produtos encontrados
             </Text>
+            {isLoadingCatalog && searchProducts.length === 0 ? (
+              <View style={{paddingVertical: 18, alignItems: 'center'}}>
+                <ActivityIndicator color={theme.primary} />
+              </View>
+            ) : null}
+            {!isLoadingCatalog && searchProducts.length === 0 ? (
+              <Text style={{color: theme.muted, fontSize: 13, lineHeight: 19}}>
+                Nenhum produto encontrado para esta busca.
+              </Text>
+            ) : null}
             {(Array.isArray(searchProducts) ? searchProducts : []).map(product => (
               <ShopMobileProductCard
                 key={String(product?.id || product?.['@id'] || product?.product)}
@@ -319,28 +372,17 @@ export default function ShopMobileCatalog({
             </View>
           ))
         ) : (
-          visibleCategories.map(category => {
-            const categoryId = getCategoryId(category);
-
-            return (
-              <View
-                key={categoryId}
-                onLayout={event => {
-                  sectionPositionsRef.current[categoryId] =
-                    event?.nativeEvent?.layout?.y || 0;
-                }}>
-                <ShopMobileProductSection
-                  cart={cart}
-                  category={category}
-                  company={company}
-                  defaultCompany={defaultCompany}
-                  isLoading={isLoadingCatalog}
-                  products={productsByCategoryId?.[categoryId] || []}
-                  refreshCart={refreshCart}
-                />
-              </View>
-            );
-          })
+          <ShopMobileProductSection
+            cart={cart}
+            category={resolvedActiveCategory}
+            company={company}
+            defaultCompany={defaultCompany}
+            isLoading={isLoadingCatalog}
+            isLoadingMore={isLoadingMoreProducts}
+            products={products}
+            refreshCart={refreshCart}
+            totalProductsCount={productTotalItems}
+          />
         )}
       </View>
     </ScrollView>

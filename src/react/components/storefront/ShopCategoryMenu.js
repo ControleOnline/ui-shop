@@ -1,5 +1,11 @@
-import React, {useMemo} from 'react';
-import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {getTopLevelShopCategories} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 import {
@@ -13,14 +19,65 @@ import {
 export default function ShopCategoryMenu({
   activeCategoryId = '',
   categories = [],
+  hasMoreCategories = false,
+  isLoadingMoreCategories = false,
+  onLoadMoreCategories = null,
   onSelect,
   company,
 }) {
   const theme = pickTheme(company);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
   const topLevel = useMemo(
     () => getTopLevelShopCategories(categories),
     [categories],
   );
+
+  const handleScroll = useCallback(
+    event => {
+      if (!hasMoreCategories || isLoadingMoreCategories) {
+        return;
+      }
+
+      const scrollX = Number(event?.nativeEvent?.contentOffset?.x || 0);
+      const viewportWidth = Number(
+        event?.nativeEvent?.layoutMeasurement?.width || 0,
+      );
+      const scrollContentWidth = Number(
+        event?.nativeEvent?.contentSize?.width || 0,
+      );
+
+      if (
+        viewportWidth > 0 &&
+        scrollContentWidth > 0 &&
+        scrollX + viewportWidth >= scrollContentWidth - 96
+      ) {
+        onLoadMoreCategories?.();
+      }
+    },
+    [hasMoreCategories, isLoadingMoreCategories, onLoadMoreCategories],
+  );
+
+  useEffect(() => {
+    if (
+      !hasMoreCategories ||
+      isLoadingMoreCategories ||
+      !containerWidth ||
+      !contentWidth
+    ) {
+      return;
+    }
+
+    if (contentWidth <= containerWidth + 72) {
+      onLoadMoreCategories?.();
+    }
+  }, [
+    containerWidth,
+    contentWidth,
+    hasMoreCategories,
+    isLoadingMoreCategories,
+    onLoadMoreCategories,
+  ]);
 
   return (
     <View
@@ -30,7 +87,13 @@ export default function ShopCategoryMenu({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={categoryMenuContentStyle}>
+        contentContainerStyle={categoryMenuContentStyle}
+        onContentSizeChange={(_, width) => setContentWidth(width || 0)}
+        onLayout={event =>
+          setContainerWidth(event?.nativeEvent?.layout?.width || 0)
+        }
+        onScroll={handleScroll}
+        scrollEventThrottle={80}>
         {topLevel.map(category => (
           <TouchableOpacity
             key={category.id}
@@ -53,6 +116,16 @@ export default function ShopCategoryMenu({
             </Text>
           </TouchableOpacity>
         ))}
+
+        {isLoadingMoreCategories ? (
+          <View
+            style={categoryMenuChipStyle({
+              isActive: false,
+              theme,
+            })}>
+            <ActivityIndicator color={theme.primary} />
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );

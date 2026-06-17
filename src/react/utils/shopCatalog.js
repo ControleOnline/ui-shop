@@ -35,23 +35,31 @@ const readStorageItem = storageKey => {
   }
 };
 
-export const normalizeShopCatalogProductsByCategoryId = payload => {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    return {};
-  }
+export const normalizeShopCollectionResponse = payload => {
+  const items = Array.isArray(payload)
+    ? payload.filter(Boolean)
+    : Array.isArray(payload?.member)
+      ? payload.member.filter(Boolean)
+      : Array.isArray(payload?.['hydra:member'])
+        ? payload['hydra:member'].filter(Boolean)
+        : [];
 
-  return Object.fromEntries(
-    Object.entries(payload).map(([categoryId, products]) => [
-      String(categoryId || ''),
-      Array.isArray(products) ? products.filter(Boolean) : [],
-    ]),
-  );
+  return {
+    items,
+    totalItems: Number(
+      payload?.totalItems || payload?.['hydra:totalItems'] || items.length || 0,
+    ),
+  };
 };
 
-export const getShopCatalogProducts = catalog =>
-  Object.values(
-    normalizeShopCatalogProductsByCategoryId(catalog?.productsByCategoryId),
-  ).flat();
+export const fetchShopCollectionPage = async (resource, params = {}) => {
+  if (!resource) {
+    return {items: [], totalItems: 0};
+  }
+
+  const response = await api.fetch(resource, {params});
+  return normalizeShopCollectionResponse(response);
+};
 
 export const hasShopProductCustomizationGroups = product =>
   product?.type === 'custom' ||
@@ -71,31 +79,7 @@ export const rememberShopCatalogProduct = product => {
 export const getRememberedShopCatalogProduct = productId =>
   shopCatalogProductCache.get(normalizeId(productId)) || null;
 
-export const fetchShopCatalog = ({
-  companyId,
-  context = 'products',
-  productTypes = [],
-} = {}) => {
-  const normalizedCompanyId = normalizeId(companyId);
-
-  if (!normalizedCompanyId) {
-    return Promise.resolve(null);
-  }
-
-  return api.fetch('products/shop-catalog', {
-    params: {
-      company: normalizedCompanyId,
-      context,
-      ...(productTypes.length > 0 ? {type: productTypes} : {}),
-    },
-  });
-};
-
-export const fetchShopCatalogProduct = async ({
-  companyId,
-  productId,
-  productTypes = [],
-} = {}) => {
+export const fetchShopCatalogProduct = async ({productId} = {}) => {
   const normalizedProductId = normalizeId(productId);
 
   if (!normalizedProductId) {
@@ -107,16 +91,9 @@ export const fetchShopCatalogProduct = async ({
     return cachedProduct;
   }
 
-  const catalog = await fetchShopCatalog({
-    companyId,
-    productTypes,
-  });
-
-  const catalogProduct =
-    getShopCatalogProducts(catalog).find(
-      product =>
-        normalizeId(product?.id || product?.['@id']) === normalizedProductId,
-    ) || null;
+  const catalogProduct = await api
+    .fetch(`products/${normalizedProductId}`)
+    .catch(() => null);
 
   if (catalogProduct) {
     rememberShopCatalogProduct(catalogProduct);
@@ -227,37 +204,28 @@ const getShopCategorySortOrder = category => {
   return Number.MAX_SAFE_INTEGER;
 };
 
-// Choose the best initial category based on route, current selection, storage and available data.
+// Choose the best initial category based on route, current selection and persisted storefront state.
 export const resolveShopCatalogCategoryId = ({
   categories,
   routeCategoryId = '',
   preferredCategoryId = '',
   storageKey = '',
 }) => {
-  const topLevelCategories = getTopLevelShopCategories(categories);
-  const availableCategoryIds = new Set(
-    topLevelCategories
-      .map(category => normalizeId(category?.id || category?.['@id']))
-      .filter(Boolean),
-  );
-
   const normalizedRouteCategoryId = normalizeId(routeCategoryId);
-  if (normalizedRouteCategoryId && availableCategoryIds.has(normalizedRouteCategoryId)) {
+  if (normalizedRouteCategoryId) {
     return normalizedRouteCategoryId;
   }
 
   const normalizedPreferredCategoryId = normalizeId(preferredCategoryId);
-  if (
-    normalizedPreferredCategoryId &&
-    availableCategoryIds.has(normalizedPreferredCategoryId)
-  ) {
+  if (normalizedPreferredCategoryId) {
     return normalizedPreferredCategoryId;
   }
 
   const persistedCategoryId = normalizeId(readStorageItem(storageKey));
-  if (persistedCategoryId && availableCategoryIds.has(persistedCategoryId)) {
+  if (persistedCategoryId) {
     return persistedCategoryId;
   }
 
+  const topLevelCategories = getTopLevelShopCategories(categories);
   return normalizeId(topLevelCategories[0]?.id || topLevelCategories[0]?.['@id']);
 };

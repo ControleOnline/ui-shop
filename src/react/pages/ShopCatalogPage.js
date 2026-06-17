@@ -48,28 +48,38 @@ export default function ShopCatalogPage({
     activeCategoryId,
     cart,
     categories,
+    categoryTotalItems,
     defaultCompany,
     franchiseLocatorEnabled,
+    hasMoreCategories,
+    hasMoreProducts,
     isLoadingCatalog,
+    isLoadingMoreCategories,
+    isLoadingMoreProducts,
     isLoadingSalesCompanies,
     products,
-    productsByCategoryId,
+    productTotalItems,
     refreshCart,
     requiresCompanySelection,
     salesCompany,
     salesCompanyOptions,
     salesPageEnabled,
+    searchCategoriesTotalItems,
     searchCategories,
+    searchProductsTotalItems,
     searchProducts,
     selectSalesCompany,
     setActiveCategoryId,
+    loadMoreCategories,
+    loadMoreProducts,
     theme,
   } = useShopCatalogState({
-    loadCategorySections: showMobileCatalog,
     mode,
     routeCategoryId: categoryId,
     searchQuery: normalizedSearchQuery,
   });
+  const [pageLayoutHeight, setPageLayoutHeight] = useState(0);
+  const [pageContentHeight, setPageContentHeight] = useState(0);
   const company = salesCompany || defaultCompany;
   const catalogCompany = useMemo(() => {
     const companyTheme = company?.theme || {};
@@ -110,6 +120,50 @@ export default function ShopCatalogPage({
     },
     [navigation],
   );
+
+  const handleCatalogScroll = useCallback(
+    event => {
+      if (mode === 'search' || !hasMoreProducts || isLoadingMoreProducts) {
+        return;
+      }
+
+      const scrollY = Number(event?.nativeEvent?.contentOffset?.y || 0);
+      const viewportHeight = Number(event?.nativeEvent?.layoutMeasurement?.height || 0);
+      const contentHeight = Number(event?.nativeEvent?.contentSize?.height || 0);
+
+      if (
+        viewportHeight > 0 &&
+        contentHeight > 0 &&
+        scrollY + viewportHeight >= contentHeight - 220
+      ) {
+        loadMoreProducts?.();
+      }
+    },
+    [hasMoreProducts, isLoadingMoreProducts, loadMoreProducts, mode],
+  );
+
+  useEffect(() => {
+    if (
+      mode === 'search' ||
+      !hasMoreProducts ||
+      isLoadingMoreProducts ||
+      !pageLayoutHeight ||
+      !pageContentHeight
+    ) {
+      return;
+    }
+
+    if (pageContentHeight <= pageLayoutHeight + 180) {
+      loadMoreProducts?.();
+    }
+  }, [
+    hasMoreProducts,
+    isLoadingMoreProducts,
+    loadMoreProducts,
+    mode,
+    pageContentHeight,
+    pageLayoutHeight,
+  ]);
 
   // Keep category changes lightweight in `ShopIndex`, while deep links still update the route param.
   const handleSelectCategory = useCallback(
@@ -185,22 +239,38 @@ export default function ShopCatalogPage({
         ) : showMobileCatalog ? (
           <ShopMobileCatalog
             activeCategoryId={activeCategoryId}
+            activeCategory={activeCategory}
             cart={cart}
             categories={categories}
             company={catalogCompany}
             defaultCompany={defaultCompany}
+            hasMoreCategories={hasMoreCategories}
+            hasMoreProducts={hasMoreProducts}
             isLoadingCatalog={isLoadingCatalog}
+            isLoadingMoreCategories={isLoadingMoreCategories}
+            isLoadingMoreProducts={isLoadingMoreProducts}
             mode={mode}
             onOpenMenu={openAccountMenu}
             onSearch={handleSearch}
+            onLoadMoreCategories={loadMoreCategories}
+            onLoadMoreProducts={loadMoreProducts}
             onSelectCategory={handleSelectCategory}
-            productsByCategoryId={productsByCategoryId}
             refreshCart={refreshCart}
+            productTotalItems={productTotalItems}
+            searchCategoriesTotalItems={searchCategoriesTotalItems}
             searchProducts={searchProducts}
+            searchProductsTotalItems={searchProductsTotalItems}
             searchValue={normalizedSearchQuery}
           />
         ) : (
-          <ScrollView contentContainerStyle={catalogPageScrollContentStyle}>
+          <ScrollView
+            contentContainerStyle={catalogPageScrollContentStyle}
+            onContentSizeChange={(_, height) => setPageContentHeight(height || 0)}
+            onLayout={event =>
+              setPageLayoutHeight(event?.nativeEvent?.layout?.height || 0)
+            }
+            onScroll={handleCatalogScroll}
+            scrollEventThrottle={80}>
             <ShopPurchasesLayout
               cartAside={
                 showCartAside ? (
@@ -211,23 +281,26 @@ export default function ShopCatalogPage({
                 />
               ) : null
             }
-            categoryMenu={
-              <ShopCategoryMenu
-                activeCategoryId={activeCategoryId}
-                categories={categories}
-                company={catalogCompany}
-                onSelect={handleSelectCategory}
-              />
-            }
+              categoryMenu={
+                <ShopCategoryMenu
+                  activeCategoryId={activeCategoryId}
+                  categories={categories}
+                  company={catalogCompany}
+                  hasMoreCategories={hasMoreCategories}
+                  isLoadingMoreCategories={isLoadingMoreCategories}
+                  onLoadMoreCategories={loadMoreCategories}
+                  onSelect={handleSelectCategory}
+                />
+              }
               isSidebarCompact={isSidebarCompact}
               mainContent={
                 <View style={catalogPageSectionStackStyle}>
                   <ShopCategoryHero
-                    categoriesCount={searchCategories.length}
+                    categoriesCount={mode === 'search' ? searchCategoriesTotalItems : categoryTotalItems}
                     category={activeCategory}
                     company={catalogCompany}
                     mode={mode}
-                    productsCount={mode === 'search' ? searchProducts.length : products.length}
+                    productsCount={mode === 'search' ? searchProductsTotalItems : productTotalItems}
                     query={normalizedSearchQuery}
                   />
 
@@ -250,8 +323,12 @@ export default function ShopCatalogPage({
                         : 'Nenhum produto nesta categoria'
                     }
                     isLoading={isLoadingCatalog}
+                    isLoadingMore={isLoadingMoreProducts}
                     products={mode === 'search' ? searchProducts : products}
                     refreshCart={refreshCart}
+                    totalProductsCount={
+                      mode === 'search' ? searchProductsTotalItems : productTotalItems
+                    }
                     title={mode === 'search' ? 'Produtos encontrados' : activeCategory?.name || 'Produtos'}
                   />
 
@@ -317,11 +394,12 @@ export default function ShopCatalogPage({
                   categories={categories}
                   company={catalogCompany}
                   compact={isSidebarCompact}
+                  isLoadingMoreCategories={isLoadingMoreCategories}
                   onSelect={handleSelectCategory}
                   onToggleCompact={() =>
                       setIsSidebarCompact(currentValue => !currentValue)
                     }
-                  />
+                />
                 ) : null
               }
             />

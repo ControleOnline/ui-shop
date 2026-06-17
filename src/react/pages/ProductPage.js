@@ -101,7 +101,6 @@ export default function ProductPage() {
   const isMobile = width < 900;
   const productId = String(route.params?.id || '');
   const productsStore = useStore('products');
-  const categoriesStore = useStore('categories');
   const productGroupStore = useStore('product_group');
   const [product, setProduct] = useState({});
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
@@ -143,7 +142,6 @@ export default function ProductPage() {
   useFocusEffect(
     useCallback(() => {
       if (!productId || requiresCompanySelection || !salesCompany?.id) {
-        categoriesStore.actions.setItems([]);
         setProduct({});
         setHasCustomizationGroups(false);
         setIsCheckingGroups(false);
@@ -240,25 +238,10 @@ export default function ProductPage() {
 
       loadProduct();
 
-      if (salesCompany?.id) {
-        categoriesStore.actions.getItems({
-          itemsPerPage: 500,
-          exists: {categoryFiles: 'true'},
-          categoryFiles: {file: {fileType: 'image'}},
-          order: {name: 'ASC'},
-          context: 'products',
-          company: salesCompany.id,
-          ...silentStoreMeta,
-        });
-      } else {
-        categoriesStore.actions.setItems([]);
-      }
-
       return () => {
         isMounted = false;
       };
     }, [
-      categoriesStore.actions,
       catalogProductTypesKey,
       productGroupStore.actions,
       productId,

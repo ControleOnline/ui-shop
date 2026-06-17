@@ -62,3 +62,14 @@ export const mobileProductSectionEmptyTextStyle = ({theme}) => ({
   fontSize: 13,
   textAlign: 'center',
 });
+
+export const mobileProductSectionFooterStyle = ({theme}) => ({
+  marginTop: 8,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: theme.cardBorder,
+  backgroundColor: theme.surface,
+  paddingVertical: 12,
+  alignItems: 'center',
+  justifyContent: 'center',
+});

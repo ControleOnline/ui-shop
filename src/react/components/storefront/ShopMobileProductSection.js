@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, View, useWindowDimensions} from 'react-native';
+import {ActivityIndicator, Text, View, useWindowDimensions} from 'react-native';
 
 import ShopMobileProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileProductCard';
 import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
@@ -8,6 +8,7 @@ import {getShopCategoryDescription} from '@controleonline/ui-shop/src/react/util
 import {
   mobileProductSectionEmptyStyle,
   mobileProductSectionEmptyTextStyle,
+  mobileProductSectionFooterStyle,
   mobileProductSectionHeaderStyle,
   mobileProductSectionCardSlotStyle,
   mobileProductSectionListStyle,
@@ -23,8 +24,10 @@ export default function ShopMobileProductSection({
   company = null,
   defaultCompany = null,
   isLoading = false,
+  isLoadingMore = false,
   products = [],
   refreshCart = null,
+  totalProductsCount = 0,
 }) {
   const {width} = useWindowDimensions();
   const theme = pickTheme(company);
@@ -46,7 +49,7 @@ export default function ShopMobileProductSection({
         </View>
 
         <Text style={mobileProductSectionMetaStyle({theme})}>
-          {rows.length}
+          {totalProductsCount || rows.length}
         </Text>
       </View>
 
@@ -89,6 +92,12 @@ export default function ShopMobileProductSection({
               />
             </View>
           ))}
+        </View>
+      ) : null}
+
+      {isLoadingMore && rows.length > 0 ? (
+        <View style={mobileProductSectionFooterStyle({theme})}>
+          <ActivityIndicator color={theme.primary} />
         </View>
       ) : null}
     </View>
