@@ -894,27 +894,23 @@ export default function CheckoutPage() {
         sellerCompanyId
           ? walletPaymentTypeActions.getItems({
               people: `/people/${sellerCompanyId}`,
-              itemsPerPage: 200,
             })
           : Promise.resolve([]),
         asaasConfigured
-          ? cardActions.getItems({itemsPerPage: 200})
+          ? cardActions.getItems({})
           : Promise.resolve([]),
         statusActions.getItems({
           context: 'invoice',
-          itemsPerPage: 200,
         }),
         resolvedCart?.id
           ? invoiceActions.getItems({
               orderId: resolvedCart.id,
               'order.order': `/orders/${resolvedCart.id}`,
-              itemsPerPage: 50,
             })
           : Promise.resolve([]),
         clientIri
           ? addressActions.getItems({
               people: clientIri,
-              itemsPerPage: 50,
             }).catch(() => [])
           : Promise.resolve([]),
       ]);
@@ -1003,7 +999,6 @@ export default function CheckoutPage() {
       deviceConfigActions
         .getItems({
           people: `/people/${sellerCompanyId}`,
-          itemsPerPage: 200,
         })
         .then(data => {
           if (!isMounted) {
@@ -1084,7 +1079,6 @@ export default function CheckoutPage() {
       .getItems({
         people: `/people/${sellerCompanyId}`,
         wallet: walletIds,
-        itemsPerPage: 200,
       })
       .then(response => {
         if (isMounted) {
@@ -2424,3 +2418,4 @@ export default function CheckoutPage() {
     </ShopShell>
   );
 }
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.

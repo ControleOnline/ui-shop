@@ -1,3 +1,4 @@
+// TODO(store-first): quando este helper for mexido, trocar chamadas diretas de api.fetch por stores e evitar passar dados em objetos quando o store ja resolver isso.
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {api} from '@controleonline/ui-common/src/api';
 

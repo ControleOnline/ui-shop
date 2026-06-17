@@ -415,3 +415,4 @@ export default function ShopNativeMap({
     </NativeMapView>
   );
 }
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores e evitar chamadas HTTP diretas quando o store ja resolver isso.

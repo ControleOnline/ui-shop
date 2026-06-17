@@ -1,3 +1,4 @@
+// TODO(store-first): quando esta tela for mexida, mover a carga para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {api} from '@controleonline/ui-common/src/api';

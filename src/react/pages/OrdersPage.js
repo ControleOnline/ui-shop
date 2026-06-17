@@ -58,7 +58,6 @@ export default function OrdersPage() {
         orderType: 'sale',
         provider: salesCompany?.id || defaultCompany.id,
         page: 1,
-        itemsPerPage: 24,
       });
     }, [
       currentCompany?.id,

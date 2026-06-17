@@ -1029,3 +1029,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5EEF5',
   },
 });
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores e evitar chamadas HTTP diretas quando o store ja resolver isso.

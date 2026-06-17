@@ -172,7 +172,6 @@ export default function ShopQuantityControl({
 
     const baseFilter = {
       product: productId,
-      itemsPerPage: 1,
     };
 
     const groupFilters = providerId
@@ -292,3 +291,4 @@ export default function ShopQuantityControl({
     </View>
   );
 }
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.

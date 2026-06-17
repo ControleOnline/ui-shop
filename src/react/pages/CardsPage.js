@@ -131,7 +131,7 @@ export default function CardsPage() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await cardActions.getItems({itemsPerPage: 200});
+      const response = await cardActions.getItems({});
       setCards(extractItems(response));
     } catch (e) {
       setError(e?.message || 'Não foi possível carregar os cartões salvos.');

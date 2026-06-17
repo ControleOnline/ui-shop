@@ -182,7 +182,6 @@ export default function ShopLoyaltyPage() {
         provider: providerId,
         orderType: 'fidelity',
         page: 1,
-        itemsPerPage: showHistory ? 8 : 1,
       };
 
       if (!showHistory) {
@@ -199,8 +198,7 @@ export default function ShopLoyaltyPage() {
           const stamps = await ordersStore.actions.getItems({
             mainOrderId: card?.id,
             orderType: 'sale',
-            page: 1,
-            itemsPerPage: Math.max(requiredSales || 1, 1),
+            page: 1, 1),
           });
 
           return {
