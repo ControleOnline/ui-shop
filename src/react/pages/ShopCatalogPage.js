@@ -256,6 +256,7 @@ export default function ShopCatalogPage({
             onLoadMoreProducts={loadMoreProducts}
             onSelectCategory={handleSelectCategory}
             refreshCart={refreshCart}
+            products={mode === 'search' ? searchProducts : products}
             productTotalItems={productTotalItems}
             searchCategoriesTotalItems={searchCategoriesTotalItems}
             searchProducts={searchProducts}
