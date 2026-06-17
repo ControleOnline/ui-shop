@@ -623,11 +623,9 @@ export default function useShopCatalogState({
       Boolean(productTotalItems) && products.length < productTotalItems,
     isLoadingCatalog:
       isLoadingCategories || isLoadingProducts || isLoadingSearch,
-    isLoadingCategories,
     isLoadingMoreCategories,
     isLoadingMoreProducts,
     isLoadingSalesCompanies,
-    isLoadingSearch,
     loadMoreCategories,
     loadMoreProducts,
     productTotalItems,
