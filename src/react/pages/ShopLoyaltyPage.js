@@ -198,7 +198,7 @@ export default function ShopLoyaltyPage() {
           const stamps = await ordersStore.actions.getItems({
             mainOrderId: card?.id,
             orderType: 'sale',
-            page: 1, 1),
+            page: 1,
           });
 
           return {
