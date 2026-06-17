@@ -194,7 +194,6 @@ export default function ProductPage() {
 
           const baseFilter = {
             product: nextProductId,
-            itemsPerPage: 1,
           };
 
           const groupFilters = providerId

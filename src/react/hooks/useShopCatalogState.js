@@ -13,11 +13,6 @@ import {
   rememberShopCatalogProduct,
 } from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
-const CATEGORY_PAGE_SIZE = 12;
-const PRODUCT_PAGE_SIZE = 5;
-const SEARCH_PRODUCT_PAGE_SIZE = 12;
-const SEARCH_CATEGORY_PAGE_SIZE = 12;
-
 const normalizeCollection = payload =>
   Array.isArray(payload) ? payload.filter(Boolean) : [];
 
@@ -184,7 +179,6 @@ export default function useShopCatalogState({
           categoryFiles: {file: {fileType: 'image'}},
           'order[name]': 'ASC',
           page: normalizedPage,
-          itemsPerPage: CATEGORY_PAGE_SIZE,
         });
 
         if (!mountedRef.current || requestToken !== categoryRequestTokenRef.current) {
@@ -253,7 +247,6 @@ export default function useShopCatalogState({
           'productCategory.category': `/categories/${normalizedCategoryId}`,
           'order[product]': 'ASC',
           page: normalizedPage,
-          itemsPerPage: PRODUCT_PAGE_SIZE,
           ...productFileFilters,
         });
 
@@ -571,7 +564,6 @@ export default function useShopCatalogState({
         type: normalizedCatalogProductTypes,
         'order[product]': 'ASC',
         page: 1,
-        itemsPerPage: SEARCH_PRODUCT_PAGE_SIZE,
         product: normalizedSearchQuery,
         ...productFileFilters,
       }),
@@ -582,7 +574,6 @@ export default function useShopCatalogState({
         categoryFiles: {file: {fileType: 'image'}},
         'order[name]': 'ASC',
         page: 1,
-        itemsPerPage: SEARCH_CATEGORY_PAGE_SIZE,
         name: normalizedSearchQuery,
       }),
     ])
