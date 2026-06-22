@@ -4,6 +4,7 @@ import md5 from 'md5';
 import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 
@@ -57,7 +58,7 @@ export default function ShopProfilePage() {
   const {defaultCompany} = useShopCart();
   const theme = pickTheme(defaultCompany);
 
-  const {user} = authStore.getters;
+  const {isLogged, sessionChecked, user} = authStore.getters;
   const authActions = authStore.actions;
   const {currentCompany} = peopleStore.getters;
   const avatarUrl = getAvatarUrl(user || {});
@@ -73,6 +74,23 @@ export default function ShopProfilePage() {
   const phone = currentCompany?.phone?.[0]
     ? `(${currentCompany.phone[0].ddd || ''}) ${currentCompany.phone[0].phone || ''}`
     : 'Sem telefone cadastrado';
+
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para acessar seu perfil"
+            description="Seu perfil, enderecos e dados de contato ficam protegidos pelo cadastro."
+          />
+        )}
+      </ShopShell>
+    );
+  }
 
   return (
     <ShopShell

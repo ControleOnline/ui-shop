@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useStore} from '@store';
 import {api} from '@controleonline/ui-common/src/api';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
 import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
@@ -102,6 +103,8 @@ const extractItems = response => {
   }
   return [];
 };
+
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
 const normalizeText = value =>
   String(value || '')
@@ -894,23 +897,29 @@ export default function CheckoutPage() {
         sellerCompanyId
           ? walletPaymentTypeActions.getItems({
               people: `/people/${sellerCompanyId}`,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             })
           : Promise.resolve([]),
         asaasConfigured
-          ? cardActions.getItems({})
+          ? cardActions.getItems({
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
+            })
           : Promise.resolve([]),
         statusActions.getItems({
           context: 'invoice',
+          itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
         }),
         resolvedCart?.id
           ? invoiceActions.getItems({
               orderId: resolvedCart.id,
               'order.order': `/orders/${resolvedCart.id}`,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             })
           : Promise.resolve([]),
         clientIri
           ? addressActions.getItems({
               people: clientIri,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             }).catch(() => [])
           : Promise.resolve([]),
       ]);
@@ -999,6 +1008,7 @@ export default function CheckoutPage() {
       deviceConfigActions
         .getItems({
           people: `/people/${sellerCompanyId}`,
+          itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
         })
         .then(data => {
           if (!isMounted) {
@@ -1079,6 +1089,7 @@ export default function CheckoutPage() {
       .getItems({
         people: `/people/${sellerCompanyId}`,
         wallet: walletIds,
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       })
       .then(response => {
         if (isMounted) {
@@ -1525,6 +1536,23 @@ export default function CheckoutPage() {
       selectedCard?.id,
     ],
   );
+
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para finalizar o pedido"
+            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
+          />
+        )}
+      </ShopShell>
+    );
+  }
 
   return (
     <ShopShell

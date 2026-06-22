@@ -2,6 +2,7 @@ import React, {useCallback, useState} from 'react';
 import {ScrollView, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
@@ -29,6 +30,8 @@ import {
 } from './OrdersPage.styles';
 
 import { inlineStyle_75_10 } from './OrdersPage.styles';
+
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
 export default function OrdersPage() {
   const navigation = useNavigation();
@@ -58,6 +61,7 @@ export default function OrdersPage() {
         orderType: 'sale',
         provider: salesCompany?.id || defaultCompany.id,
         page: 1,
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       });
     }, [
       currentCompany?.id,
@@ -75,6 +79,23 @@ export default function OrdersPage() {
   const pageWidth = Math.max(effectiveWidth - 28, 320);
   const gap = width < 640 ? 10 : 16;
   const cardWidth = (pageWidth - gap * (columns - 1)) / columns;
+
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para ver seus pedidos"
+            description="Seus pedidos ficam vinculados ao cadastro usado no checkout."
+          />
+        )}
+      </ShopShell>
+    );
+  }
 
   return (
     <ShopShell

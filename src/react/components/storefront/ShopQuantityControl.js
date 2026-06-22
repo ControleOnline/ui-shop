@@ -172,6 +172,7 @@ export default function ShopQuantityControl({
 
     const baseFilter = {
       product: productId,
+      itemsPerPage: 1,
     };
 
     const groupFilters = providerId

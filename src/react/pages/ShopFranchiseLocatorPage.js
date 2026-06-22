@@ -29,13 +29,18 @@ import {
   buildNavigationMapQuery,
   buildWazeNavigationUrl,
 } from '@controleonline/ui-common/src/react/utils/mapNavigation';
-import {fetchShopFranchiseDirectory} from '@controleonline/ui-common/src/react/utils/shopFranchises';
+import {
+  fetchShopFranchiseDirectory,
+  SHOP_FRANCHISE_PAGE_SIZE,
+} from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {
   normalizeShopEntityId,
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 const geocodeCache = new Map();
+const GEOCODE_BATCH_SIZE = 5;
+const MAX_GEOCODE_RECORDS = 50;
 
 const getNativeWebView = () => {
   if (Platform.OS === 'web') {
@@ -215,6 +220,28 @@ const geocodeMapQuery = async ({apiKey, mapQuery}) => {
 
   geocodeCache.set(cacheKey, request);
   return request;
+};
+
+const resolveGeocodeRecords = async ({apiKey, records}) => {
+  const entries = [];
+  const limitedRecords = records.slice(0, MAX_GEOCODE_RECORDS);
+
+  for (let index = 0; index < limitedRecords.length; index += GEOCODE_BATCH_SIZE) {
+    const batch = limitedRecords.slice(index, index + GEOCODE_BATCH_SIZE);
+    const batchEntries = await Promise.all(
+      batch.map(async record => {
+        const coordinates = await geocodeMapQuery({
+          apiKey,
+          mapQuery: record.mapQuery,
+        });
+        return [record.addressId, coordinates];
+      }),
+    );
+
+    entries.push(...batchEntries);
+  }
+
+  return entries;
 };
 
 const resolveCompanyPhone = company => {
@@ -609,6 +636,8 @@ export default function ShopFranchiseLocatorPage() {
 
       fetchShopFranchiseDirectory({
         companyId: defaultCompany.id,
+        publicDirectory: true,
+        itemsPerPage: SHOP_FRANCHISE_PAGE_SIZE,
       })
         .then(items => {
           if (isMounted) {
@@ -735,15 +764,10 @@ export default function ShopFranchiseLocatorPage() {
     let cancelled = false;
     setIsResolvingCoordinates(true);
 
-    Promise.all(
-      unresolvedRecords.map(async record => {
-        const coordinates = await geocodeMapQuery({
-          apiKey: googleMapsApiKey,
-          mapQuery: record.mapQuery,
-        });
-        return [record.addressId, coordinates];
-      }),
-    )
+    resolveGeocodeRecords({
+      apiKey: googleMapsApiKey,
+      records: unresolvedRecords,
+    })
       .then(entries => {
         if (cancelled) {
           return;

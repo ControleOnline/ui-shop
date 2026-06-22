@@ -3,6 +3,8 @@ import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {api} from '@controleonline/ui-common/src/api';
 
 const SHOP_CATALOG_CATEGORY_STORAGE_PREFIX = 'shop-purchases-active-category';
+export const SHOP_CATALOG_PAGE_SIZE = 30;
+export const SHOP_CATALOG_MAX_PAGE_SIZE = 50;
 const shopCatalogProductCache = new Map();
 const SHOP_CATEGORY_DESCRIPTION_BY_NAME = {
   'lanches gyros':
@@ -58,7 +60,23 @@ export const fetchShopCollectionPage = async (resource, params = {}) => {
     return {items: [], totalItems: 0};
   }
 
-  const response = await api.fetch(resource, {params});
+  const requestedItemsPerPage = Number(params?.itemsPerPage);
+  const itemsPerPage = Math.max(
+    1,
+    Math.min(
+      SHOP_CATALOG_MAX_PAGE_SIZE,
+      Number.isFinite(requestedItemsPerPage)
+        ? requestedItemsPerPage
+        : SHOP_CATALOG_PAGE_SIZE,
+    ),
+  );
+
+  const response = await api.fetch(resource, {
+    params: {
+      ...params,
+      itemsPerPage,
+    },
+  });
   return normalizeShopCollectionResponse(response);
 };
 

@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
@@ -51,6 +52,7 @@ const isPaidSale = order => {
 };
 
 const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
 export default function ShopLoyaltyPage() {
   const navigation = useNavigation();
@@ -182,6 +184,7 @@ export default function ShopLoyaltyPage() {
         provider: providerId,
         orderType: 'fidelity',
         page: 1,
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       };
 
       if (!showHistory) {
@@ -199,6 +202,10 @@ export default function ShopLoyaltyPage() {
             mainOrderId: card?.id,
             orderType: 'sale',
             page: 1,
+            itemsPerPage: Math.max(
+              1,
+              Math.min(SHOP_COLLECTION_ITEMS_PER_PAGE, requiredSales || SHOP_COLLECTION_ITEMS_PER_PAGE),
+            ),
           });
 
           return {
@@ -450,7 +457,13 @@ export default function ShopLoyaltyPage() {
                 </TouchableOpacity>
               </View>
 
-              {isLoadingCards ? (
+              {sessionChecked && !isLogged ? (
+                <ShopAuthRequiredState
+                  theme={theme}
+                  title="Entre para ver seus carimbos"
+                  description="O programa de fidelidade e publico, mas seus cartoes e carimbos dependem do cadastro."
+                />
+              ) : isLoadingCards ? (
                 <View
                   style={[
                     styles.summaryCard,

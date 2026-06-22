@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
@@ -49,6 +50,8 @@ const extractItems = response => {
     return response['hydra:member'];
   return [];
 };
+
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
 const digitsOnly = value => String(value || '').replace(/\D/g, '');
 
@@ -131,7 +134,9 @@ export default function CardsPage() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await cardActions.getItems({});
+      const response = await cardActions.getItems({
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
+      });
       setCards(extractItems(response));
     } catch (e) {
       setError(e?.message || 'Não foi possível carregar os cartões salvos.');
@@ -285,6 +290,23 @@ export default function CardsPage() {
     },
     [cardActions, loadCards],
   );
+
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para gerenciar cartoes"
+            description="Cartoes salvos ficam vinculados ao seu cadastro."
+          />
+        )}
+      </ShopShell>
+    );
+  }
 
   return (
     <ShopShell

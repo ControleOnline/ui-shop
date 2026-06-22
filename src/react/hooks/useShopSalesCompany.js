@@ -1,7 +1,10 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 
-import {fetchShopFranchiseDirectory} from '@controleonline/ui-common/src/react/utils/shopFranchises';
+import {
+  fetchShopFranchiseDirectory,
+  SHOP_FRANCHISE_PAGE_SIZE,
+} from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
@@ -32,6 +35,8 @@ const loadDirectory = async companyId => {
 
   const request = fetchShopFranchiseDirectory({
     companyId: normalizedCompanyId,
+    publicDirectory: true,
+    itemsPerPage: SHOP_FRANCHISE_PAGE_SIZE,
   })
     .then(items => {
       const nextItems = Array.isArray(items) ? items.filter(Boolean) : [];
@@ -59,6 +64,7 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
   const hasConfiguredSalesCompanies = visibleFranchiseCompanyIds.length > 0;
 
   const [directory, setDirectory] = useState([]);
+  const [directoryLoadFailed, setDirectoryLoadFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(loadOptions);
   const [storedSelection, setStoredSelection] = useState(() =>
     readStoredShopSalesCompany(defaultCompanyId),
@@ -91,12 +97,14 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
         !hasConfiguredSalesCompanies
       ) {
         setDirectory([]);
+        setDirectoryLoadFailed(false);
         setIsLoading(false);
         return undefined;
       }
 
       let isMounted = true;
       setIsLoading(true);
+      setDirectoryLoadFailed(false);
 
       loadDirectory(defaultCompanyId)
         .then(items => {
@@ -107,6 +115,7 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
         .catch(() => {
           if (isMounted) {
             setDirectory([]);
+            setDirectoryLoadFailed(true);
           }
         })
         .finally(() => {
@@ -169,12 +178,13 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     : matchedSelection ||
       (selectionOptions.length === 1 ? selectionOptions[0] : null) ||
       fallbackStoredSelection ||
-      (!isLoading && selectionOptions.length === 0 ? defaultCompany : null);
+      null;
   const requiresCompanySelection =
     loadOptions &&
-    ((hasConfiguredSalesCompanies && isLoading) ||
-      selectionOptions.length > 1) &&
-    !matchedSelection;
+    hasConfiguredSalesCompanies &&
+    (isLoading ||
+      directoryLoadFailed ||
+      (!matchedSelection && selectionOptions.length !== 1));
 
   useEffect(() => {
     if (!loadOptions || !defaultCompanyId) {
@@ -253,7 +263,9 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
   return {
     clearSalesCompanySelection,
     defaultCompany,
+    directoryLoadFailed,
     isLoading,
+    franchiseDirectoryLoadFailed: directoryLoadFailed,
     requiresCompanySelection,
     salesCompany,
     salesCompanyOptions: selectionOptions,

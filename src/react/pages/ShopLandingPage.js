@@ -1,6 +1,5 @@
-import React, {useEffect, useLayoutEffect} from 'react';
+import React, {useLayoutEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
-import {useStore} from '@store';
 
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
@@ -17,8 +16,6 @@ import {
 
 export default function ShopLandingPage() {
   const navigation = useNavigation();
-  const authStore = useStore('auth');
-  const {isLogged, sessionChecked} = authStore.getters;
   const {
     defaultCompany,
     homeEntries,
@@ -27,30 +24,10 @@ export default function ShopLandingPage() {
   const resolvedPrimaryEntry = homeEntries[0]?.key || '';
   const shouldRenderSales = resolvedPrimaryEntry === SHOP_HOME_OPTION_SALES;
   const isLoadingDefaultCompany = !defaultCompany?.id;
-  const shouldRequireLogin =
-    resolvedPrimaryEntry === SHOP_HOME_OPTION_LOYALTY;
 
   useLayoutEffect(() => {
     navigation.setParams({showBottomCart: shouldRenderSales});
   }, [navigation, shouldRenderSales]);
-
-  useEffect(() => {
-    if (!shouldRequireLogin || !sessionChecked || isLogged) {
-      return;
-    }
-
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'SignInPage',
-          params: {
-            redirectRoute: 'HomePage',
-          },
-        },
-      ],
-    });
-  }, [isLogged, navigation, sessionChecked, shouldRequireLogin]);
 
   if (resolvedPrimaryEntry === SHOP_HOME_OPTION_SALES) {
     return <StorefrontHome />;
@@ -58,22 +35,6 @@ export default function ShopLandingPage() {
 
   if (resolvedPrimaryEntry === SHOP_HOME_OPTION_FRANCHISE_LOCATOR) {
     return <ShopFranchiseLocatorPage />;
-  }
-
-  if (shouldRequireLogin && (!sessionChecked || !isLogged)) {
-    return (
-      <ShopShell hideHeader showSearch={false}>
-        {() => (
-          <ShopFeatureState
-            theme={theme}
-            iconName="login"
-            title="Entrar para acessar"
-            description="A fidelidade depende da sua conta para exibir cartoes, carimbos e brindes."
-            secondaryText="Voce sera direcionado para autenticacao."
-          />
-        )}
-      </ShopShell>
-    );
   }
 
   if (resolvedPrimaryEntry === SHOP_HOME_OPTION_LOYALTY) {
