@@ -1,11 +1,14 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Image, Linking, Platform, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {ActivityIndicator, Image, Linking, Platform, Text, View} from 'react-native';
+import {env} from '@env';
 
 import styles from './ShopNativeMap.styles';
+import {
+  buildAndroidWebMapHtml,
+  resolveWebViewBaseUrlForDomain,
+} from './ShopNativeMap.shared';
 
 const getNativeMapComponents = () => {
-  // No Android, não usar MapView nativo pois requer API key no AndroidManifest.xml
-  // Em vez disso, usar WebView com chave dinâmica do banco de dados
   if (Platform.OS === 'android') {
     return null;
   }
@@ -17,7 +20,20 @@ const getNativeMapComponents = () => {
   }
 };
 
+const getNativeWebView = () => {
+  if (Platform.OS !== 'android') {
+    return null;
+  }
+
+  try {
+    return require('react-native-webview').WebView;
+  } catch {
+    return null;
+  }
+};
+
 const nativeMapComponents = getNativeMapComponents();
+const NativeWebView = getNativeWebView();
 const NativeMapView = nativeMapComponents?.default || null;
 const Marker = nativeMapComponents?.Marker || null;
 const Callout = nativeMapComponents?.Callout || null;
@@ -25,8 +41,13 @@ const CalloutSubview = nativeMapComponents?.CalloutSubview || null;
 const Polyline = nativeMapComponents?.Polyline || null;
 const PROVIDER_GOOGLE = nativeMapComponents?.PROVIDER_GOOGLE || null;
 export const HAS_NATIVE_MAP_SUPPORT = Boolean(
-  NativeMapView && Marker && Callout,
+  (Platform.OS === 'android' && NativeWebView) ||
+    (NativeMapView && Marker && Callout),
 );
+
+const DEFAULT_ANDROID_ERROR_MESSAGE = 'Nao foi possivel carregar o mapa no Android.';
+const GOOGLE_MAPS_WEBVIEW_ERROR_PATTERN =
+  /google maps|maps api|referernotallowedmaperror|billingnotenabledmaperror|apikey|invalidkeymaperror|apinotactivatedmaperror/i;
 
 const DEFAULT_REGION = {
   latitude: -23.55052,
@@ -156,15 +177,8 @@ const CalloutAction = ({label, onPress, primary = false}) => {
   return (
     <CalloutSubview
       onPress={onPress}
-      style={[
-        styles.actionButton,
-        primary && styles.actionButtonPrimary,
-      ]}>
-      <Text
-        style={[
-          styles.actionText,
-          primary && styles.actionTextPrimary,
-        ]}>
+      style={[styles.actionButton, primary && styles.actionButtonPrimary]}>
+      <Text style={[styles.actionText, primary && styles.actionTextPrimary]}>
         {label}
       </Text>
     </CalloutSubview>
@@ -174,12 +188,15 @@ const CalloutAction = ({label, onPress, primary = false}) => {
 export default function ShopNativeMap({
   apiKey = '',
   markerPayloads = [],
+  routeColor = '#0EA5E9',
   userCoordinates = null,
 }) {
   const mapRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   const [selectedMarkerId, setSelectedMarkerId] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [androidMapState, setAndroidMapState] = useState('loading');
+  const [androidMapErrorMessage, setAndroidMapErrorMessage] = useState('');
   const hasUserCoordinates =
     Number.isFinite(userCoordinates?.latitude) &&
     Number.isFinite(userCoordinates?.longitude);
@@ -238,10 +255,23 @@ export default function ShopNativeMap({
     userCoordinates,
   ]);
 
-  const initialRegion = useMemo(
-    () => buildRegion(focusCoordinates),
-    [focusCoordinates],
+  const initialRegion = useMemo(() => buildRegion(focusCoordinates), [focusCoordinates]);
+  const androidMapBaseUrl = useMemo(
+    () => resolveWebViewBaseUrlForDomain(env?.DOMAIN),
+    [],
   );
+  const androidMapHtml = useMemo(() => {
+    if (Platform.OS !== 'android') {
+      return '';
+    }
+
+    return buildAndroidWebMapHtml({
+      apiKey,
+      markerPayloads,
+      routeColor,
+      userCoordinates,
+    });
+  }, [apiKey, markerPayloads, routeColor, userCoordinates]);
 
   useEffect(() => {
     if (!selectedMarkerId) {
@@ -252,6 +282,16 @@ export default function ShopNativeMap({
       setSelectedMarkerId(null);
     }
   }, [selectedMarker, selectedMarkerId]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return undefined;
+    }
+
+    setAndroidMapState('loading');
+    setAndroidMapErrorMessage('');
+    return undefined;
+  }, [androidMapHtml]);
 
   useEffect(() => {
     if (!hasUserCoordinates || !selectedMarker || !apiKey || !Polyline) {
@@ -286,13 +326,7 @@ export default function ShopNativeMap({
     return () => {
       cancelled = true;
     };
-  }, [
-    Polyline,
-    apiKey,
-    hasUserCoordinates,
-    selectedMarker,
-    userCoordinates,
-  ]);
+  }, [Polyline, apiKey, hasUserCoordinates, selectedMarker, userCoordinates]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || focusCoordinates.length === 0) {
@@ -323,8 +357,119 @@ export default function ShopNativeMap({
     return () => clearTimeout(timeoutId);
   }, [focusCoordinates, mapReady]);
 
-  if (!HAS_NATIVE_MAP_SUPPORT) {
+  const openExternalUrl = useCallback(url => {
+    const normalizedUrl = String(url || '').trim();
+    if (!normalizedUrl) {
+      return;
+    }
+
+    Linking.openURL(normalizedUrl).catch(() => {});
+  }, []);
+
+  const handleAndroidNavigation = useCallback(
+    request => {
+      const url = String(request?.url || '');
+
+      if (!url || url === 'about:blank') {
+        return true;
+      }
+
+      if (
+        url.includes('google.com/maps') ||
+        url.includes('maps.google.com') ||
+        url.includes('waze.com/ul')
+      ) {
+        openExternalUrl(url);
+        return false;
+      }
+
+      return true;
+    },
+    [openExternalUrl],
+  );
+
+  if (!HAS_NATIVE_MAP_SUPPORT || !apiKey || markerPayloads.length === 0) {
     return null;
+  }
+
+  if (Platform.OS === 'android') {
+    return (
+      <View style={styles.mapContainer}>
+        <NativeWebView
+          source={{html: androidMapHtml, baseUrl: androidMapBaseUrl}}
+          style={styles.mapViewport}
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          setSupportMultipleWindows={false}
+          onShouldStartLoadWithRequest={handleAndroidNavigation}
+          onMessage={event => {
+            try {
+              const message = JSON.parse(event.nativeEvent.data);
+
+              if (message?.type === 'ready') {
+                setAndroidMapState('ready');
+                setAndroidMapErrorMessage('');
+                return;
+              }
+
+              if (message?.type === 'open-url') {
+                openExternalUrl(message?.url);
+                return;
+              }
+
+              if (message?.type === 'error') {
+                setAndroidMapState('error');
+                setAndroidMapErrorMessage(
+                  String(message?.message || '').trim() || DEFAULT_ANDROID_ERROR_MESSAGE,
+                );
+                return;
+              }
+
+              if (message?.type === 'window-error') {
+                setAndroidMapState('error');
+                setAndroidMapErrorMessage(
+                  String(message?.message || '').trim() || DEFAULT_ANDROID_ERROR_MESSAGE,
+                );
+                return;
+              }
+
+              if (message?.type === 'console') {
+                const consoleMessage = String(message?.message || '').trim();
+
+                if (GOOGLE_MAPS_WEBVIEW_ERROR_PATTERN.test(consoleMessage)) {
+                  setAndroidMapErrorMessage(consoleMessage);
+                }
+              }
+            } catch {
+              setAndroidMapState('error');
+              setAndroidMapErrorMessage(DEFAULT_ANDROID_ERROR_MESSAGE);
+            }
+          }}
+          onError={() => {
+            setAndroidMapState('error');
+            setAndroidMapErrorMessage(current =>
+              current || DEFAULT_ANDROID_ERROR_MESSAGE,
+            );
+          }}
+        />
+        {androidMapState !== 'ready' ? (
+          <View style={styles.mapOverlay}>
+            {androidMapState !== 'error' ? (
+              <ActivityIndicator color={routeColor} />
+            ) : null}
+            <Text style={styles.mapOverlayText}>
+              {androidMapState === 'error'
+                ? androidMapErrorMessage || DEFAULT_ANDROID_ERROR_MESSAGE
+                : 'Carregando mapa das unidades...'}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
   }
 
   return (
@@ -357,7 +502,7 @@ export default function ShopNativeMap({
       {Polyline && routeCoordinates.length > 1 ? (
         <Polyline
           coordinates={routeCoordinates}
-          strokeColor="#0EA5E9"
+          strokeColor={routeColor}
           strokeWidth={5}
         />
       ) : null}
@@ -384,12 +529,8 @@ export default function ShopNativeMap({
             <View style={styles.calloutCard}>
               <Text style={styles.companyName}>{item.companyName}</Text>
               <Text style={styles.title}>{item.title}</Text>
-              {item.addressLine ? (
-                <Text style={styles.line}>{item.addressLine}</Text>
-              ) : null}
-              {item.addressExtra ? (
-                <Text style={styles.line}>{item.addressExtra}</Text>
-              ) : null}
+              {item.addressLine ? <Text style={styles.line}>{item.addressLine}</Text> : null}
+              {item.addressExtra ? <Text style={styles.line}>{item.addressExtra}</Text> : null}
 
               <View style={styles.metaList}>
                 <MetaRow label="Telefone" value={item.phoneLabel} />
@@ -400,12 +541,12 @@ export default function ShopNativeMap({
               <View style={styles.actionsRow}>
                 <CalloutAction
                   label="Abrir no Maps"
-                  onPress={() => Linking.openURL(item.googleMapsUrl).catch(() => {})}
+                  onPress={() => openExternalUrl(item.googleMapsUrl)}
                   primary
                 />
                 <CalloutAction
                   label="Waze"
-                  onPress={() => Linking.openURL(item.wazeUrl).catch(() => {})}
+                  onPress={() => openExternalUrl(item.wazeUrl)}
                 />
               </View>
             </View>
@@ -415,4 +556,3 @@ export default function ShopNativeMap({
     </NativeMapView>
   );
 }
-// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores e evitar chamadas HTTP diretas quando o store ja resolver isso.

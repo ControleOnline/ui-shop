@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
-  Linking,
   Platform,
   StyleSheet,
   View,
@@ -41,20 +40,7 @@ import {
 const geocodeCache = new Map();
 const GEOCODE_BATCH_SIZE = 5;
 const MAX_GEOCODE_RECORDS = 50;
-
-const getNativeWebView = () => {
-  if (Platform.OS === 'web') {
-    return null;
-  }
-
-  try {
-    return require('react-native-webview').WebView;
-  } catch {
-    return null;
-  }
-};
-
-const NativeWebView = getNativeWebView();
+const ANDROID_LOCATION_TIMEOUT_MS = 12000;
 
 const normalizeCoordinate = value => {
   if (value === null || value === undefined || value === '') {
@@ -177,9 +163,83 @@ const requestUserCoordinates = async () => {
     throw new Error('location-denied');
   }
 
-  const currentPosition = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
+  if (Platform.OS === 'android') {
+    try {
+      await Location.enableNetworkProviderAsync();
+    } catch {}
+
+    try {
+      return await new Promise((resolve, reject) => {
+        let isSettled = false;
+        let timeoutId = null;
+        let subscription = null;
+
+        const cleanup = () => {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          if (subscription) {
+            subscription.remove();
+          }
+        };
+
+        const settle = (callback, value) => {
+          if (isSettled) {
+            return;
+          }
+
+          isSettled = true;
+          cleanup();
+          callback(value);
+        };
+
+        timeoutId = setTimeout(() => {
+          settle(reject, new Error('location-timeout'));
+        }, ANDROID_LOCATION_TIMEOUT_MS);
+
+        Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Highest,
+            distanceInterval: 0,
+            mayShowUserSettingsDialog: true,
+            timeInterval: 1000,
+          },
+          position => {
+            const latitude = Number(position?.coords?.latitude);
+            const longitude = Number(position?.coords?.longitude);
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+              return;
+            }
+
+            settle(resolve, {latitude, longitude});
+          },
+          error => {
+            settle(reject, error);
+          },
+        )
+          .then(nextSubscription => {
+            subscription = nextSubscription;
+          })
+          .catch(error => {
+            settle(reject, error);
+          });
+      });
+    } catch {}
+  }
+
+  const currentPosition = await Location.getCurrentPositionAsync(
+    Platform.OS === 'android'
+      ? {
+          accuracy: Location.Accuracy.Highest,
+          distanceInterval: 0,
+          mayShowUserSettingsDialog: true,
+          timeInterval: 1000,
+        }
+      : {
+          accuracy: Location.Accuracy.Balanced,
+        },
+  );
 
   return {
     latitude: Number(currentPosition?.coords?.latitude),
@@ -263,339 +323,6 @@ const resolveCompanyPhone = company => {
   }
 
   return '';
-};
-
-const safeJsonForHtml = value =>
-  JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
-
-const buildMapDocument = ({apiKey, markerPayloads, theme, userCoordinates}) => {
-  if (!apiKey) {
-    return `
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <style>
-            html, body {
-              margin: 0;
-              height: 100%;
-              background: ${theme?.surface || '#ffffff'};
-              font-family: Arial, sans-serif;
-            }
-            body {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: ${theme?.text || '#0f1720'};
-            }
-          </style>
-        </head>
-        <body>Mapa indisponivel no momento.</body>
-      </html>
-    `;
-  }
-
-  const markerPayloadsJson = safeJsonForHtml(markerPayloads);
-  const userCoordinatesJson = safeJsonForHtml(userCoordinates || null);
-  const routeColor = theme?.primary || '#0ea5e9';
-
-  return `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-        />
-        <style>
-          html, body, #map {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #f8fafc;
-            font-family: Arial, sans-serif;
-          }
-
-          .popup {
-            min-width: 220px;
-            max-width: 280px;
-            color: #0f172a;
-          }
-
-          .popup-company {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #0369a1;
-            margin-bottom: 6px;
-          }
-
-          .popup-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 8px;
-          }
-
-          .popup-line {
-            font-size: 13px;
-            line-height: 1.45;
-            color: #0f172a;
-            margin-bottom: 4px;
-          }
-
-          .popup-meta-list {
-            display: grid;
-            gap: 6px;
-            margin-top: 10px;
-          }
-
-          .popup-meta {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 12px;
-            color: #334155;
-          }
-
-          .popup-meta-label {
-            color: #64748b;
-          }
-
-          .popup-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 14px;
-          }
-
-          .popup-action {
-            flex: 1;
-            border-radius: 999px;
-            border: 1px solid #cbd5e1;
-            padding: 10px 12px;
-            text-align: center;
-            text-decoration: none;
-            color: #0f172a;
-            font-size: 12px;
-            font-weight: 700;
-            background: #ffffff;
-          }
-
-          .popup-action.primary {
-            border-color: transparent;
-            background: #0ea5e9;
-            color: #ffffff;
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          window.__SHOP_MAP_MARKERS__ = ${markerPayloadsJson};
-          window.__SHOP_MAP_USER__ = ${userCoordinatesJson};
-
-          function escapeHtml(value) {
-            return String(value || '')
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#39;');
-          }
-
-          function buildLine(value) {
-            if (!value) {
-              return '';
-            }
-
-            return '<div class="popup-line">' + escapeHtml(value) + '</div>';
-          }
-
-          function buildMeta(label, value) {
-            if (!value) {
-              return '';
-            }
-
-            return (
-              '<div class="popup-meta">' +
-                '<span class="popup-meta-label">' + escapeHtml(label) + '</span>' +
-                '<span>' + escapeHtml(value) + '</span>' +
-              '</div>'
-            );
-          }
-
-          function buildPopupContent(item) {
-            return (
-              '<div class="popup">' +
-                '<div class="popup-company">' + escapeHtml(item.companyName) + '</div>' +
-                '<div class="popup-title">' + escapeHtml(item.title) + '</div>' +
-                buildLine(item.addressLine) +
-                buildLine(item.addressExtra) +
-                '<div class="popup-meta-list">' +
-                  buildMeta('Telefone', item.phoneLabel) +
-                  buildMeta('Distancia', item.distanceLabel) +
-                  buildMeta('Horario', item.openingHours) +
-                '</div>' +
-                '<div class="popup-actions">' +
-                  '<a class="popup-action primary" href="' + escapeHtml(item.googleMapsUrl) + '" target="_blank" rel="noopener noreferrer">Abrir no Maps</a>' +
-                  '<a class="popup-action" href="' + escapeHtml(item.wazeUrl) + '" target="_blank" rel="noopener noreferrer">Waze</a>' +
-                '</div>' +
-              '</div>'
-            );
-          }
-
-          window.__initShopMap = function () {
-            var markers = window.__SHOP_MAP_MARKERS__ || [];
-            var userCoordinates = window.__SHOP_MAP_USER__;
-
-            if (!window.google || !markers.length) {
-              return;
-            }
-
-            var map = new window.google.maps.Map(document.getElementById('map'), {
-              mapTypeControl: false,
-              streetViewControl: false,
-              fullscreenControl: false,
-              clickableIcons: false,
-              gestureHandling: 'greedy',
-              zoomControl: false,
-            });
-
-            var bounds = new window.google.maps.LatLngBounds();
-            var infoWindow = new window.google.maps.InfoWindow({maxWidth: 320});
-            var hasUserCoordinates =
-              userCoordinates &&
-              Number.isFinite(userCoordinates.latitude) &&
-              Number.isFinite(userCoordinates.longitude);
-            var directionsService = hasUserCoordinates
-              ? new window.google.maps.DirectionsService()
-              : null;
-            var directionsRenderer = directionsService
-              ? new window.google.maps.DirectionsRenderer({
-                  map: map,
-                  suppressMarkers: true,
-                  preserveViewport: false,
-                  polylineOptions: {
-                    strokeColor: '${routeColor}',
-                    strokeOpacity: 0.92,
-                    strokeWeight: 5,
-                  },
-                })
-              : null;
-            var activeRouteRequestId = 0;
-
-            if (
-              userCoordinates &&
-              Number.isFinite(userCoordinates.latitude) &&
-              Number.isFinite(userCoordinates.longitude)
-            ) {
-              var userPosition = {
-                lat: userCoordinates.latitude,
-                lng: userCoordinates.longitude,
-              };
-
-              new window.google.maps.Marker({
-                position: userPosition,
-                map: map,
-                title: 'Sua localizacao',
-                zIndex: 999,
-              });
-
-              bounds.extend(userPosition);
-            }
-
-            markers.forEach(function (item) {
-              var position = {
-                lat: item.latitude,
-                lng: item.longitude,
-              };
-
-              var marker = new window.google.maps.Marker({
-                position: position,
-                map: map,
-                title: item.title,
-                animation: window.google.maps.Animation.DROP,
-                icon: item.markerIconUrl
-                  ? {
-                      url: item.markerIconUrl,
-                      scaledSize: new window.google.maps.Size(42, 42),
-                    }
-                  : undefined,
-              });
-
-              bounds.extend(position);
-
-              marker.addListener('click', function () {
-                infoWindow.setContent(buildPopupContent(item));
-                infoWindow.open({
-                  anchor: marker,
-                  map: map,
-                  shouldFocus: false,
-                });
-
-                if (!directionsService || !directionsRenderer) {
-                  return;
-                }
-
-                var routeRequestId = activeRouteRequestId + 1;
-                activeRouteRequestId = routeRequestId;
-
-                directionsService.route(
-                  {
-                    origin: {
-                      lat: userCoordinates.latitude,
-                      lng: userCoordinates.longitude,
-                    },
-                    destination: position,
-                    travelMode: window.google.maps.TravelMode.DRIVING,
-                  },
-                  function (response, status) {
-                    if (routeRequestId !== activeRouteRequestId) {
-                      return;
-                    }
-
-                    if (status === 'OK' && response) {
-                      directionsRenderer.setDirections(response);
-                      return;
-                    }
-
-                    directionsRenderer.set('directions', null);
-                  },
-                );
-              });
-            });
-
-            if (!bounds.isEmpty()) {
-              map.fitBounds(bounds, {
-                top: 56,
-                right: 32,
-                bottom: 56,
-                left: 32,
-              });
-
-              window.google.maps.event.addListenerOnce(map, 'idle', function () {
-                if (markers.length === 1 && map.getZoom() > 15) {
-                  map.setZoom(15);
-                }
-              });
-            }
-          };
-        </script>
-        <script
-          async
-          src="https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
-            apiKey,
-          )}&loading=async&callback=__initShopMap"
-        ></script>
-      </body>
-    </html>
-  `;
 };
 
 export default function ShopFranchiseLocatorPage() {
@@ -875,16 +602,6 @@ export default function ShopFranchiseLocatorPage() {
     ],
   );
 
-  const mapDocument = useMemo(
-    () =>
-      buildMapDocument({
-        apiKey: googleMapsApiKey,
-        markerPayloads,
-        theme,
-        userCoordinates,
-      }),
-    [googleMapsApiKey, markerPayloads, theme, userCoordinates],
-  );
   const selectedCompanyId = normalizeShopEntityId(salesCompany);
   const shouldRenderFranchiseList =
     effectiveDirectory.length > 0 &&
@@ -900,25 +617,6 @@ export default function ShopFranchiseLocatorPage() {
     },
     [navigation, salesPageEnabled, selectSalesCompany],
   );
-
-  const handleNativeNavigation = useCallback(request => {
-    const url = String(request?.url || '');
-
-    if (!url || url === 'about:blank') {
-      return true;
-    }
-
-    if (
-      url.includes('google.com/maps') ||
-      url.includes('maps.google.com') ||
-      url.includes('waze.com/ul')
-    ) {
-      Linking.openURL(url).catch(() => {});
-      return false;
-    }
-
-    return true;
-  }, []);
 
   return (
     <ShopShell
@@ -1009,14 +707,8 @@ export default function ShopFranchiseLocatorPage() {
                 <ShopNativeMap
                   apiKey={googleMapsApiKey}
                   markerPayloads={markerPayloads}
+                  routeColor={theme.primary || '#0EA5E9'}
                   userCoordinates={userCoordinates}
-                />
-              ) : NativeWebView ? (
-                <NativeWebView
-                  originWhitelist={['*']}
-                  source={{html: mapDocument}}
-                  onShouldStartLoadWithRequest={handleNativeNavigation}
-                  style={styles.mapNativeFrame}
                 />
               ) : (
                 <ShopFeatureState
@@ -1045,10 +737,6 @@ const styles = StyleSheet.create({
   },
   mapViewport: {
     width: '100%',
-    flex: 1,
-    backgroundColor: '#E5EEF5',
-  },
-  mapNativeFrame: {
     flex: 1,
     backgroundColor: '#E5EEF5',
   },
