@@ -20,11 +20,11 @@ import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefron
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
-  buildWalletIdsForGateway,
   filterDeviceConfigsByCompany,
-  getPaymentGatewayFromConfigs,
+  filterWalletPaymentTypesByAllowedIds,
   isOrderChargeOnDeliveryEnabled,
   resolveRemotePaymentDeviceOptions,
+  resolveDevicePaymentTypeIds,
 } from '@controleonline/ui-common/src/react/utils/paymentDevices';
 import {
   detectPaymentOptionKind,
@@ -931,8 +931,16 @@ export default function CheckoutPage() {
         extractItems(invoicesResponse),
       );
       const fetchedAddresses = extractItems(addressesResponse);
+      const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
+        effectiveCompanyConfigs,
+        fetchedPaymentTypes,
+      );
+      const filteredPaymentTypes = filterWalletPaymentTypesByAllowedIds(
+        fetchedPaymentTypes,
+        allowedPaymentTypeIds,
+      );
 
-      setPaymentTypes(fetchedPaymentTypes);
+      setPaymentTypes(filteredPaymentTypes);
       setCards(fetchedCards);
       setInvoices(fetchedInvoices);
       setDeliveryAddresses(fetchedAddresses);
@@ -1053,47 +1061,27 @@ export default function CheckoutPage() {
       return undefined;
     }
 
-    const deliveryGateways = [
-      ...new Set(
-        [
-          ...remotePaymentDevices.map(device => device.gateway),
-          getPaymentGatewayFromConfigs(effectiveCompanyConfigs),
-        ].filter(Boolean),
-      ),
-    ];
-    const walletIds = [
-      ...new Set([
-        ...deliveryGateways.flatMap(gateway =>
-          buildWalletIdsForGateway({
-            gateway,
-            companyConfigs: effectiveCompanyConfigs,
-            includeCashWallet: false,
-          }),
-        ),
-        ...buildWalletIdsForGateway({
-          gateway: null,
-          companyConfigs: effectiveCompanyConfigs,
-          includeCashWallet: true,
-        }),
-      ]),
-    ];
-
-    if (!walletIds.length) {
-      setDeliveryPaymentTypes([]);
-      return undefined;
-    }
-
     let isMounted = true;
 
     walletPaymentTypeActions
       .getItems({
         people: `/people/${sellerCompanyId}`,
-        wallet: walletIds,
         itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       })
       .then(response => {
         if (isMounted) {
-          setDeliveryPaymentTypes(extractItems(response));
+          const allPaymentTypes = extractItems(response);
+          const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
+            effectiveCompanyConfigs,
+            allPaymentTypes,
+          );
+
+          setDeliveryPaymentTypes(
+            filterWalletPaymentTypesByAllowedIds(
+              allPaymentTypes,
+              allowedPaymentTypeIds,
+            ),
+          );
         }
       })
       .catch(() => {
