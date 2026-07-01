@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -9,11 +9,8 @@ import {
 import * as Location from 'expo-location';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
+import DefaultMap from '@controleonline/ui-default/src/react/components/map/DefaultMap';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
-import ShopGoogleMap from '@controleonline/ui-shop/src/react/components/storefront/ShopGoogleMap';
-import ShopNativeMap, {
-  HAS_NATIVE_MAP_SUPPORT,
-} from '@controleonline/ui-shop/src/react/components/storefront/ShopNativeMap';
 import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
@@ -21,13 +18,7 @@ import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSett
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
   formatPhoneDisplay,
-  resolveAddressDisplayParts,
 } from '@controleonline/ui-common/src/react/utils/entityDisplay';
-import {
-  buildGoogleMapsNavigationUrl,
-  buildNavigationMapQuery,
-  buildWazeNavigationUrl,
-} from '@controleonline/ui-common/src/react/utils/mapNavigation';
 import {
   fetchShopFranchiseDirectory,
   SHOP_FRANCHISE_PAGE_SIZE,
@@ -37,9 +28,6 @@ import {
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
-const geocodeCache = new Map();
-const GEOCODE_BATCH_SIZE = 5;
-const MAX_GEOCODE_RECORDS = 50;
 const ANDROID_LOCATION_TIMEOUT_MS = 12000;
 
 const normalizeCoordinate = value => {
@@ -86,53 +74,6 @@ const extractAddressCoordinates = address => {
   }
 
   return {latitude, longitude};
-};
-
-const buildMapQuery = (company, address) => {
-  const parts = resolveAddressDisplayParts(address);
-
-  return buildNavigationMapQuery([
-    company?.alias || company?.name,
-    parts.streetLine,
-    parts.district,
-    parts.cityStateLine,
-    address?.searchFor,
-  ]);
-};
-
-const calculateDistanceInKm = (origin, destination) => {
-  if (!origin || !destination) {
-    return null;
-  }
-
-  const toRadians = degrees => (degrees * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-  const deltaLatitude = toRadians(destination.latitude - origin.latitude);
-  const deltaLongitude = toRadians(destination.longitude - origin.longitude);
-  const startLatitude = toRadians(origin.latitude);
-  const endLatitude = toRadians(destination.latitude);
-
-  const a =
-    Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
-    Math.cos(startLatitude) *
-      Math.cos(endLatitude) *
-      Math.sin(deltaLongitude / 2) *
-      Math.sin(deltaLongitude / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return earthRadiusKm * c;
-};
-
-const formatDistance = distanceInKm => {
-  if (!Number.isFinite(distanceInKm)) {
-    return '';
-  }
-
-  if (distanceInKm < 1) {
-    return `${Math.max(1, Math.round(distanceInKm * 1000))} m`;
-  }
-
-  return `${distanceInKm.toFixed(distanceInKm >= 10 ? 0 : 1).replace('.', ',')} km`;
 };
 
 const requestUserCoordinates = async () => {
@@ -247,63 +188,6 @@ const requestUserCoordinates = async () => {
   };
 };
 
-const geocodeMapQuery = async ({apiKey, mapQuery}) => {
-  const normalizedQuery = String(mapQuery || '').trim();
-
-  if (!normalizedQuery || !apiKey) {
-    return null;
-  }
-
-  const cacheKey = `${String(apiKey).trim()}::${normalizedQuery.toLowerCase()}`;
-  if (geocodeCache.has(cacheKey)) {
-    return geocodeCache.get(cacheKey);
-  }
-
-  const request = fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      normalizedQuery,
-    )}&key=${encodeURIComponent(apiKey)}`,
-  )
-    .then(response => response.json())
-    .then(payload => {
-      const location = payload?.results?.[0]?.geometry?.location;
-      const latitude = normalizeCoordinate(location?.lat);
-      const longitude = normalizeCoordinate(location?.lng);
-
-      if (latitude === null || longitude === null) {
-        return null;
-      }
-
-      return {latitude, longitude};
-    })
-    .catch(() => null);
-
-  geocodeCache.set(cacheKey, request);
-  return request;
-};
-
-const resolveGeocodeRecords = async ({apiKey, records}) => {
-  const entries = [];
-  const limitedRecords = records.slice(0, MAX_GEOCODE_RECORDS);
-
-  for (let index = 0; index < limitedRecords.length; index += GEOCODE_BATCH_SIZE) {
-    const batch = limitedRecords.slice(index, index + GEOCODE_BATCH_SIZE);
-    const batchEntries = await Promise.all(
-      batch.map(async record => {
-        const coordinates = await geocodeMapQuery({
-          apiKey,
-          mapQuery: record.mapQuery,
-        });
-        return [record.addressId, coordinates];
-      }),
-    );
-
-    entries.push(...batchEntries);
-  }
-
-  return entries;
-};
-
 const resolveCompanyPhone = company => {
   const candidates = [company?.phone, company?.mobile, company?.whatsapp];
 
@@ -331,12 +215,11 @@ export default function ShopFranchiseLocatorPage() {
   const {
     defaultCompany,
     franchiseLocatorEnabled,
-    franchisePinIconUrl,
-    googleMapsApiKey,
     primaryEntryRouteName,
     salesPageEnabled,
     visibleFranchiseAddressIds,
     visibleFranchiseCompanyIds,
+    ...mapSettings
   } = useShopSettings();
   const {salesCompany, selectSalesCompany} = useShopSalesCompany({
     loadOptions: false,
@@ -346,10 +229,7 @@ export default function ShopFranchiseLocatorPage() {
 
   const [directory, setDirectory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isResolvingCoordinates, setIsResolvingCoordinates] = useState(false);
   const [userCoordinates, setUserCoordinates] = useState(null);
-  const [resolvedCoordinatesByAddressId, setResolvedCoordinatesByAddressId] =
-    useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -390,7 +270,7 @@ export default function ShopFranchiseLocatorPage() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!franchiseLocatorEnabled || !googleMapsApiKey) {
+      if (!franchiseLocatorEnabled) {
         setUserCoordinates(null);
         return undefined;
       }
@@ -421,7 +301,7 @@ export default function ShopFranchiseLocatorPage() {
       return () => {
         isMounted = false;
       };
-    }, [franchiseLocatorEnabled, googleMapsApiKey]),
+    }, [franchiseLocatorEnabled]),
   );
 
   const configuredDirectory = useMemo(() => {
@@ -455,157 +335,43 @@ export default function ShopFranchiseLocatorPage() {
 
   const effectiveDirectory = configuredDirectory;
 
-  const flattenedAddressRecords = useMemo(
+  const markerAddresses = useMemo(
     () =>
       effectiveDirectory.flatMap(company =>
-        (company?.shopAddresses || []).map(address => ({
-          address,
-          addressId: normalizeShopEntityId(address),
-          company,
-          mapQuery: buildMapQuery(company, address),
-          rawCoordinates: extractAddressCoordinates(address),
-        })),
-      ),
-    [effectiveDirectory],
-  );
+        (company?.shopAddresses || [])
+          .map(address => {
+            const coordinates = extractAddressCoordinates(address);
 
-  useEffect(() => {
-    if (!googleMapsApiKey) {
-      setIsResolvingCoordinates(false);
-      return undefined;
-    }
-
-    const unresolvedRecords = flattenedAddressRecords.filter(record => {
-      if (!record.addressId || record.rawCoordinates) {
-        return false;
-      }
-
-      return !resolvedCoordinatesByAddressId[record.addressId];
-    });
-
-    if (unresolvedRecords.length === 0) {
-      setIsResolvingCoordinates(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    setIsResolvingCoordinates(true);
-
-    resolveGeocodeRecords({
-      apiKey: googleMapsApiKey,
-      records: unresolvedRecords,
-    })
-      .then(entries => {
-        if (cancelled) {
-          return;
-        }
-
-        setResolvedCoordinatesByAddressId(current => {
-          const next = {...current};
-
-          entries.forEach(([addressId, coordinates]) => {
-            if (addressId && coordinates) {
-              next[addressId] = coordinates;
-            }
-          });
-
-          return next;
-        });
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsResolvingCoordinates(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    flattenedAddressRecords,
-    googleMapsApiKey,
-    resolvedCoordinatesByAddressId,
-  ]);
-
-  const markerPayloads = useMemo(
-    () =>
-      effectiveDirectory
-        .flatMap(company =>
-          (company?.shopAddresses || []).map(address => {
-            const addressId = normalizeShopEntityId(address);
-            const coordinates =
-              extractAddressCoordinates(address) ||
-              resolvedCoordinatesByAddressId[addressId] ||
-              null;
-
-            if (!coordinates) {
+            if (
+              coordinates &&
+              (normalizeCoordinate(coordinates.latitude) === null ||
+                normalizeCoordinate(coordinates.longitude) === null)
+            ) {
               return null;
             }
-
-            const lat = normalizeCoordinate(coordinates.latitude);
-            const lng = normalizeCoordinate(coordinates.longitude);
-
-            if (lat === null || lng === null) {
-              return null;
-            }
-
-            const addressParts = resolveAddressDisplayParts(address);
-            const distanceLabel = formatDistance(
-              calculateDistanceInKm(userCoordinates, coordinates),
-            );
-            const addressTitle =
-              addressParts.primary ||
-              address?.nickname ||
-              company?.alias ||
-              company?.name ||
-              'Unidade';
-            const addressLine =
-              addressParts.streetLine ||
-              address?.searchFor ||
-              addressTitle;
-            const addressExtra = [
-              addressParts.district,
-              addressParts.cityStateLine,
-              addressParts.postalCode,
-            ]
-              .filter(Boolean)
-              .join(' • ');
-            const mapQuery = buildMapQuery(company, address);
 
             return {
-              id: `${normalizeShopEntityId(company)}-${addressId}`,
-              companyName: company?.alias || company?.name || 'Franquia',
-              title: addressTitle,
-              addressLine,
-              addressExtra,
-              distanceLabel,
-              googleMapsUrl: buildGoogleMapsNavigationUrl({
-                coordinates,
-                mapQuery,
-                origin: userCoordinates,
-              }),
-              latitude: lat,
-              longitude: lng,
-              markerIconUrl: franchisePinIconUrl,
-              openingHours: address?.openingHours || '',
-              phoneLabel: resolveCompanyPhone(company),
-              wazeUrl: buildWazeNavigationUrl({coordinates, mapQuery}),
+              ...address,
+              latitude: coordinates?.latitude ?? address?.latitude ?? null,
+              longitude: coordinates?.longitude ?? address?.longitude ?? null,
             };
-          }),
-        )
-        .filter(Boolean),
-    [
-      effectiveDirectory,
-      franchisePinIconUrl,
-      resolvedCoordinatesByAddressId,
-      userCoordinates,
-    ],
+          })
+          .filter(Boolean),
+      ),
+    [effectiveDirectory],
   );
 
   const selectedCompanyId = normalizeShopEntityId(salesCompany);
   const shouldRenderFranchiseList =
     effectiveDirectory.length > 0 &&
-    (!googleMapsApiKey || (!isResolvingCoordinates && markerPayloads.length === 0));
+    markerAddresses.length === 0;
+  const mapConfig = {
+    ...mapSettings,
+    addresses: {
+      markers: markerAddresses,
+      user: userCoordinates,
+    },
+  };
 
   const handleSelectFranchise = useCallback(
     company => {
@@ -625,7 +391,7 @@ export default function ShopFranchiseLocatorPage() {
       showHomeEntryControls
       showSalesShortcuts={false}
       showSearch={false}
-      subtitle={googleMapsApiKey ? 'Mapa das unidades' : 'Escolha uma unidade'}>
+      subtitle={markerAddresses.length > 0 ? 'Mapa das unidades' : 'Escolha uma unidade'}>
       {() => {
         if (!franchiseLocatorEnabled) {
           return (
@@ -674,9 +440,7 @@ export default function ShopFranchiseLocatorPage() {
             <ShopSalesCompanySelector
               companies={effectiveDirectory}
               description={
-                googleMapsApiKey
-                  ? 'Nao foi possivel posicionar as unidades no mapa. Selecione uma franquia na lista para continuar.'
-                  : 'Selecione a franquia que vai atender o pedido.'
+                'Selecione a franquia que vai atender o pedido.'
               }
               onSelect={handleSelectFranchise}
               selectedCompanyId={selectedCompanyId}
@@ -686,35 +450,18 @@ export default function ShopFranchiseLocatorPage() {
           );
         }
 
-        if (isResolvingCoordinates) {
-          return (
-            <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color={theme.primary} />
-            </View>
-          );
-        }
-
         return (
           <View style={styles.page}>
             <View style={[styles.mapViewport, {height: mapHeight}]}>
-              {Platform.OS === 'web' ? (
-                <ShopGoogleMap
-                  apiKey={googleMapsApiKey}
-                  markerPayloads={markerPayloads}
-                  userCoordinates={userCoordinates}
-                />
-              ) : HAS_NATIVE_MAP_SUPPORT ? (
-                <ShopNativeMap
-                  apiKey={googleMapsApiKey}
-                  markerPayloads={markerPayloads}
-                  routeColor={theme.primary || '#0EA5E9'}
-                  userCoordinates={userCoordinates}
+              {markerAddresses.length > 0 ? (
+                <DefaultMap
+                  config={mapConfig}
                 />
               ) : (
                 <ShopFeatureState
                   theme={theme}
                   iconName="map"
-                  title="Mapa indisponivel no dispositivo"
+                  title="Sem coordenadas para montar o mapa"
                   description="Nao foi possivel abrir o mapa neste ambiente."
                 />
               )}

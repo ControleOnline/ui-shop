@@ -1,11 +1,11 @@
 const {
   buildAndroidWebMapHtml,
   resolveWebViewBaseUrlForDomain,
-} = require('../../../../react/components/storefront/ShopNativeMap.shared');
+} = require('@controleonline/ui-default/src/react/components/map/DefaultNativeMap.shared');
 
 const {describe, expect, it} = global;
 
-describe('ShopNativeMap.shared', () => {
+describe('DefaultNativeMap.shared', () => {
   it('resolves the Android WebView base URL from the configured domain', () => {
     expect(resolveWebViewBaseUrlForDomain('https://app.lave-go.com')).toBe(
       'https://app.lave-go.com/',
@@ -29,13 +29,24 @@ describe('ShopNativeMap.shared', () => {
           addressLine: 'Rua Principal, 100',
           addressExtra: 'Centro • Cuiaba/MT',
           distanceLabel: '2,1 km',
-          googleMapsUrl: 'https://maps.google.com/?q=-15.6,-56.1',
           latitude: -15.6,
           longitude: -56.1,
           markerIconUrl: 'https://cdn.example.com/pin.png',
           openingHours: '08:00 - 18:00',
           phoneLabel: '(65) 99999-0000',
-          wazeUrl: 'https://waze.com/ul?ll=-15.6,-56.1',
+        },
+      ],
+      paths: [
+        {
+          id: 'route-1',
+          from: {
+            latitude: -15.61,
+            longitude: -56.09,
+          },
+          to: {
+            latitude: -15.6,
+            longitude: -56.1,
+          },
         },
       ],
       routeColor: '#123456',
@@ -51,6 +62,7 @@ describe('ShopNativeMap.shared', () => {
     expect(html).toContain('android-webview-key');
     expect(html).toContain('#123456');
     expect(html).toContain('Loja Centro');
+    expect(html).toContain('__SHOP_MAP_PATHS__');
     expect(html).toContain('Abrir no Maps');
     expect(html).toContain('Waze');
   });
