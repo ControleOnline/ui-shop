@@ -349,18 +349,6 @@ export default function ShopGoogleMap({
 }) {
   const containerRef = useRef(null);
 
-  if (Platform.OS === 'web' && !apiKey && markerPayloads.length > 0) {
-    return (
-      <View style={styles.mapViewport}>
-        <iframe
-          title="Mapa da entrega"
-          src={buildOpenStreetMapEmbedUrl({markerPayloads, userCoordinates})}
-          style={{width: '100%', height: '100%', border: 0}}
-        />
-      </View>
-    );
-  }
-
   useEffect(() => {
     if (Platform.OS !== 'web') {
       return undefined;
@@ -510,6 +498,21 @@ export default function ShopGoogleMap({
       cancelled = true;
     };
   }, [apiKey, markerPayloads, userCoordinates]);
+
+  const shouldRenderIframeFallback =
+    Platform.OS === 'web' && !apiKey && markerPayloads.length > 0;
+
+  if (shouldRenderIframeFallback) {
+    return (
+      <View style={styles.mapViewport}>
+        <iframe
+          title="Mapa da entrega"
+          src={buildOpenStreetMapEmbedUrl({markerPayloads, userCoordinates})}
+          style={{width: '100%', height: '100%', border: 0}}
+        />
+      </View>
+    );
+  }
 
   if (Platform.OS !== 'web') {
     return null;
