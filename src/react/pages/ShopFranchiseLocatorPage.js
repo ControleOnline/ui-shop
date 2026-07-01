@@ -17,9 +17,6 @@ import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShop
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
-  formatPhoneDisplay,
-} from '@controleonline/ui-common/src/react/utils/entityDisplay';
-import {
   fetchShopFranchiseDirectory,
   SHOP_FRANCHISE_PAGE_SIZE,
 } from '@controleonline/ui-common/src/react/utils/shopFranchises';
@@ -188,27 +185,6 @@ const requestUserCoordinates = async () => {
   };
 };
 
-const resolveCompanyPhone = company => {
-  const candidates = [company?.phone, company?.mobile, company?.whatsapp];
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      const match = candidate.map(formatPhoneDisplay).find(Boolean);
-      if (match) {
-        return match;
-      }
-      continue;
-    }
-
-    const formatted = formatPhoneDisplay(candidate);
-    if (formatted) {
-      return formatted;
-    }
-  }
-
-  return '';
-};
-
 export default function ShopFranchiseLocatorPage() {
   const navigation = useNavigation();
   const {height} = useWindowDimensions();
@@ -337,8 +313,8 @@ export default function ShopFranchiseLocatorPage() {
 
   const markerAddresses = useMemo(
     () =>
-      effectiveDirectory.flatMap(company =>
-        (company?.shopAddresses || [])
+      effectiveDirectory.flatMap(_company =>
+        (_company?.shopAddresses || [])
           .map(address => {
             const coordinates = extractAddressCoordinates(address);
 
