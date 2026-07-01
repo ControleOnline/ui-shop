@@ -69,6 +69,37 @@ const buildPopupContent = item => `
   </div>
 `;
 
+const normalizeCoordinate = value => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const buildOpenStreetMapEmbedUrl = ({markerPayloads = [], userCoordinates = null}) => {
+  const coordinates = [
+    ...(Array.isArray(markerPayloads) ? markerPayloads : []),
+    userCoordinates ? {latitude: userCoordinates.latitude, longitude: userCoordinates.longitude} : null,
+  ].filter(item => Number.isFinite(item?.latitude) && Number.isFinite(item?.longitude));
+
+  if (coordinates.length === 0) {
+    return 'https://www.openstreetmap.org/export/embed.html?layer=mapnik';
+  }
+
+  const latitudes = coordinates.map(item => item.latitude);
+  const longitudes = coordinates.map(item => item.longitude);
+  const south = Math.min(...latitudes);
+  const north = Math.max(...latitudes);
+  const west = Math.min(...longitudes);
+  const east = Math.max(...longitudes);
+  const padding = 0.01;
+  const center = coordinates[0];
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
+    `${west - padding},${south - padding},${east + padding},${north + padding}`,
+  )}&layer=mapnik&marker=${encodeURIComponent(
+    `${normalizeCoordinate(center.latitude) || 0},${normalizeCoordinate(center.longitude) || 0}`,
+  )}`;
+};
+
 const injectPopupStyles = () => {
   if (typeof document === 'undefined') {
     return;
@@ -317,6 +348,18 @@ export default function ShopGoogleMap({
   userCoordinates = null,
 }) {
   const containerRef = useRef(null);
+
+  if (Platform.OS === 'web' && !apiKey && markerPayloads.length > 0) {
+    return (
+      <View style={styles.mapViewport}>
+        <iframe
+          title="Mapa da entrega"
+          src={buildOpenStreetMapEmbedUrl({markerPayloads, userCoordinates})}
+          style={{width: '100%', height: '100%', border: 0}}
+        />
+      </View>
+    );
+  }
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
