@@ -104,7 +104,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
   );
 
   const refreshCart = useCallback(() => {
-    const appType = String(env.APP_TYPE || '').toUpperCase();
+    const appType = String(app_type || '').toUpperCase();
     const isShopApp = appType === 'SHOP';
 
     const currentCompanyId = normalizeId(currentCompany?.id);
