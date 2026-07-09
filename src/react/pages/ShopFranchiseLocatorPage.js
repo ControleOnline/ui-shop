@@ -15,6 +15,9 @@ import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/componen
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
+import {
+  buildFranchiseMarkerAddresses,
+} from '@controleonline/ui-shop/src/react/utils/shopFranchiseLocator';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
   fetchShopFranchiseDirectory,
@@ -26,52 +29,6 @@ import {
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
 
 const ANDROID_LOCATION_TIMEOUT_MS = 12000;
-
-const normalizeCoordinate = value => {
-  if (value === null || value === undefined || value === '') {
-    return null;
-  }
-
-  const parsed = Number(String(value).replace(',', '.'));
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const extractAddressCoordinates = address => {
-  const latitudeCandidates = [
-    address?.latitude,
-    address?.lat,
-    address?.location?.latitude,
-    address?.location?.lat,
-    address?.coords?.latitude,
-    address?.coords?.lat,
-    address?.coordinate?.latitude,
-    address?.coordinate?.lat,
-  ];
-  const longitudeCandidates = [
-    address?.longitude,
-    address?.lng,
-    address?.lon,
-    address?.location?.longitude,
-    address?.location?.lng,
-    address?.coords?.longitude,
-    address?.coords?.lng,
-    address?.coordinate?.longitude,
-    address?.coordinate?.lng,
-  ];
-
-  const latitude = latitudeCandidates
-    .map(normalizeCoordinate)
-    .find(value => value !== null);
-  const longitude = longitudeCandidates
-    .map(normalizeCoordinate)
-    .find(value => value !== null);
-
-  if (latitude === null || longitude === null) {
-    return null;
-  }
-
-  return {latitude, longitude};
-};
 
 const requestUserCoordinates = async () => {
   if (
@@ -313,28 +270,11 @@ export default function ShopFranchiseLocatorPage() {
 
   const markerAddresses = useMemo(
     () =>
-      effectiveDirectory.flatMap(_company =>
-        (_company?.shopAddresses || [])
-          .map(address => {
-            const coordinates = extractAddressCoordinates(address);
-
-            if (
-              coordinates &&
-              (normalizeCoordinate(coordinates.latitude) === null ||
-                normalizeCoordinate(coordinates.longitude) === null)
-            ) {
-              return null;
-            }
-
-            return {
-              ...address,
-              latitude: coordinates?.latitude ?? address?.latitude ?? null,
-              longitude: coordinates?.longitude ?? address?.longitude ?? null,
-            };
-          })
-          .filter(Boolean),
-      ),
-    [effectiveDirectory],
+      buildFranchiseMarkerAddresses({
+        directory: effectiveDirectory,
+        franchisePinIconUrl: mapSettings.franchisePinIconUrl,
+      }),
+    [effectiveDirectory, mapSettings.franchisePinIconUrl],
   );
 
   const selectedCompanyId = normalizeShopEntityId(salesCompany);
