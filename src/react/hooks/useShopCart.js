@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import {env} from '@env';
+import {app_type} from '@appType';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import {
   clearAnonymousCart,
