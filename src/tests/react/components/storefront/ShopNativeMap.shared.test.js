@@ -25,6 +25,7 @@ describe('DefaultNativeMap.shared', () => {
         {
           id: 'company-1-address-1',
           companyName: 'Loja Centro',
+          unitAlias: 'Lave-go unidade 5',
           title: 'Unidade Centro',
           addressLine: 'Rua Principal, 100',
           addressExtra: 'Centro • Cuiaba/MT',
@@ -62,8 +63,10 @@ describe('DefaultNativeMap.shared', () => {
     expect(html).toContain('android-webview-key');
     expect(html).toContain('#123456');
     expect(html).toContain('Loja Centro');
+    expect(html).toContain('Lave-go unidade 5');
     expect(html).toContain('__SHOP_MAP_PATHS__');
     expect(html).toContain('Abrir no Maps');
-    expect(html).toContain('Waze');
+    expect(html).toContain('Abrir no Waze');
+    expect(html).toContain('popup-header');
   });
 });

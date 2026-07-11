@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -12,7 +13,12 @@ import ShopFeatureState from '@controleonline/ui-shop/src/react/components/store
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {normalizeId, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import {
+  buildLoyaltyDisplayCards,
+  isPaidLoyaltySaleOrder,
+} from '@controleonline/ui-shop/src/react/utils/shopLoyalty';
+import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
+import {readShopSessionClientId} from '@controleonline/ui-shop/src/react/utils/shopSession';
 import {useStore} from '@store';
 import {SHOP_HOME_OPTION_LOYALTY} from '@controleonline/ui-common/src/react/utils/shopConfig';
 import styles from '@controleonline/ui-shop/src/react/pages/ShopLoyaltyPage.styles';
@@ -44,21 +50,17 @@ const resolveCardRequiredSales = (card, fallback) => {
   return Math.max(0, configuredValue || fallbackValue);
 };
 
-const isPaidSale = order => {
-  const status = String(order?.status?.status || '').trim().toLowerCase();
-  const realStatus = String(order?.status?.realStatus || '').trim().toLowerCase();
-
-  return status === 'paid' || realStatus === 'paid' || realStatus === 'closed';
-};
-
 const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
 const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
+const SHOP_LOYALTY_SALES_ITEMS_PER_PAGE = 200;
 
 export default function ShopLoyaltyPage() {
   const navigation = useNavigation();
   const authStore = useStore('auth');
   const productsStore = useStore('products');
   const ordersStore = useStore('orders');
+  const themeStore = useStore('theme');
+  const themeColors = themeStore.getters?.colors || {};
   const {isLogged, sessionChecked} = authStore.getters;
   const {
     defaultCompany,
@@ -66,6 +68,7 @@ export default function ShopLoyaltyPage() {
     loyaltyGiftProductId,
     loyaltyProductIds,
     loyaltyRequiredSales,
+    loyaltyStampIconUrl,
     primaryEntryRouteName,
   } = useShopSettings();
   const {
@@ -74,7 +77,29 @@ export default function ShopLoyaltyPage() {
     refreshCart,
     salesCompany,
   } = useShopCart({autoRefresh: true});
-  const theme = pickTheme(defaultCompany);
+  const palette = {
+    pageBackground: themeColors.pageBackground,
+    cardBackground: themeColors.cardBackground,
+    headerBorder: themeColors.headerBorder,
+    badgeText: themeColors.badgeText,
+    buttonBackground: themeColors.buttonBackground,
+    buttonText: themeColors.buttonText,
+    chipSelectedBackground: themeColors.chipSelectedBackground,
+    chipSelectedBorder: themeColors.chipSelectedBorder,
+    chipSelectedText: themeColors.chipSelectedText,
+    dividerBorder: themeColors.dividerBorder,
+    textMuted: themeColors.textMuted,
+    textPrimary: themeColors.textPrimary,
+  };
+  const featureTheme = {
+    surface: palette.cardBackground,
+    cardBorder: palette.headerBorder,
+    primary: palette.buttonBackground,
+    onPrimary: palette.buttonText,
+    text: palette.textPrimary,
+    muted: palette.textMuted,
+  };
+  const loyaltyStampIconSource = String(loyaltyStampIconUrl || '').trim();
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
@@ -162,7 +187,7 @@ export default function ShopLoyaltyPage() {
 
   const loadLoyaltyCards = useCallback(async () => {
     const providerId = normalizeId(salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id);
-    const clientId = normalizeId(currentCompany?.id);
+    const clientId = normalizeId(currentCompany?.id) || readShopSessionClientId();
 
     if (
       !sessionChecked ||
@@ -186,12 +211,28 @@ export default function ShopLoyaltyPage() {
         page: 1,
         itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       };
+      const salesQuery = {
+        provider: providerId,
+        orderType: 'sale',
+        page: 1,
+        itemsPerPage: SHOP_LOYALTY_SALES_ITEMS_PER_PAGE,
+      };
 
       if (!showHistory) {
         cardQuery.status = {realStatus: 'open'};
       }
 
-      const cards = await ordersStore.actions.getItems(cardQuery);
+      const [cards, clientSales, payerSales] = await Promise.all([
+        ordersStore.actions.getItems(cardQuery),
+        ordersStore.actions.getItems({
+          ...salesQuery,
+          client: clientId,
+        }),
+        ordersStore.actions.getItems({
+          ...salesQuery,
+          payer: clientId,
+        }),
+      ]);
       const hydratedCards = await Promise.all(
         (Array.isArray(cards) ? cards : []).map(async card => {
           const requiredSales = resolveCardRequiredSales(
@@ -212,7 +253,7 @@ export default function ShopLoyaltyPage() {
             card,
             requiredSales,
             stamps: (Array.isArray(stamps) ? stamps : [])
-              .filter(isPaidSale)
+              .filter(isPaidLoyaltySaleOrder)
               .sort(
                 (left, right) =>
                   new Date(left?.orderDate || 0).getTime() -
@@ -222,7 +263,19 @@ export default function ShopLoyaltyPage() {
         }),
       );
 
-      setLoyaltyCards(hydratedCards);
+      setLoyaltyCards(
+        buildLoyaltyDisplayCards({
+          cards: hydratedCards,
+          clientId,
+          loyaltyProductIds,
+          requiredSales: loyaltyRequiredSales,
+          sales: [
+            ...(Array.isArray(clientSales) ? clientSales : []),
+            ...(Array.isArray(payerSales) ? payerSales : []),
+          ],
+          showHistory,
+        }),
+      );
     } catch {
       setLoyaltyCards([]);
     } finally {
@@ -234,6 +287,7 @@ export default function ShopLoyaltyPage() {
     defaultCompany?.id,
     isLogged,
     loyaltyCouponsEnabled,
+    loyaltyProductIds,
     loyaltyRequiredSales,
     ordersStore.actions,
     refreshCart,
@@ -263,14 +317,14 @@ export default function ShopLoyaltyPage() {
       <>
         <View style={styles.summaryHeader}>
           <View style={styles.summaryTitleGroup}>
-            <Text style={[styles.summaryLabel, {color: theme.muted}]}>
+            <Text style={[styles.summaryLabel, {color: palette.textMuted}]}>
               Pedidos carimbados
             </Text>
-            <Text style={[styles.summaryValue, {color: theme.text}]}>
+            <Text style={[styles.summaryValue, {color: palette.textPrimary}]}>
               {completedStampCount} / {requiredSales || 0}
             </Text>
             {cardData?.card?.id ? (
-              <Text style={[styles.cardMeta, {color: theme.muted}]}>
+              <Text style={[styles.cardMeta, {color: palette.textMuted}]}>
                 Cartão #{cardData.card.id}
               </Text>
             ) : null}
@@ -278,12 +332,12 @@ export default function ShopLoyaltyPage() {
           <View
             style={[
               styles.rewardBadge,
-              {backgroundColor: theme.primary},
+              {backgroundColor: palette.buttonBackground},
             ]}>
             <Text
               style={[
                 styles.rewardBadgeText,
-                {color: theme.onPrimary},
+                {color: palette.buttonText},
               ]}>
               prêmio
             </Text>
@@ -298,57 +352,75 @@ export default function ShopLoyaltyPage() {
                   styles.stampSlot,
                   {
                     backgroundColor: slot.completed
-                      ? theme.background
-                      : theme.surface,
+                      ? palette.pageBackground
+                      : palette.cardBackground,
                     borderColor: slot.completed
-                      ? theme.primary
-                      : theme.cardBorder,
+                      ? palette.chipSelectedBorder
+                      : palette.headerBorder,
                   },
                 ]}>
                 {slot.completed ? (
-                  <View
-                    style={[
-                      styles.stampMark,
-                      {
-                        borderColor: theme.primary,
-                        transform: [
-                          {
-                            rotate:
-                              slot.number % 2 === 0 ? '4deg' : '-5deg',
-                          },
-                        ],
-                      },
-                    ]}>
-                    <Text
+                  loyaltyStampIconSource ? (
+                    <Image
+                      source={{uri: loyaltyStampIconSource}}
                       style={[
-                        styles.stampMarkMain,
-                        {color: theme.primary},
-                      ]}>
-                      OK
-                    </Text>
-                    <Text
+                        styles.stampImage,
+                        {
+                          transform: [
+                            {
+                              rotate:
+                                slot.number % 2 === 0 ? '4deg' : '-5deg',
+                            },
+                          ],
+                        },
+                      ]}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View
                       style={[
-                        styles.stampMarkLabel,
-                        {color: theme.primary},
+                        styles.stampMark,
+                        {
+                          borderColor: palette.chipSelectedBorder,
+                          transform: [
+                            {
+                              rotate:
+                                slot.number % 2 === 0 ? '4deg' : '-5deg',
+                            },
+                          ],
+                        },
                       ]}>
-                      {slot.order?.id
-                        ? `PEDIDO #${slot.order.id}`
-                        : `PEDIDO ${formatStampNumber(slot.number)}`}
-                    </Text>
-                  </View>
+                      <Text
+                        style={[
+                          styles.stampMarkMain,
+                          {color: palette.chipSelectedText},
+                        ]}>
+                        OK
+                      </Text>
+                      <Text
+                        style={[
+                          styles.stampMarkLabel,
+                          {color: palette.chipSelectedText},
+                        ]}>
+                        {slot.order?.id
+                          ? `PEDIDO #${slot.order.id}`
+                          : `PEDIDO ${formatStampNumber(slot.number)}`}
+                      </Text>
+                    </View>
+                  )
                 ) : (
                   <>
                     <Text
                       style={[
                         styles.pendingStampNumber,
-                        {color: theme.cardBorder},
+                        {color: palette.dividerBorder},
                       ]}>
                       {formatStampNumber(slot.number)}
                     </Text>
                     <Text
                       style={[
                         styles.pendingStampLabel,
-                        {color: theme.muted},
+                        {color: palette.textMuted},
                       ]}>
                       aguardando pedido
                     </Text>
@@ -361,15 +433,15 @@ export default function ShopLoyaltyPage() {
           <View
             style={[
               styles.emptyStampBoard,
-              {borderColor: theme.cardBorder},
+              {borderColor: palette.headerBorder},
             ]}>
-            <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+            <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
               Nenhuma meta de pedidos foi configurada para esta fidelidade.
             </Text>
           </View>
         )}
         {stampSlots.length > 0 && (
-          <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+          <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
             {remainingSales > 0
               ? `Faltam ${remainingSales} pedido(s) para liberar o brinde.`
               : 'Brinde liberado para o próximo pedido.'}
@@ -389,12 +461,12 @@ export default function ShopLoyaltyPage() {
       subtitle="Programa de fidelidade">
       {() => (
         <ScrollView
-          style={styles.page}
+          style={[styles.page, {backgroundColor: palette.pageBackground}]}
           contentContainerStyle={styles.pageContent}
           showsVerticalScrollIndicator={false}>
           {!loyaltyCouponsEnabled ? (
             <ShopFeatureState
-              theme={theme}
+              theme={featureTheme}
               iconName="loyalty"
               title="Fidelidade desativada"
               description="A tela de acompanhamento está escondida porque os cupons de fidelidade não estão ativos para esta empresa."
@@ -415,21 +487,17 @@ export default function ShopLoyaltyPage() {
                 style={[
                   styles.hero,
                   {
-                    backgroundColor: theme.darkCard,
-                    borderColor: theme.darkBorder,
+                    backgroundColor: palette.buttonBackground,
+                    borderColor: palette.chipSelectedBorder,
                   },
                 ]}>
-                <Text style={[styles.heroEyebrow, {color: theme.accent}]}>
+                <Text style={[styles.heroEyebrow, {color: palette.chipSelectedBackground}]}>
                   FIDELIDADE
                 </Text>
-                <Text style={[styles.heroTitle, {color: '#FFFFFF'}]}>
+                <Text style={[styles.heroTitle, {color: palette.badgeText}]}>
                   Acompanhe a sua fidelidade
                 </Text>
-                <Text
-                  style={[
-                    styles.heroText,
-                    {color: 'rgba(255,255,255,0.78)'},
-                  ]}>
+                <Text style={[styles.heroText, {color: palette.badgeText}]}>
                   Cada pedido pago com produtos participantes ganha um carimbo.
                   Ao completar o cartão, o brinde entra no próximo carrinho.
                 </Text>
@@ -437,10 +505,10 @@ export default function ShopLoyaltyPage() {
 
               <View style={styles.loyaltyToolbar}>
                 <View style={styles.toolbarTitleGroup}>
-                  <Text style={[styles.toolbarTitle, {color: theme.text}]}>
+                  <Text style={[styles.toolbarTitle, {color: palette.textPrimary}]}>
                     {showHistory ? 'Últimos cartões' : 'Cartão atual'}
                   </Text>
-                  <Text style={[styles.toolbarMeta, {color: theme.muted}]}>
+                  <Text style={[styles.toolbarMeta, {color: palette.textMuted}]}>
                     {loyaltyCards.length} cartão(ões) carregado(s)
                   </Text>
                 </View>
@@ -449,9 +517,13 @@ export default function ShopLoyaltyPage() {
                   onPress={() => setShowHistory(value => !value)}
                   style={[
                     styles.historyButton,
-                    {borderColor: theme.primary},
+                    {borderColor: palette.buttonBackground},
                   ]}>
-                  <Text style={[styles.historyButtonText, {color: theme.primary}]}>
+                  <Text
+                    style={[
+                      styles.historyButtonText,
+                      {color: palette.buttonBackground},
+                    ]}>
                     {showHistory ? 'Ver atual' : 'Ver últimos'}
                   </Text>
                 </TouchableOpacity>
@@ -459,7 +531,7 @@ export default function ShopLoyaltyPage() {
 
               {sessionChecked && !isLogged ? (
                 <ShopAuthRequiredState
-                  theme={theme}
+                  theme={featureTheme}
                   title="Entre para ver seus carimbos"
                   description="O programa de fidelidade e publico, mas seus cartoes e carimbos dependem do cadastro."
                 />
@@ -468,23 +540,23 @@ export default function ShopLoyaltyPage() {
                   style={[
                     styles.summaryCard,
                     {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
+                      backgroundColor: palette.cardBackground,
+                      borderColor: palette.headerBorder,
                     },
                   ]}>
-                  <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+                  <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
                     Carregando cartões de fidelidade.
                   </Text>
                 </View>
               ) : loyaltyCards.length > 0 ? (
                 loyaltyCards.map(cardData => (
                   <View
-                    key={`loyalty-card-${cardData?.card?.id || 'current'}`}
+                    key={`loyalty-card-${cardData?.card?.id || cardData?.syntheticKey || 'current'}`}
                     style={[
                       styles.summaryCard,
                       {
-                        backgroundColor: theme.surface,
-                        borderColor: theme.cardBorder,
+                        backgroundColor: palette.cardBackground,
+                        borderColor: palette.headerBorder,
                       },
                     ]}>
                     {renderStampGrid(cardData)}
@@ -495,8 +567,8 @@ export default function ShopLoyaltyPage() {
                   style={[
                     styles.summaryCard,
                     {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
+                      backgroundColor: palette.cardBackground,
+                      borderColor: palette.headerBorder,
                     },
                   ]}>
                   {renderStampGrid({
@@ -504,7 +576,7 @@ export default function ShopLoyaltyPage() {
                     requiredSales: loyaltyRequiredSales || 0,
                     stamps: [],
                   })}
-                  <Text style={[styles.summaryHelp, {color: theme.muted}]}>
+                  <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
                     Nenhum cartão aberto foi encontrado para este cliente.
                   </Text>
                 </View>
@@ -515,26 +587,26 @@ export default function ShopLoyaltyPage() {
                   style={[
                     styles.infoCard,
                     {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
+                      backgroundColor: palette.cardBackground,
+                      borderColor: palette.headerBorder,
                     },
                   ]}>
-                  <Text style={[styles.infoTitle, {color: theme.text}]}>
+                  <Text style={[styles.infoTitle, {color: palette.textPrimary}]}>
                     Produtos participantes
                   </Text>
-                  <Text style={[styles.infoMeta, {color: theme.muted}]}>
+                  <Text style={[styles.infoMeta, {color: palette.textMuted}]}>
                     {loyaltyProductIds.length} produto(s) configurado(s)
                   </Text>
                   {participantProducts.length > 0 ? (
                     participantProducts.map(product => (
                       <Text
                         key={product?.id || resolveProductLabel(product)}
-                        style={[styles.infoListItem, {color: theme.text}]}>
+                        style={[styles.infoListItem, {color: palette.textPrimary}]}>
                         • {resolveProductLabel(product)}
                       </Text>
                     ))
                   ) : (
-                    <Text style={[styles.infoEmpty, {color: theme.muted}]}>
+                    <Text style={[styles.infoEmpty, {color: palette.textMuted}]}>
                       Nenhum produto participante foi carregado.
                     </Text>
                   )}
@@ -544,22 +616,22 @@ export default function ShopLoyaltyPage() {
                   style={[
                     styles.infoCard,
                     {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
+                      backgroundColor: palette.cardBackground,
+                      borderColor: palette.headerBorder,
                     },
                   ]}>
-                  <Text style={[styles.infoTitle, {color: theme.text}]}>
+                  <Text style={[styles.infoTitle, {color: palette.textPrimary}]}>
                     Brinde configurado
                   </Text>
-                  <Text style={[styles.infoMeta, {color: theme.muted}]}>
+                  <Text style={[styles.infoMeta, {color: palette.textMuted}]}>
                     Produto liberado ao bater a meta
                   </Text>
-                  <Text style={[styles.giftTitle, {color: theme.primary}]}>
+                  <Text style={[styles.giftTitle, {color: palette.buttonBackground}]}>
                     {giftProduct
                       ? resolveProductLabel(giftProduct)
                       : 'Nenhum brinde configurado'}
                   </Text>
-                  <Text style={[styles.infoEmpty, {color: theme.muted}]}>
+                  <Text style={[styles.infoEmpty, {color: palette.textMuted}]}>
                     Meta configurada: {loyaltyRequiredSales || 0} pedido(s).
                   </Text>
                 </View>

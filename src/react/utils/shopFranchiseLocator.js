@@ -1,6 +1,7 @@
 import {
   normalizeShopTextConfig,
 } from '@controleonline/ui-common/src/react/utils/shopConfig';
+import {resolveFileImageUrl} from '@controleonline/ui-common/src/react/utils/fileUrl';
 
 const normalizeCoordinate = value => {
   if (value === null || value === undefined || value === '') {
@@ -72,9 +73,23 @@ export const buildFranchiseMarkerAddresses = ({
         const resolvedMarkerIconUrl =
           normalizedConfiguredIconUrl ||
           normalizeShopTextConfig(address?.markerIconUrl);
+        const unitAlias = normalizeShopTextConfig(
+          address?.alias ||
+            company?.alias ||
+            address?.nickname ||
+            company?.name,
+        );
+        const companyLogoUrl = normalizeShopTextConfig(
+          resolveFileImageUrl(company?.image_id || address?.logo || company?.logo || null, {
+            company,
+          }),
+        );
 
         return {
           ...address,
+          companyName: unitAlias,
+          unitAlias,
+          ...(companyLogoUrl ? {companyLogoUrl} : {}),
           latitude: coordinates?.latitude ?? address?.latitude ?? null,
           longitude: coordinates?.longitude ?? address?.longitude ?? null,
           ...(resolvedMarkerIconUrl

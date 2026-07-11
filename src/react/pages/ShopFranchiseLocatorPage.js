@@ -368,10 +368,18 @@ export default function ShopFranchiseLocatorPage() {
 
         return (
           <View style={styles.page}>
-            <View style={[styles.mapViewport, {height: mapHeight}]}>
+            <View
+              style={[
+                styles.mapViewport,
+                {
+                  height: mapHeight,
+                  backgroundColor: theme.pageBackground,
+                },
+              ]}>
               {markerAddresses.length > 0 ? (
                 <DefaultMap
                   config={mapConfig}
+                  popupTheme={theme}
                 />
               ) : (
                 <ShopFeatureState
@@ -401,7 +409,6 @@ const styles = StyleSheet.create({
   mapViewport: {
     width: '100%',
     flex: 1,
-    backgroundColor: '#E5EEF5',
   },
 });
 // TODO(store-first): quando este arquivo for mexido, mover a leitura para stores e evitar chamadas HTTP diretas quando o store ja resolver isso.

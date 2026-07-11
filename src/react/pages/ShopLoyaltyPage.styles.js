@@ -135,6 +135,10 @@ export default StyleSheet.create({
     justifyContent: 'center',
     width: 72,
   },
+  stampImage: {
+    height: 72,
+    width: 72,
+  },
   stampMarkMain: {
     fontSize: 22,
     fontWeight: '900',

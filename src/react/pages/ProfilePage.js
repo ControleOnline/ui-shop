@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 
 import {
   buildFileUrl,
@@ -56,6 +57,7 @@ export default function ShopProfilePage() {
   const authStore = useStore('auth');
   const peopleStore = useStore('people');
   const {defaultCompany} = useShopCart();
+  const {salesPageEnabled} = useShopSettings();
   const theme = pickTheme(defaultCompany);
 
   const {isLogged, sessionChecked, user} = authStore.getters;
@@ -160,71 +162,75 @@ export default function ShopProfilePage() {
               <Icon name="chevron-right" size={22} color={theme.muted} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ShopCartPage')}
-              style={inlineStyle_135_14({
-                theme: theme,
-              })}>
-              <View
-                style={inlineStyle_144_16}>
-                <Icon name="shopping-cart" size={20} color={theme.primary} />
-                <Text style={inlineStyle_146_22({
-                  theme: theme,
-                })}>
-                  Meu carrinho
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={22} color={theme.muted} />
-            </TouchableOpacity>
+            {salesPageEnabled && (
+              <>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ShopCartPage')}
+                  style={inlineStyle_135_14({
+                    theme: theme,
+                  })}>
+                  <View
+                    style={inlineStyle_144_16}>
+                    <Icon name="shopping-cart" size={20} color={theme.primary} />
+                    <Text style={inlineStyle_146_22({
+                      theme: theme,
+                    })}>
+                      Meu carrinho
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={theme.muted} />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ShopCheckoutPage')}
-              style={inlineStyle_155_14({
-                theme: theme,
-              })}>
-              <View
-                style={inlineStyle_164_16}>
-                <Icon name="payments" size={20} color={theme.primary} />
-                <Text style={inlineStyle_166_22({
-                  theme: theme,
-                })}>
-                  Pagamento e Pix
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={22} color={theme.muted} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ShopCheckoutPage')}
+                  style={inlineStyle_155_14({
+                    theme: theme,
+                  })}>
+                  <View
+                    style={inlineStyle_164_16}>
+                    <Icon name="payments" size={20} color={theme.primary} />
+                    <Text style={inlineStyle_166_22({
+                      theme: theme,
+                    })}>
+                      Pagamento e Pix
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={theme.muted} />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ShopCardsPage')}
-              style={inlineStyle_175_14({
-                theme: theme,
-              })}>
-              <View
-                style={inlineStyle_184_16}>
-                <Icon name="credit-card" size={20} color={theme.primary} />
-                <Text style={inlineStyle_186_22({
-                  theme: theme,
-                })}>
-                  Meus cartões
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={22} color={theme.muted} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ShopCardsPage')}
+                  style={inlineStyle_175_14({
+                    theme: theme,
+                  })}>
+                  <View
+                    style={inlineStyle_184_16}>
+                    <Icon name="credit-card" size={20} color={theme.primary} />
+                    <Text style={inlineStyle_186_22({
+                      theme: theme,
+                    })}>
+                      Meus cartões
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={theme.muted} />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ShopOrdersPage')}
-              style={inlineStyle_195_14}>
-              <View
-                style={inlineStyle_202_16}>
-                <Icon name="receipt-long" size={20} color={theme.primary} />
-                <Text style={inlineStyle_204_22({
-                  theme: theme,
-                })}>
-                  Meus pedidos
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={22} color={theme.muted} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ShopOrdersPage')}
+                  style={inlineStyle_195_14}>
+                  <View
+                    style={inlineStyle_202_16}>
+                    <Icon name="receipt-long" size={20} color={theme.primary} />
+                    <Text style={inlineStyle_204_22({
+                      theme: theme,
+                    })}>
+                      Meus pedidos
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={theme.muted} />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           <TouchableOpacity

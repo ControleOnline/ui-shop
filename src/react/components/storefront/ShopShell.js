@@ -137,6 +137,7 @@ export default function ShopShell({
     homeEntries,
     loyaltyCouponsEnabled,
     primaryEntryRouteName,
+    salesPageEnabled,
   } = useShopSettings();
 
   const {isLogged, user} = authStore.getters;
@@ -150,6 +151,7 @@ export default function ShopShell({
     return companyConfigs || {};
   }, [companyConfigs, salesCompany?.configs]);
   const cardRegistrationEnabled = Boolean(effectiveCompanyConfigs?.['asaas-key']);
+  const canShowSalesShortcuts = showSalesShortcuts && salesPageEnabled;
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -229,6 +231,17 @@ export default function ShopShell({
   const surface = theme.surface;
   const foreground = theme.text;
   const muted = theme.muted;
+  const menuPalette = {
+    buttonBackground: theme.buttonBackground,
+    buttonText: theme.buttonText,
+    dividerBorder: theme.dividerBorder,
+    modalBackground: theme.modalBackground,
+    modalHeaderText: theme.modalHeaderText,
+    modalOverlay: theme.modalOverlay,
+    modalShadow: theme.modalShadow,
+    modalText: theme.modalText,
+    textMuted: theme.textMuted,
+  };
 
   const routeActiveHomeEntry = useMemo(() => {
     if (route?.name === 'ShopFranchiseLocatorPage') {
@@ -433,6 +446,7 @@ export default function ShopShell({
         <TouchableOpacity
           style={inlineStyle_345_10({
             isMobile: isMobile,
+            menuPalette: menuPalette,
           })}
           activeOpacity={1}
           onPress={() => setAccountOpen(false)}>
@@ -440,7 +454,7 @@ export default function ShopShell({
             activeOpacity={1}
             style={inlineStyle_358_12({
               isMobile: isMobile,
-              surface: surface,
+              menuPalette: menuPalette,
             })}>
             <View style={inlineStyle_369_18({
               isMobile: isMobile,
@@ -450,7 +464,7 @@ export default function ShopShell({
               })}>
                 <Text
                   style={inlineStyle_372_18({
-                    foreground: foreground,
+                    menuPalette: menuPalette,
                   })}>
                   Menu
                 </Text>
@@ -463,10 +477,14 @@ export default function ShopShell({
                       handleSelectHomeEntry(entry);
                     }}
                     style={inlineStyle_381_18}>
-                    <Icon name={entry.iconName} size={22} color={foreground} />
+                    <Icon
+                      name={entry.iconName}
+                      size={22}
+                      color={menuPalette.modalText}
+                    />
                     <Text
                       style={inlineStyle_388_20({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       {entry.label}
                     </Text>
@@ -480,17 +498,17 @@ export default function ShopShell({
                       navigation.navigate('ShopProfilePage');
                     }}
                     style={inlineStyle_381_18}>
-                    <Icon name="face" size={22} color={foreground} />
+                    <Icon name="face" size={22} color={menuPalette.modalText} />
                     <Text
                       style={inlineStyle_388_20({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       Meu Perfil
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {isLogged && (
+                {isLogged && salesPageEnabled && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -498,14 +516,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_398_18}>
                     <Text style={inlineStyle_399_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Meus Pedidos
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && cardRegistrationEnabled && (
+                {canShowSalesShortcuts && cardRegistrationEnabled && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -513,14 +531,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_409_18}>
                     <Text style={inlineStyle_410_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Carrinho
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && (
+                {canShowSalesShortcuts && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -528,14 +546,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_420_18}>
                     <Text style={inlineStyle_421_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Pagamento e Pix
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && (
+                {canShowSalesShortcuts && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -543,7 +561,7 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_431_18}>
                     <Text style={inlineStyle_432_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Meus Cartões
                     </Text>
@@ -558,7 +576,7 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_431_18}>
                     <Text style={inlineStyle_432_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Fidelidade
                     </Text>
@@ -567,14 +585,18 @@ export default function ShopShell({
 
                 <View
                   style={inlineStyle_438_18}>
-                  <Icon name="g-translate" size={22} color={foreground} />
+                  <Icon
+                    name="g-translate"
+                    size={22}
+                    color={menuPalette.modalText}
+                  />
                   <View style={inlineStyle_444_24}>
                     <Text style={inlineStyle_445_26({
-                      muted: muted,
+                      menuPalette: menuPalette,
                     })}>Idioma</Text>
                     <Text
                       style={inlineStyle_447_22({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       {JSON.parse(localStorage.getItem('config') || '{}')
                         ?.language || 'Pt-BR'}
@@ -585,8 +607,8 @@ export default function ShopShell({
 
               <View
                 style={inlineStyle_460_16({
-                  darkMode: false,
                   isMobile: isMobile,
+                  menuPalette: menuPalette,
                 })}
               />
 
@@ -596,7 +618,7 @@ export default function ShopShell({
                 })}>
                 <View
                   style={inlineStyle_473_18({
-                    theme: theme,
+                    menuPalette: menuPalette,
                   })}>
                   {avatarUrl ? (
                     <Image
@@ -606,7 +628,9 @@ export default function ShopShell({
                     />
                   ) : (
                     <Text
-                      style={inlineStyle_490_22}>
+                      style={inlineStyle_490_22({
+                        menuPalette: menuPalette,
+                      })}>
                       {getInitials(displayName)}
                     </Text>
                   )}
@@ -614,7 +638,7 @@ export default function ShopShell({
 
                 <Text
                   style={inlineStyle_497_18({
-                    foreground: foreground,
+                    menuPalette: menuPalette,
                   })}>
                   {displayName}
                 </Text>
@@ -633,9 +657,11 @@ export default function ShopShell({
                     navigateToSignIn();
                   }}
                   style={inlineStyle_531_18({
-                    theme: theme,
+                    menuPalette: menuPalette,
                   })}>
-                  <Text style={inlineStyle_538_24}>
+                  <Text style={inlineStyle_538_24({
+                    menuPalette: menuPalette,
+                  })}>
                     {isLogged ? 'Sair' : 'Entrar'}
                   </Text>
                 </TouchableOpacity>
@@ -649,9 +675,11 @@ export default function ShopShell({
                       });
                     }}
                     style={inlineStyle_531_18({
-                      theme: theme,
+                      menuPalette: menuPalette,
                     })}>
-                    <Text style={inlineStyle_538_24}>Criar conta</Text>
+                    <Text style={inlineStyle_538_24({
+                      menuPalette: menuPalette,
+                    })}>Criar conta</Text>
                   </TouchableOpacity>
                 )}
               </View>

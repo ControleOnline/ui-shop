@@ -5,6 +5,7 @@ import {useStore} from '@store';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import {readShopSessionClientId} from '@controleonline/ui-shop/src/react/utils/shopSession';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 
 import {
@@ -47,7 +48,9 @@ export default function OrdersPage() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!currentCompany?.id || !(salesCompany?.id || defaultCompany?.id)) {
+      const clientId = currentCompany?.id || readShopSessionClientId();
+
+      if (!clientId || !(salesCompany?.id || defaultCompany?.id)) {
         return;
       }
 
@@ -57,7 +60,7 @@ export default function OrdersPage() {
 
       ordersStore.actions.getItems({
         app: 'SHOP',
-        client: currentCompany.id,
+        client: clientId,
         orderType: 'sale',
         provider: salesCompany?.id || defaultCompany.id,
         page: 1,
