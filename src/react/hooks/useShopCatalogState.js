@@ -12,6 +12,7 @@ import {
   persistShopCatalogCategoryId,
   resolveShopCatalogCategoryId,
   rememberShopCatalogProduct,
+  SHOP_CATEGORIES_RESOURCE,
 } from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
 const normalizeCollection = payload =>
@@ -173,7 +174,7 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await fetchShopCollectionPage('categories', {
+        const response = await fetchShopCollectionPage(SHOP_CATEGORIES_RESOURCE, {
           company: normalizedCompanyId,
           context: 'products',
           exists: {categoryFiles: 'true'},
@@ -454,7 +455,9 @@ export default function useShopCatalogState({
     const requestToken = ++activeCategoryRequestTokenRef.current;
 
     api
-      .fetch(`categories/${normalizedActiveCategoryId}`)
+      .fetch(`${SHOP_CATEGORIES_RESOURCE}/${normalizedActiveCategoryId}`, {
+        params: {company: salesCompany.id},
+      })
       .then(category => {
         if (!mountedRef.current || requestToken !== activeCategoryRequestTokenRef.current) {
           return;
@@ -568,7 +571,7 @@ export default function useShopCatalogState({
         product: normalizedSearchQuery,
         ...productFileFilters,
       }),
-      fetchShopCollectionPage('categories', {
+      fetchShopCollectionPage(SHOP_CATEGORIES_RESOURCE, {
         company: salesCompany.id,
         context: 'products',
         exists: {categoryFiles: 'true'},

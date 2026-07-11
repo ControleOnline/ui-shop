@@ -3,6 +3,7 @@ import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {api} from '@controleonline/ui-common/src/api';
 
 const SHOP_CATALOG_CATEGORY_STORAGE_PREFIX = 'shop-purchases-active-category';
+export const SHOP_CATEGORIES_RESOURCE = 'shop/categories';
 export const SHOP_CATALOG_PAGE_SIZE = 30;
 export const SHOP_CATALOG_MAX_PAGE_SIZE = 50;
 const shopCatalogProductCache = new Map();
