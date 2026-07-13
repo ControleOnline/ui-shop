@@ -189,7 +189,10 @@ export default function ShopLoyaltyPage() {
     sessionChecked,
   ]);
 
-  // The page only renders the backend snapshot. It never rebuilds stamps from raw orders locally.
+  /*
+   * @agents The page only renders the backend snapshot.
+   * It never rebuilds stamps from raw orders locally.
+   */
   const loadLoyaltyCards = useCallback(async () => {
     const requestId = loyaltySnapshotRequestRef.current + 1;
     loyaltySnapshotRequestRef.current = requestId;
@@ -231,6 +234,10 @@ export default function ShopLoyaltyPage() {
         return;
       }
 
+      /*
+       * @agents Accept both the wrapped API response and a direct array so the screen
+       * stays resilient to the store contract while still rendering only the canonical snapshot.
+       */
       const nextCards = Array.isArray(response?.member)
         ? response.member.filter(Boolean)
         : Array.isArray(response)
@@ -275,6 +282,10 @@ export default function ShopLoyaltyPage() {
   );
 
   const renderStampGrid = cardData => {
+    /*
+     * @agents Stamp slots are derived from the snapshot count only.
+     * The UI never recalculates progress from raw orders.
+     */
     const requiredSales = cardData?.requiredSales || loyaltyRequiredSales || 0;
     const stamps = Array.isArray(cardData?.stamps) ? cardData.stamps : [];
     const completedStampCount = Math.min(stamps.length, requiredSales);
