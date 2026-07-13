@@ -523,9 +523,9 @@ export default function ShopLoyaltyPage() {
                   </Text>
                 </View>
               ) : loyaltyCards.length > 0 ? (
-                loyaltyCards.map(cardData => (
+                loyaltyCards.map((cardData, index) => (
                   <View
-                    key={`loyalty-card-${cardData?.card?.id || cardData?.syntheticKey || 'current'}`}
+                    key={`loyalty-card-${cardData?.card?.id || `current-${index}`}`}
                     style={[
                       styles.summaryCard,
                       {
