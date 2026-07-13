@@ -111,7 +111,7 @@ export default StyleSheet.create({
   stampGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
     justifyContent: 'center',
     marginTop: 18,
   },
@@ -136,9 +136,9 @@ export default StyleSheet.create({
     width: 72,
   },
   stampImage: {
+    width: 128,
     height: 128,
     opacity: 0.9,
-    width: 128,
   },
   stampMarkMain: {
     fontSize: 22,

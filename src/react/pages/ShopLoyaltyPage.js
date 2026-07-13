@@ -39,8 +39,8 @@ const normalizeCollection = payload => {
   return [];
 };
 
-const STAMP_OFFSET_LIMIT = 15;
-const STAMP_ROTATION_VALUE = 15;
+const STAMP_OFFSET_LIMIT = 25;
+const STAMP_ROTATION_VALUE = 12;
 
 const createSeededValue = seed => {
   const text = String(seed || 'stamp');
