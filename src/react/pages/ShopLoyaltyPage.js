@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Image,
   ScrollView,
@@ -8,15 +8,13 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
+import DefaultErrors from '@controleonline/ui-default/src/react/components/errors/DefaultErrors';
+import StateStore from '@controleonline/ui-layout/src/react/components/StateStore';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {
-  buildLoyaltyDisplayCards,
-  isPaidLoyaltySaleOrder,
-} from '@controleonline/ui-shop/src/react/utils/shopLoyalty';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {readShopSessionClientId} from '@controleonline/ui-shop/src/react/utils/shopSession';
 import {useStore} from '@store';
@@ -51,8 +49,6 @@ const resolveCardRequiredSales = (card, fallback) => {
 };
 
 const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
-const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
-const SHOP_LOYALTY_SALES_ITEMS_PER_PAGE = 200;
 
 export default function ShopLoyaltyPage() {
   const navigation = useNavigation();
@@ -74,7 +70,6 @@ export default function ShopLoyaltyPage() {
   const {
     currentCompany,
     defaultCompany: cartDefaultCompany,
-    refreshCart,
     salesCompany,
   } = useShopCart({autoRefresh: true});
   const palette = {
@@ -106,6 +101,15 @@ export default function ShopLoyaltyPage() {
   const [loyaltyCards, setLoyaltyCards] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
+  const [cardsError, setCardsError] = useState(null);
+  const loyaltySnapshotRequestRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -186,7 +190,11 @@ export default function ShopLoyaltyPage() {
   ]);
 
   const loadLoyaltyCards = useCallback(async () => {
-    const providerId = normalizeId(salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id);
+    const requestId = loyaltySnapshotRequestRef.current + 1;
+    loyaltySnapshotRequestRef.current = requestId;
+    const providerId = normalizeId(
+      salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id,
+    );
     const clientId = normalizeId(currentCompany?.id) || readShopSessionClientId();
 
     if (
@@ -196,90 +204,56 @@ export default function ShopLoyaltyPage() {
       !providerId ||
       !clientId
     ) {
-      setLoyaltyCards([]);
+      if (isMountedRef.current) {
+        setLoyaltyCards([]);
+        setCardsError(null);
+        setIsLoadingCards(false);
+      }
       return;
     }
 
-    setIsLoadingCards(true);
+    if (isMountedRef.current) {
+      setIsLoadingCards(true);
+      setCardsError(null);
+    }
+
     try {
-      await refreshCart?.();
+      const response = await ordersStore.actions.getFidelitySnapshot({
+        clientId,
+        history: showHistory,
+      });
 
-      const cardQuery = {
-        client: clientId,
-        provider: providerId,
-        orderType: 'fidelity',
-        page: 1,
-        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
-      };
-      const salesQuery = {
-        provider: providerId,
-        orderType: 'sale',
-        page: 1,
-        itemsPerPage: SHOP_LOYALTY_SALES_ITEMS_PER_PAGE,
-      };
-
-      if (!showHistory) {
-        cardQuery.status = {realStatus: 'open'};
+      if (
+        !isMountedRef.current ||
+        loyaltySnapshotRequestRef.current !== requestId
+      ) {
+        return;
       }
 
-      const [cards, clientSales, payerSales] = await Promise.all([
-        ordersStore.actions.getItems(cardQuery),
-        ordersStore.actions.getItems({
-          ...salesQuery,
-          client: clientId,
-        }),
-        ordersStore.actions.getItems({
-          ...salesQuery,
-          payer: clientId,
-        }),
-      ]);
-      const hydratedCards = await Promise.all(
-        (Array.isArray(cards) ? cards : []).map(async card => {
-          const requiredSales = resolveCardRequiredSales(
-            card,
-            loyaltyRequiredSales,
-          );
-          const stamps = await ordersStore.actions.getItems({
-            mainOrderId: card?.id,
-            orderType: 'sale',
-            page: 1,
-            itemsPerPage: Math.max(
-              1,
-              Math.min(SHOP_COLLECTION_ITEMS_PER_PAGE, requiredSales || SHOP_COLLECTION_ITEMS_PER_PAGE),
-            ),
-          });
+      const nextCards = Array.isArray(response?.member)
+        ? response.member.filter(Boolean)
+        : Array.isArray(response)
+          ? response.filter(Boolean)
+          : [];
 
-          return {
-            card,
-            requiredSales,
-            stamps: (Array.isArray(stamps) ? stamps : [])
-              .filter(isPaidLoyaltySaleOrder)
-              .sort(
-                (left, right) =>
-                  new Date(left?.orderDate || 0).getTime() -
-                  new Date(right?.orderDate || 0).getTime(),
-              ),
-          };
-        }),
-      );
+      setLoyaltyCards(nextCards);
+    } catch (error) {
+      if (
+        !isMountedRef.current ||
+        loyaltySnapshotRequestRef.current !== requestId
+      ) {
+        return;
+      }
 
-      setLoyaltyCards(
-        buildLoyaltyDisplayCards({
-          cards: hydratedCards,
-          clientId,
-          loyaltyProductIds,
-          requiredSales: loyaltyRequiredSales,
-          sales: [
-            ...(Array.isArray(clientSales) ? clientSales : []),
-            ...(Array.isArray(payerSales) ? payerSales : []),
-          ],
-          showHistory,
-        }),
-      );
-    } catch {
       setLoyaltyCards([]);
+      setCardsError(error);
     } finally {
-      setIsLoadingCards(false);
+      if (
+        isMountedRef.current &&
+        loyaltySnapshotRequestRef.current === requestId
+      ) {
+        setIsLoadingCards(false);
+      }
     }
   }, [
     cartDefaultCompany?.id,
@@ -287,10 +261,7 @@ export default function ShopLoyaltyPage() {
     defaultCompany?.id,
     isLogged,
     loyaltyCouponsEnabled,
-    loyaltyProductIds,
-    loyaltyRequiredSales,
     ordersStore.actions,
-    refreshCart,
     salesCompany?.id,
     sessionChecked,
     showHistory,
