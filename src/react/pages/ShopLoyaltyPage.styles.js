@@ -122,9 +122,9 @@ export default StyleSheet.create({
     borderStyle: 'dashed',
     borderWidth: 2,
     justifyContent: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
     padding: 8,
-    width: 98,
+    width: 128,
   },
   stampMark: {
     alignItems: 'center',
@@ -136,8 +136,9 @@ export default StyleSheet.create({
     width: 72,
   },
   stampImage: {
-    height: 72,
-    width: 72,
+    height: 128,
+    opacity: 0.9,
+    width: 128,
   },
   stampMarkMain: {
     fontSize: 22,

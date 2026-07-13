@@ -39,6 +39,42 @@ const normalizeCollection = payload => {
   return [];
 };
 
+const STAMP_OFFSET_LIMIT = 15;
+const STAMP_ROTATION_VALUE = 15;
+
+const createSeededValue = seed => {
+  const text = String(seed || 'stamp');
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 31 + text.charCodeAt(index)) | 0;
+  }
+
+  const normalized = Math.sin(hash || 1) * 10000;
+  return normalized - Math.floor(normalized);
+};
+
+const resolveStampTransform = (cardId, slotNumber) => {
+  const baseSeed = `${cardId || 'empty'}:${slotNumber || 0}`;
+  const offsetX = Math.round(
+    (createSeededValue(`${baseSeed}:x`) * 2 - 1) * STAMP_OFFSET_LIMIT,
+  );
+  const offsetY = Math.round(
+    (createSeededValue(`${baseSeed}:y`) * 2 - 1) * STAMP_OFFSET_LIMIT,
+  );
+  const rotation = Math.round(
+    createSeededValue(`${baseSeed}:rotation`) >= 0.5
+      ? STAMP_ROTATION_VALUE
+      : -STAMP_ROTATION_VALUE,
+  );
+
+  return [
+    {translateX: offsetX},
+    {translateY: offsetY},
+    {rotate: `${rotation}deg`},
+  ];
+};
+
 const extractOrderInfo = order => {
   const raw = order?.otherInformations;
   if (!raw) return {};
@@ -418,12 +454,10 @@ export default function ShopLoyaltyPage() {
                       style={[
                         styles.stampImage,
                         {
-                          transform: [
-                            {
-                              rotate:
-                                slot.number % 2 === 0 ? '4deg' : '-5deg',
-                            },
-                          ],
+                          transform: resolveStampTransform(
+                            cardData?.card?.id,
+                            slot.number,
+                          ),
                         },
                       ]}
                       resizeMode="contain"
@@ -434,12 +468,10 @@ export default function ShopLoyaltyPage() {
                       style={[
                         styles.stampImage,
                         {
-                          transform: [
-                            {
-                              rotate:
-                                slot.number % 2 === 0 ? '4deg' : '-5deg',
-                            },
-                          ],
+                          transform: resolveStampTransform(
+                            cardData?.card?.id,
+                            slot.number,
+                          ),
                         },
                       ]}
                       resizeMode="contain"
@@ -450,12 +482,10 @@ export default function ShopLoyaltyPage() {
                         styles.stampMark,
                         {
                           borderColor: palette.chipSelectedBorder,
-                          transform: [
-                            {
-                              rotate:
-                                slot.number % 2 === 0 ? '4deg' : '-5deg',
-                            },
-                          ],
+                          transform: resolveStampTransform(
+                            cardData?.card?.id,
+                            slot.number,
+                          ),
                         },
                       ]}>
                       <Text
