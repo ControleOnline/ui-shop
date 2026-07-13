@@ -189,6 +189,7 @@ export default function ShopLoyaltyPage() {
     sessionChecked,
   ]);
 
+  // The page only renders the backend snapshot. It never rebuilds stamps from raw orders locally.
   const loadLoyaltyCards = useCallback(async () => {
     const requestId = loyaltySnapshotRequestRef.current + 1;
     loyaltySnapshotRequestRef.current = requestId;
@@ -440,7 +441,7 @@ export default function ShopLoyaltyPage() {
               theme={featureTheme}
               iconName="loyalty"
               title="Fidelidade desativada"
-              description="A tela de acompanhamento está escondida porque os cupons de fidelidade não estão ativos para esta empresa."
+              description="A tela de acompanhamento fica oculta porque os cupons de fidelidade nao estao ativos para esta empresa."
               primaryActionLabel={
                 primaryEntryRouteName && primaryEntryRouteName !== 'ShopLoyaltyPage'
                   ? 'Voltar para o shop'
@@ -469,8 +470,10 @@ export default function ShopLoyaltyPage() {
                   Acompanhe a sua fidelidade
                 </Text>
                 <Text style={[styles.heroText, {color: palette.badgeText}]}>
-                  Cada pedido pago com produtos participantes ganha um carimbo.
-                  Ao completar o cartão, o brinde entra no próximo carrinho.
+                  Cada pedido fechado com produtos participantes ganha um carimbo.
+                  Quando o cartão completa a meta, a proxima venda fechada com
+                  o brinde encerra esse cartão; se vier sem brinde, abre um
+                  novo cartão.
                 </Text>
               </View>
 
@@ -504,7 +507,7 @@ export default function ShopLoyaltyPage() {
                 <ShopAuthRequiredState
                   theme={featureTheme}
                   title="Entre para ver seus carimbos"
-                  description="O programa de fidelidade e publico, mas seus cartoes e carimbos dependem do cadastro."
+                  description="O programa de fidelidade esta ativo, mas seus cartoes e carimbos dependem do cadastro."
                 />
               ) : isLoadingCards ? (
                 <View
