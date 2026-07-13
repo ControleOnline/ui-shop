@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
+import {api} from '@controleonline/ui-common/src/api';
 import DefaultErrors from '@controleonline/ui-default/src/react/components/errors/DefaultErrors';
+import DefaultFile from '@controleonline/ui-default/src/react/components/files/DefaultFile';
 import StateStore from '@controleonline/ui-layout/src/react/components/StateStore';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
@@ -27,6 +29,15 @@ const resolveProductLabel = product =>
 
 const formatStampNumber = value => String(value).padStart(2, '0');
 const tt = (type, key) => global.t?.t('configs', type, key);
+
+const normalizeCollection = payload => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== 'object') return [];
+  if (Array.isArray(payload.member)) return payload.member;
+  if (Array.isArray(payload['hydra:member'])) return payload['hydra:member'];
+  if (Array.isArray(payload.items)) return payload.items;
+  return [];
+};
 
 const extractOrderInfo = order => {
   const raw = order?.otherInformations;
@@ -107,10 +118,14 @@ export default function ShopLoyaltyPage() {
     muted: palette.textMuted,
   };
   const loyaltyStampIconSource = String(loyaltyStampIconUrl || '').trim();
+  const loyaltyProviderCompany =
+    salesCompany || cartDefaultCompany || defaultCompany || null;
+  const loyaltyProviderCompanyId = normalizeId(loyaltyProviderCompany?.id);
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
   const [loyaltyCards, setLoyaltyCards] = useState([]);
+  const [loyaltyStampMedia, setLoyaltyStampMedia] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
   const [cardsError, setCardsError] = useState(null);
@@ -123,6 +138,29 @@ export default function ShopLoyaltyPage() {
       isMountedRef.current = false;
     };
   }, []);
+
+  const loadLoyaltyStampMedia = useCallback(async () => {
+    if (!loyaltyProviderCompanyId) {
+      setLoyaltyStampMedia(null);
+      return;
+    }
+
+    try {
+      const response = await api.fetch('/people_media', {
+        params: {
+          people: `/people/${loyaltyProviderCompanyId}`,
+          'mediaType.type': 'stamp',
+          'mediaType.peopleType': 'J',
+          itemsPerPage: 1,
+        },
+      });
+
+      const [media] = normalizeCollection(response);
+      setLoyaltyStampMedia(media || null);
+    } catch {
+      setLoyaltyStampMedia(null);
+    }
+  }, [loyaltyProviderCompanyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -305,6 +343,12 @@ export default function ShopLoyaltyPage() {
     }, [loadLoyaltyCards]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      loadLoyaltyStampMedia();
+    }, [loadLoyaltyStampMedia]),
+  );
+
   const renderStampGrid = cardData => {
     /*
      * @agents Stamp slots are derived from the snapshot count only.
@@ -367,7 +411,24 @@ export default function ShopLoyaltyPage() {
                   },
                 ]}>
                 {slot.completed ? (
-                  loyaltyStampIconSource ? (
+                  loyaltyStampMedia?.file ? (
+                    <DefaultFile
+                      source={loyaltyStampMedia.file}
+                      company={loyaltyProviderCompany}
+                      style={[
+                        styles.stampImage,
+                        {
+                          transform: [
+                            {
+                              rotate:
+                                slot.number % 2 === 0 ? '4deg' : '-5deg',
+                            },
+                          ],
+                        },
+                      ]}
+                      resizeMode="contain"
+                    />
+                  ) : loyaltyStampIconSource ? (
                     <Image
                       source={{uri: loyaltyStampIconSource}}
                       style={[
