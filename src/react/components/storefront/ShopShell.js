@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import md5 from 'md5';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
+import {api} from '@controleonline/ui-common/src/api';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/storefront/ShopHomeEntryControls';
@@ -28,6 +29,7 @@ import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/
 import {
   buildFileUrl,
   getInitials,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {
@@ -110,6 +112,15 @@ const getAvatarUrl = user => {
   return `https://www.gravatar.com/avatar/${md5(String(user.email).trim().toLowerCase())}?s=200&d=identicon`;
 };
 
+const normalizeCollection = payload => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== 'object') return [];
+  if (Array.isArray(payload.member)) return payload.member;
+  if (Array.isArray(payload['hydra:member'])) return payload['hydra:member'];
+  if (Array.isArray(payload.items)) return payload.items;
+  return [];
+};
+
 export default function ShopShell({
   children,
   hideHeader = false,
@@ -155,6 +166,7 @@ export default function ShopShell({
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [headerIconMedia, setHeaderIconMedia] = useState(null);
   const searchValueRef = useRef('');
   useEffect(() => {
     setSearchTerm(searchValue);
@@ -192,10 +204,48 @@ export default function ShopShell({
         defaultCompany?.name ||
         'Empresa';
   const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
+  const headerCompany = salesCompany || defaultCompany || null;
+  const headerCompanyId = normalizeId(headerCompany?.id);
 
-  const logoUrl = defaultCompany?.logo
-    ? buildFileUrl(defaultCompany.logo, defaultCompany)
+  const logoUrl = headerIconMedia?.file
+    ? buildFileUrl(headerIconMedia.file, headerCompany)
     : '';
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!headerCompanyId) {
+      setHeaderIconMedia(null);
+      return undefined;
+    }
+
+    api
+      .fetch('/people_media', {
+        params: {
+          people: `/people/${headerCompanyId}`,
+          'mediaType.type': 'icon',
+          'mediaType.peopleType': 'J',
+          itemsPerPage: 1,
+        },
+      })
+      .then(response => {
+        if (cancelled) {
+          return;
+        }
+
+        const [media] = normalizeCollection(response);
+        setHeaderIconMedia(media || null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHeaderIconMedia(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [headerCompanyId]);
 
   const submitSearch = useCallback(() => {
     const normalizedTerm = String(searchTerm || '').trim();
@@ -359,7 +409,9 @@ export default function ShopShell({
                         style={inlineStyle_164_22({
                           isMobile: isMobile,
                         })}>
-                        {getInitials(defaultCompany?.alias || 'CO')}
+                        {getInitials(
+                          headerCompany?.alias || headerCompany?.name || 'CO',
+                        )}
                       </Text>
                     </View>
                   )}
