@@ -26,6 +26,7 @@ const resolveProductLabel = product =>
   `Produto #${product?.id || ''}`;
 
 const formatStampNumber = value => String(value).padStart(2, '0');
+const tt = (type, key) => global.t?.t('configs', type, key);
 
 const extractOrderInfo = order => {
   const raw = order?.otherInformations;
@@ -47,6 +48,17 @@ const resolveCardRequiredSales = (card, fallback) => {
 
   return Math.max(0, configuredValue || fallbackValue);
 };
+
+/*
+ * @agents History responses carry a dedicated empty-state flag so the UI can keep
+ * the "no open card" and "no history found" messages separated.
+ */
+const resolveLoyaltyEmptyMessage = summary =>
+  summary?.historyEmpty
+    ? tt('loyalty_text', 'historyEmpty') ||
+      'Nenhum histórico encontrado para este cliente.'
+    : tt('loyalty_text', 'openCardEmpty') ||
+      'Nenhum cartão aberto foi encontrado para este cliente.';
 
 const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
 
@@ -102,6 +114,7 @@ export default function ShopLoyaltyPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
   const [cardsError, setCardsError] = useState(null);
+  const [snapshotSummary, setSnapshotSummary] = useState({});
   const loyaltySnapshotRequestRef = useRef(0);
   const isMountedRef = useRef(true);
 
@@ -210,6 +223,7 @@ export default function ShopLoyaltyPage() {
     ) {
       if (isMountedRef.current) {
         setLoyaltyCards([]);
+        setSnapshotSummary({});
         setCardsError(null);
         setIsLoadingCards(false);
       }
@@ -238,12 +252,21 @@ export default function ShopLoyaltyPage() {
        * @agents Accept both the wrapped API response and a direct array so the screen
        * stays resilient to the store contract while still rendering only the canonical snapshot.
        */
+      /*
+       * @agents The backend summary flags the empty-history branch so the screen can
+       * keep the empty-state copy aligned with the requested mode.
+       */
+      const nextSummary =
+        response?.summary && typeof response.summary === 'object'
+          ? response.summary
+          : {};
       const nextCards = Array.isArray(response?.member)
         ? response.member.filter(Boolean)
         : Array.isArray(response)
           ? response.filter(Boolean)
           : [];
 
+      setSnapshotSummary(nextSummary);
       setLoyaltyCards(nextCards);
     } catch (error) {
       if (
@@ -254,6 +277,7 @@ export default function ShopLoyaltyPage() {
       }
 
       setLoyaltyCards([]);
+      setSnapshotSummary({});
       setCardsError(error);
     } finally {
       if (
@@ -434,6 +458,8 @@ export default function ShopLoyaltyPage() {
     );
   };
 
+  const emptyLoyaltyMessage = resolveLoyaltyEmptyMessage(snapshotSummary);
+
   return (
     <ShopShell
       activeHomeEntry={SHOP_HOME_OPTION_LOYALTY}
@@ -562,7 +588,7 @@ export default function ShopLoyaltyPage() {
                     stamps: [],
                   })}
                   <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
-                    Nenhum cartão aberto foi encontrado para este cliente.
+                    {emptyLoyaltyMessage}
                   </Text>
                 </View>
               )}

@@ -1,38 +1,20 @@
-const React = require('react')
-const ReactDOMServer = require('react-dom/server')
-const {jest} = require('@jest/globals')
+const React = require('react');
+const ReactDOMServer = require('react-dom/server');
+const {jest} = require('@jest/globals');
 
-const {afterEach, beforeEach, describe, expect, it} = global
+const {afterEach, beforeEach, describe, expect, it} = global;
 
-let mockSalesPageEnabled = true
-let consoleErrorSpy
-
-jest.mock('react-native', () => {
-  const React = require('react')
-  const createComponent = name => props => {
-    if (name === 'Text') {
-      global.__shopProfileTextChildren = global.__shopProfileTextChildren || []
-      global.__shopProfileTextChildren.push(props.children)
-    }
-
-    return React.createElement(name, props, props.children)
-  }
-
-  return {
-    Image: createComponent('Image'),
-    ScrollView: createComponent('ScrollView'),
-    Text: createComponent('Text'),
-    TouchableOpacity: createComponent('TouchableOpacity'),
-    View: createComponent('View'),
-  }
-})
+let mockIsLogged = true;
+let mockSessionChecked = true;
+let capturedShellProps = null;
+let consoleErrorSpy;
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: jest.fn(),
     reset: jest.fn(),
   }),
-}))
+}));
 
 jest.mock('@store', () => ({
   useStore: jest.fn(name => {
@@ -42,35 +24,23 @@ jest.mock('@store', () => ({
           logOut: jest.fn(),
         },
         getters: {
-          isLogged: true,
-          sessionChecked: true,
+          isLogged: mockIsLogged,
+          sessionChecked: mockSessionChecked,
           user: {
             email: 'cliente@teste.com',
             id: 15,
             name: 'Cliente Teste',
           },
         },
-      }
-    }
-
-    if (name === 'people') {
-      return {
-        getters: {
-          currentCompany: {
-            alias: 'Empresa Teste',
-            email: [{email: 'empresa@teste.com'}],
-            phone: [{ddd: '11', phone: '999999999'}],
-          },
-        },
-      }
+      };
     }
 
     return {
       actions: {},
       getters: {},
-    }
+    };
   }),
-}))
+}));
 
 jest.mock('@controleonline/ui-shop/src/react/hooks/useShopCart', () => () => ({
   defaultCompany: {
@@ -79,90 +49,86 @@ jest.mock('@controleonline/ui-shop/src/react/hooks/useShopCart', () => () => ({
       colors: {},
     },
   },
-}))
+}));
 
-jest.mock('@controleonline/ui-shop/src/react/hooks/useShopSettings', () => () => ({
-  salesPageEnabled: mockSalesPageEnabled,
-}))
+jest.mock('@controleonline/ui-shop/src/react/components/storefront/ShopShell', () => props => {
+  capturedShellProps = props;
 
-jest.mock('@controleonline/ui-shop/src/react/components/storefront/ShopShell', () => props =>
-  React.createElement(
+  return React.createElement(
     'ShopShell',
     props,
     typeof props.children === 'function' ? props.children({}) : props.children,
-  ),
-)
+  );
+});
 
 jest.mock(
   '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState',
-  () => () => React.createElement('ShopAuthRequiredState'),
-)
+  () => props => {
+    global.__shopAuthRequiredRendered = true;
+    return React.createElement('ShopAuthRequiredState', props);
+  },
+);
 
 jest.mock('@controleonline/ui-shop/src/react/utils/shop', () => ({
-  buildFileUrl: jest.fn(() => 'https://example.com/avatar.png'),
-  getInitials: jest.fn(() => 'CT'),
   pickTheme: jest.fn(() => ({
-    muted: '#64748B',
-    primary: '#0F172A',
+    background: '#fff',
+    surface: '#fff',
+    text: '#111',
+    muted: '#666',
   })),
-}))
+}));
 
-jest.mock('react-native-vector-icons/MaterialIcons', () => 'Icon')
-jest.mock('md5', () => jest.fn(() => 'hash'))
+jest.mock('@controleonline/ui-people/src/react/pages/Profile', () => props => {
+  global.__profileEditorRendered = true;
+  return React.createElement('ProfileScreen', props);
+});
 
-const ShopProfilePage =
-  require('../../../react/pages/ProfilePage').default
-
-const flattenText = children =>
-  React.Children.toArray(children).flatMap(child => {
-    if (typeof child === 'string') {
-      return [child]
-    }
-
-    return []
-  })
+const ShopProfilePage = require('../../../react/pages/ProfilePage').default;
 
 const renderPage = () => {
-  global.__shopProfileTextChildren = []
-  ReactDOMServer.renderToStaticMarkup(React.createElement(ShopProfilePage))
-
-  return global.__shopProfileTextChildren.flatMap(flattenText)
-}
+  global.__profileEditorRendered = false;
+  global.__shopAuthRequiredRendered = false;
+  capturedShellProps = null;
+  ReactDOMServer.renderToStaticMarkup(React.createElement(ShopProfilePage));
+};
 
 describe('ShopProfilePage', () => {
   beforeEach(() => {
-    mockSalesPageEnabled = true
-    global.__shopProfileTextChildren = []
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-  })
+    mockIsLogged = true;
+    mockSessionChecked = true;
+    global.__profileEditorRendered = false;
+    global.__shopAuthRequiredRendered = false;
+    capturedShellProps = null;
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
 
   afterEach(() => {
-    global.__shopProfileTextChildren = []
-    consoleErrorSpy.mockRestore()
-  })
+    consoleErrorSpy.mockRestore();
+  });
 
-  it('oculta atalhos de vendas quando a pagina de vendas esta desativada', () => {
-    mockSalesPageEnabled = false
+  it('abre o editor completo de perfil direto no ShopShell', () => {
+    renderPage();
 
-    const textChildren = renderPage()
+    expect(global.__profileEditorRendered).toBe(true);
+    expect(global.__shopAuthRequiredRendered).toBe(false);
+    expect(capturedShellProps).toMatchObject({
+      showBottomCart: false,
+      showSearch: false,
+      subtitle: 'Perfil',
+    });
+  });
 
-    expect(textChildren).toContain('Editar perfil completo')
-    expect(textChildren).not.toContain('Meu carrinho')
-    expect(textChildren).not.toContain('Pagamento e Pix')
-    expect(textChildren).not.toContain('Meus cartões')
-    expect(textChildren).not.toContain('Meus pedidos')
-  })
+  it('mostra autenticacao quando o usuario nao esta logado', () => {
+    mockIsLogged = false;
 
-  it('mantem atalhos de vendas quando a pagina de vendas esta ativa', () => {
-    const textChildren = renderPage()
+    renderPage();
 
-    expect(textChildren).toEqual(
-      expect.arrayContaining([
-        'Meu carrinho',
-        'Pagamento e Pix',
-        'Meus cartões',
-        'Meus pedidos',
-      ]),
-    )
-  })
-})
+    expect(global.__profileEditorRendered).toBe(false);
+    expect(global.__shopAuthRequiredRendered).toBe(true);
+    expect(capturedShellProps).toMatchObject({
+      showBottomCart: false,
+      showSearch: false,
+      subtitle: 'Perfil',
+    });
+  });
+});

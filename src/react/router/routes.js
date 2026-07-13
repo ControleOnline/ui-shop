@@ -103,10 +103,21 @@ const shopRoutes = [
   },
   {
     name: 'ShopProfilePage',
+    path: 'shop/profile',
+    component: ProfilePage,
+    options: {
+      headerShown: false,
+      showBottomCart: false,
+      title: 'Perfil',
+    },
+  },
+  {
+    name: 'ShopProfileLegacyPage',
     path: 'orders/my-profile',
     component: ProfilePage,
     options: {
       headerShown: false,
+      showBottomCart: false,
       title: 'Perfil',
     },
   },
