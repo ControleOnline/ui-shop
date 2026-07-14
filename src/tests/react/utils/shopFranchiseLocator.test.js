@@ -87,13 +87,13 @@ describe('shopFranchiseLocator', () => {
     ]);
   });
 
-  it('uses the People image_id as the popup logo source', () => {
+  it('uses the People logo as the popup logo source', () => {
     const markers = buildFranchiseMarkerAddresses({
       franchisePinIconUrl: '',
       directory: [
         {
           alias: 'Alias do People',
-          image_id: 321,
+          logo: {id: 321},
           domain: 'maincompany.controleonline.com',
           shopAddresses: [
             {

@@ -80,7 +80,7 @@ export const buildFranchiseMarkerAddresses = ({
             company?.name,
         );
         const companyLogoUrl = normalizeShopTextConfig(
-          resolveFileImageUrl(company?.image_id || address?.logo || company?.logo || null, {
+          resolveFileImageUrl(company?.logo || address?.logo || null, {
             company,
           }),
         );
