@@ -176,7 +176,7 @@ export default function ShopLoyaltyPage() {
   }, []);
 
   const loadLoyaltyStampMedia = useCallback(async () => {
-    if (!loyaltyProviderCompanyId) {
+    if (!sessionChecked || !isLogged || !loyaltyProviderCompanyId) {
       setLoyaltyStampMedia(null);
       return;
     }
@@ -196,7 +196,7 @@ export default function ShopLoyaltyPage() {
     } catch {
       setLoyaltyStampMedia(null);
     }
-  }, [loyaltyProviderCompanyId]);
+  }, [isLogged, loyaltyProviderCompanyId, sessionChecked]);
 
   useEffect(() => {
     let cancelled = false;
