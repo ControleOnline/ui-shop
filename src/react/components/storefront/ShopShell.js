@@ -206,15 +206,16 @@ export default function ShopShell({
   const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
   const headerCompany = salesCompany || defaultCompany || null;
   const headerCompanyId = normalizeId(headerCompany?.id);
+  const publicHeaderIconFile = headerCompany?.icon || null;
 
-  const logoUrl = headerIconMedia?.file
-    ? buildFileUrl(headerIconMedia.file, headerCompany)
+  const logoUrl = headerIconMedia?.file || publicHeaderIconFile
+    ? buildFileUrl(headerIconMedia?.file || publicHeaderIconFile, headerCompany)
     : '';
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!headerCompanyId) {
+    if (!headerCompanyId || publicHeaderIconFile) {
       setHeaderIconMedia(null);
       return undefined;
     }
@@ -245,7 +246,7 @@ export default function ShopShell({
     return () => {
       cancelled = true;
     };
-  }, [headerCompanyId]);
+  }, [headerCompanyId, publicHeaderIconFile]);
 
   const submitSearch = useCallback(() => {
     const normalizedTerm = String(searchTerm || '').trim();
