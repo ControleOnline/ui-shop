@@ -124,6 +124,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
     padding: 8,
+    position: 'relative',
     width: 128,
   },
   stampMark: {
@@ -136,9 +137,18 @@ export default StyleSheet.create({
     width: 72,
   },
   stampImage: {
-    width: 128,
     height: 128,
     opacity: 0.9,
+    width: 128,
+  },
+  stampImageWrap: {
+    height: 128,
+    left: '50%',
+    marginLeft: -64,
+    marginTop: -64,
+    position: 'absolute',
+    top: '50%',
+    width: 128,
   },
   stampMarkMain: {
     fontSize: 22,

@@ -39,8 +39,9 @@ const normalizeCollection = payload => {
   return [];
 };
 
-const STAMP_OFFSET_LIMIT = 25;
-const STAMP_ROTATION_VALUE = 12;
+const STAMP_OFFSET_LIMIT_X = 25;
+const STAMP_OFFSET_LIMIT_Y = 25;
+const STAMP_ROTATION_LIMIT = 15;
 
 const createSeededValue = seed => {
   const text = String(seed || 'stamp');
@@ -54,18 +55,43 @@ const createSeededValue = seed => {
   return normalized - Math.floor(normalized);
 };
 
+const resolveSeededOffset = (baseSeed, slotNumber, axis, limit) => {
+  const slotIndex = Math.max(Number(slotNumber || 1) - 1, 0);
+  const magnitude = Math.round(
+    createSeededValue(`${baseSeed}:${axis}:magnitude`) * limit,
+  );
+  const preferredSign =
+    axis === 'x'
+      ? slotIndex % 2 === 0
+        ? -1
+        : 1
+      : Math.floor(slotIndex / 2) % 2 === 0
+        ? -1
+        : 1;
+  const shouldFlipSign =
+    createSeededValue(`${baseSeed}:${axis}:direction`) >= 0.75;
+  const sign = shouldFlipSign ? preferredSign * -1 : preferredSign;
+
+  return magnitude * sign;
+};
+
 const resolveStampTransform = (cardId, slotNumber) => {
   const baseSeed = `${cardId || 'empty'}:${slotNumber || 0}`;
-  const offsetX = Math.round(
-    (createSeededValue(`${baseSeed}:x`) * 2 - 1) * STAMP_OFFSET_LIMIT,
+  const offsetX = resolveSeededOffset(
+    baseSeed,
+    slotNumber,
+    'x',
+    STAMP_OFFSET_LIMIT_X,
   );
-  const offsetY = Math.round(
-    (createSeededValue(`${baseSeed}:y`) * 2 - 1) * STAMP_OFFSET_LIMIT,
+  const offsetY = resolveSeededOffset(
+    baseSeed,
+    slotNumber,
+    'y',
+    STAMP_OFFSET_LIMIT_Y,
   );
   const rotation = Math.round(
-    createSeededValue(`${baseSeed}:rotation`) >= 0.5
-      ? STAMP_ROTATION_VALUE
-      : -STAMP_ROTATION_VALUE,
+    (createSeededValue(`${baseSeed}:rotation`) * 2 - 1) *
+      STAMP_ROTATION_LIMIT,
   );
 
   return [
@@ -448,34 +474,40 @@ export default function ShopLoyaltyPage() {
                 ]}>
                 {slot.completed ? (
                   loyaltyStampMedia?.file ? (
-                    <DefaultFile
-                      source={loyaltyStampMedia.file}
-                      company={loyaltyProviderCompany}
+                    <View
                       style={[
-                        styles.stampImage,
+                        styles.stampImageWrap,
                         {
                           transform: resolveStampTransform(
                             cardData?.card?.id,
                             slot.number,
                           ),
                         },
-                      ]}
-                      resizeMode="contain"
-                    />
+                      ]}>
+                      <DefaultFile
+                        source={loyaltyStampMedia.file}
+                        company={loyaltyProviderCompany}
+                        style={styles.stampImage}
+                        resizeMode="contain"
+                      />
+                    </View>
                   ) : loyaltyStampIconSource ? (
-                    <Image
-                      source={{uri: loyaltyStampIconSource}}
+                    <View
                       style={[
-                        styles.stampImage,
+                        styles.stampImageWrap,
                         {
                           transform: resolveStampTransform(
                             cardData?.card?.id,
                             slot.number,
                           ),
                         },
-                      ]}
-                      resizeMode="contain"
-                    />
+                      ]}>
+                      <Image
+                        source={{uri: loyaltyStampIconSource}}
+                        style={styles.stampImage}
+                        resizeMode="contain"
+                      />
+                    </View>
                   ) : (
                     <View
                       style={[

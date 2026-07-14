@@ -192,7 +192,7 @@ export default function ShopShell({
         defaultCompany?.alias ||
         defaultCompany?.name ||
         'Empresa';
-  const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
+  const purchaseCompanyLabel = displayCompany;
   const headerCompany = salesCompany || defaultCompany || null;
   const publicHeaderIconFile = headerCompany?.icon || null;
 
