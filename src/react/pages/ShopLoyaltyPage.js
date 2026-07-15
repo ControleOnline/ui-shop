@@ -11,7 +11,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {api} from '@controleonline/ui-common/src/api';
 import DefaultErrors from '@controleonline/ui-default/src/react/components/errors/DefaultErrors';
 import DefaultFile from '@controleonline/ui-default/src/react/components/files/DefaultFile';
-import StateStore from '@controleonline/ui-layout/src/react/components/StateStore';
+import StateStore from '@controleonline/ui-common/src/react/components/StateStore';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
