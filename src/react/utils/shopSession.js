@@ -1,5 +1,9 @@
 const normalizeNumericId = value => {
-  const clean = String(value || '').replace(/\D/g, '')
+  const source =
+    value && typeof value === 'object'
+      ? value.id || value['@id'] || ''
+      : value
+  const clean = String(source || '').replace(/\D/g, '')
   return clean ? Number(clean) : null
 }
 
@@ -21,5 +25,15 @@ export const resolveShopSessionClientId = session =>
 
 export const readShopSessionClientId = () =>
   resolveShopSessionClientId(readShopSession())
+
+/*
+ * @agents Loyalty belongs to the authenticated person, never to the company
+ * currently selected for operational navigation.
+ */
+export const resolveShopAuthenticatedPeopleId = session =>
+  normalizeNumericId(session?.people)
+
+export const readShopAuthenticatedPeopleId = () =>
+  resolveShopAuthenticatedPeopleId(readShopSession())
 
 export {normalizeNumericId}

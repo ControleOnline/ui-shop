@@ -37,6 +37,14 @@ export default StyleSheet.create({
     borderWidth: 1,
     padding: 18,
   },
+  franchiseGroup: {
+    marginHorizontal: 14,
+    marginTop: 14,
+  },
+  groupedSummaryCard: {
+    marginHorizontal: 0,
+    marginTop: 10,
+  },
   loyaltyToolbar: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -80,6 +88,11 @@ export default StyleSheet.create({
   summaryTitleGroup: {
     flex: 1,
     minWidth: 0,
+  },
+  franchiseTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 22,
   },
   summaryLabel: {
     fontSize: 13,

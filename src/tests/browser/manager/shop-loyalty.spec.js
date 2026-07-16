@@ -54,7 +54,14 @@ const createProduct = (id, product) => ({
   description: product,
 });
 
-const createCardSnapshot = ({id, requiredSales, stampIds = [], closed = false}) => ({
+const createCardSnapshot = ({
+  id,
+  requiredSales,
+  stampIds = [],
+  closed = false,
+  provider = {id: 3, name: 'Gyros', alias: 'GYROS'},
+}) => ({
+  provider,
   card: {
     id,
     '@id': `/orders/${id}`,
@@ -194,7 +201,7 @@ const mockShopLoyaltyApi = async (
       });
     }
 
-    if (pathname === 'orders/fidelityById/3') {
+    if (pathname === 'orders/fidelityById/7') {
       const isHistory = url.searchParams.get('history') === '1';
       const cards = isHistory ? historyCards : currentCards;
 
@@ -308,6 +315,52 @@ test.describe('shop loyalty browser smoke', () => {
     await expect(page.getByText('Brinde promocional')).toBeVisible();
   });
 
+  test('shows one active loyalty card per franchise without a selector', async ({
+    page,
+  }) => {
+    await mockShopLoyaltyApi(page, {
+      currentCards: [
+        createCardSnapshot({
+          id: 600,
+          requiredSales: 5,
+          stampIds: [701, 702, 703],
+          provider: {
+            id: 31458,
+            name: 'S. Cozer Ltda',
+            alias: 'MT - SORRISO (6)',
+          },
+        }),
+        createCardSnapshot({
+          id: 500,
+          requiredSales: 5,
+          stampIds: [801],
+          provider: {
+            id: 2,
+            name: 'J V R II Estetica Automotiva Ltda',
+            alias: 'MT - CUIABÁ - JD. PETRÓPOLIS (2)',
+          },
+        }),
+      ],
+    });
+
+    const snapshotRequestPromise = page.waitForRequest(request =>
+      request.url().includes('/orders/fidelityById/7'),
+    );
+
+    await page.goto('/shop/loyalty');
+    await snapshotRequestPromise;
+
+    await expect(page.getByText('MT - SORRISO (6)', {exact: true})).toBeVisible();
+    await expect(
+      page.getByText('MT - CUIABÁ - JD. PETRÓPOLIS (2)', {exact: true}),
+    ).toBeVisible();
+    await expect(page.getByText('Cartão #600', {exact: true})).toBeVisible();
+    await expect(page.getByText('Cartão #500', {exact: true})).toBeVisible();
+    await expect(page.getByText('3 / 5', {exact: true})).toBeVisible();
+    await expect(page.getByText('1 / 5', {exact: true})).toBeVisible();
+    await expect(page.getByRole('combobox')).toHaveCount(0);
+  });
+
   test('switches to history without rebuilding the snapshot locally', async ({
     page,
   }) => {
@@ -317,6 +370,7 @@ test.describe('shop loyalty browser smoke', () => {
           id: 600,
           requiredSales: 3,
           stampIds: [701, 702],
+          provider: {id: 31458, alias: 'MT - SORRISO'},
         }),
       ],
       historyCards: [
@@ -324,12 +378,14 @@ test.describe('shop loyalty browser smoke', () => {
           id: 600,
           requiredSales: 3,
           stampIds: [701, 702],
+          provider: {id: 31458, alias: 'MT - SORRISO'},
         }),
         createCardSnapshot({
           id: 500,
           requiredSales: 3,
           stampIds: [601, 602, 603],
           closed: true,
+          provider: {id: 31458, alias: 'MT - SORRISO'},
         }),
       ],
     });
@@ -343,7 +399,7 @@ test.describe('shop loyalty browser smoke', () => {
 
     const historyRequestPromise = page.waitForRequest(request => {
       return (
-        request.url().includes('/orders/fidelityById/3') &&
+        request.url().includes('/orders/fidelityById/7') &&
         request.url().includes('history=1')
       );
     });
@@ -353,6 +409,10 @@ test.describe('shop loyalty browser smoke', () => {
 
     await expect(page.getByText('Últimos cartões', {exact: true})).toBeVisible();
     await expect(page.getByText('Cartão #500')).toBeVisible();
+    await expect(page.getByText('MT - SORRISO', {exact: true})).toHaveCount(1);
+    await expect(
+      page.getByText('1 franquia(s), 2 cartão(ões) carregado(s)', {exact: true}),
+    ).toBeVisible();
     await expect(page.getByText('Ver atual', {exact: true})).toBeVisible();
   });
 
@@ -376,7 +436,7 @@ test.describe('shop loyalty browser smoke', () => {
 
     const historyRequestPromise = page.waitForRequest(request => {
       return (
-        request.url().includes('/orders/fidelityById/3') &&
+        request.url().includes('/orders/fidelityById/7') &&
         request.url().includes('history=1')
       );
     });

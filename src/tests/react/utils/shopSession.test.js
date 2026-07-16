@@ -1,5 +1,6 @@
 import {
   normalizeNumericId,
+  resolveShopAuthenticatedPeopleId,
   resolveShopSessionClientId,
 } from '@controleonline/ui-shop/src/react/utils/shopSession';
 
@@ -19,6 +20,16 @@ describe('shopSession', () => {
         people: '/people/44',
       }),
     ).toBe(44);
+  });
+
+  it('uses the authenticated people id for customer loyalty', () => {
+    expect(
+      resolveShopAuthenticatedPeopleId({
+        mycompany: '/people/88',
+        people: '/people/44',
+      }),
+    ).toBe(44);
+    expect(resolveShopAuthenticatedPeopleId({people: {id: 45}})).toBe(45);
   });
 
   it('normalizes mixed id values into numbers', () => {

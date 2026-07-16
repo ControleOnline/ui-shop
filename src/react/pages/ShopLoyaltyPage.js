@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Image,
   ScrollView,
@@ -18,7 +18,7 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
-import {readShopSessionClientId} from '@controleonline/ui-shop/src/react/utils/shopSession';
+import {readShopAuthenticatedPeopleId} from '@controleonline/ui-shop/src/react/utils/shopSession';
 import {useStore} from '@store';
 import {SHOP_HOME_OPTION_LOYALTY} from '@controleonline/ui-common/src/react/utils/shopConfig';
 import styles from '@controleonline/ui-shop/src/react/pages/ShopLoyaltyPage.styles';
@@ -26,6 +26,36 @@ import styles from '@controleonline/ui-shop/src/react/pages/ShopLoyaltyPage.styl
 const resolveProductLabel = product =>
   String(product?.product || product?.name || '').trim() ||
   `Produto #${product?.id || ''}`;
+
+const resolveProviderLabel = provider =>
+  String(provider?.alias || provider?.name || '').trim();
+
+const groupCardsByProvider = cards => {
+  const groups = new Map();
+
+  cards.forEach((cardData, index) => {
+    const provider = cardData?.provider || null;
+    const providerLabel = resolveProviderLabel(provider);
+    const providerId = normalizeId(provider?.id || provider?.['@id']);
+    const key = providerId
+      ? `provider-${providerId}`
+      : providerLabel
+        ? `provider-${providerLabel}`
+        : `provider-unknown-${index}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        label: providerLabel,
+        cards: [],
+      });
+    }
+
+    groups.get(key).cards.push(cardData);
+  });
+
+  return Array.from(groups.values());
+};
 
 const formatStampNumber = value => String(value).padStart(2, '0');
 const tt = (type, key) => global.t?.t('configs', type, key);
@@ -101,27 +131,6 @@ const resolveStampTransform = (cardId, slotNumber) => {
   ];
 };
 
-const extractOrderInfo = order => {
-  const raw = order?.otherInformations;
-  if (!raw) return {};
-  if (typeof raw === 'object') return raw;
-
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
-const resolveCardRequiredSales = (card, fallback) => {
-  const info = extractOrderInfo(card);
-  const configuredValue = Number(info.loyalty_required_sales || 0);
-  const fallbackValue = Number(fallback || 0);
-
-  return Math.max(0, configuredValue || fallbackValue);
-};
-
 /*
  * @agents History responses carry a dedicated empty-state flag so the UI can keep
  * the "no open card" and "no history found" messages separated.
@@ -142,7 +151,7 @@ export default function ShopLoyaltyPage() {
   const ordersStore = useStore('orders');
   const themeStore = useStore('theme');
   const themeColors = themeStore.getters?.colors || {};
-  const {isLogged, sessionChecked} = authStore.getters;
+  const {isLogged, sessionChecked, user} = authStore.getters;
   const {
     defaultCompany,
     loyaltyCouponsEnabled,
@@ -153,7 +162,6 @@ export default function ShopLoyaltyPage() {
     primaryEntryRouteName,
   } = useShopSettings();
   const {
-    currentCompany,
     defaultCompany: cartDefaultCompany,
     salesCompany,
   } = useShopCart({autoRefresh: true});
@@ -312,7 +320,9 @@ export default function ShopLoyaltyPage() {
     const providerId = normalizeId(
       salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id,
     );
-    const clientId = normalizeId(currentCompany?.id) || readShopSessionClientId();
+    const clientId =
+      normalizeId(user?.people?.id || user?.people?.['@id'] || user?.people) ||
+      readShopAuthenticatedPeopleId();
 
     if (
       !sessionChecked ||
@@ -389,7 +399,6 @@ export default function ShopLoyaltyPage() {
     }
   }, [
     cartDefaultCompany?.id,
-    currentCompany?.id,
     defaultCompany?.id,
     isLogged,
     loyaltyCouponsEnabled,
@@ -397,6 +406,7 @@ export default function ShopLoyaltyPage() {
     salesCompany?.id,
     sessionChecked,
     showHistory,
+    user?.people,
   ]);
 
   useFocusEffect(
@@ -409,6 +419,11 @@ export default function ShopLoyaltyPage() {
     useCallback(() => {
       loadLoyaltyStampMedia();
     }, [loadLoyaltyStampMedia]),
+  );
+
+  const loyaltyCardGroups = useMemo(
+    () => groupCardsByProvider(loyaltyCards),
+    [loyaltyCards],
   );
 
   const renderStampGrid = cardData => {
@@ -643,6 +658,7 @@ export default function ShopLoyaltyPage() {
                     {showHistory ? 'Últimos cartões' : 'Cartão atual'}
                   </Text>
                   <Text style={[styles.toolbarMeta, {color: palette.textMuted}]}>
+                    {loyaltyCardGroups.length} franquia(s),{' '}
                     {loyaltyCards.length} cartão(ões) carregado(s)
                   </Text>
                 </View>
@@ -683,17 +699,31 @@ export default function ShopLoyaltyPage() {
                   </Text>
                 </View>
               ) : loyaltyCards.length > 0 ? (
-                loyaltyCards.map((cardData, index) => (
-                  <View
-                    key={`loyalty-card-${cardData?.card?.id || `current-${index}`}`}
-                    style={[
-                      styles.summaryCard,
-                      {
-                        backgroundColor: palette.cardBackground,
-                        borderColor: palette.headerBorder,
-                      },
-                    ]}>
-                    {renderStampGrid(cardData)}
+                loyaltyCardGroups.map(group => (
+                  <View key={group.key} style={styles.franchiseGroup}>
+                    {group.label ? (
+                      <Text
+                        style={[
+                          styles.franchiseTitle,
+                          {color: palette.textPrimary},
+                        ]}>
+                        {group.label}
+                      </Text>
+                    ) : null}
+                    {group.cards.map((cardData, index) => (
+                      <View
+                        key={`loyalty-card-${cardData?.card?.id || `current-${index}`}`}
+                        style={[
+                          styles.summaryCard,
+                          styles.groupedSummaryCard,
+                          {
+                            backgroundColor: palette.cardBackground,
+                            borderColor: palette.headerBorder,
+                          },
+                        ]}>
+                        {renderStampGrid(cardData)}
+                      </View>
+                    ))}
                   </View>
                 ))
               ) : (
