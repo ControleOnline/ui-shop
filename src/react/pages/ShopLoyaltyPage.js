@@ -457,19 +457,6 @@ export default function ShopLoyaltyPage() {
               </Text>
             ) : null}
           </View>
-          <View
-            style={[
-              styles.rewardBadge,
-              {backgroundColor: palette.buttonBackground},
-            ]}>
-            <Text
-              style={[
-                styles.rewardBadgeText,
-                {color: palette.buttonText},
-              ]}>
-              prêmio
-            </Text>
-          </View>
         </View>
         {stampSlots.length > 0 ? (
           <View style={styles.stampGrid}>
