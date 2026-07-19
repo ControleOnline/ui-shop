@@ -8,16 +8,14 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
-import {api} from '@controleonline/ui-common/src/api';
 import DefaultErrors from '@controleonline/ui-default/src/react/components/errors/DefaultErrors';
-import DefaultFile from '@controleonline/ui-default/src/react/components/files/DefaultFile';
 import StateStore from '@controleonline/ui-common/src/react/components/StateStore';
 import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
+import {buildFileUrl, normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {readShopAuthenticatedPeopleId} from '@controleonline/ui-shop/src/react/utils/shopSession';
 import {useStore} from '@store';
 import {SHOP_HOME_OPTION_LOYALTY} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -59,15 +57,6 @@ const groupCardsByProvider = cards => {
 
 const formatStampNumber = value => String(value).padStart(2, '0');
 const tt = (type, key) => global.t?.t('configs', type, key);
-
-const normalizeCollection = payload => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== 'object') return [];
-  if (Array.isArray(payload.member)) return payload.member;
-  if (Array.isArray(payload['hydra:member'])) return payload['hydra:member'];
-  if (Array.isArray(payload.items)) return payload.items;
-  return [];
-};
 
 const STAMP_OFFSET_LIMIT_X = 25;
 const STAMP_OFFSET_LIMIT_Y = 25;
@@ -142,6 +131,13 @@ const resolveLoyaltyEmptyMessage = summary =>
     : tt('loyalty_text', 'openCardEmpty') ||
       'Nenhum cartão aberto foi encontrado para este cliente.';
 
+const resolvePublicStampUrl = (...companies) => {
+  const companyWithStamp = companies.find(company => company?.stamp);
+  return companyWithStamp?.stamp
+    ? buildFileUrl(companyWithStamp.stamp, companyWithStamp)
+    : '';
+};
+
 const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
 
 export default function ShopLoyaltyPage() {
@@ -187,18 +183,16 @@ export default function ShopLoyaltyPage() {
     text: palette.textPrimary,
     muted: palette.textMuted,
   };
-  const loyaltyStampIconSource = String(loyaltyStampIconUrl || '').trim();
-  const loyaltyProviderCompany =
-    salesCompany || cartDefaultCompany || defaultCompany || null;
-  const loyaltyProviderCompanyId = normalizeId(loyaltyProviderCompany?.id);
+  const loyaltyStampIconSource =
+    resolvePublicStampUrl(salesCompany, cartDefaultCompany, defaultCompany) ||
+    String(loyaltyStampIconUrl || '').trim();
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
   const [loyaltyCards, setLoyaltyCards] = useState([]);
-  const [loyaltyStampMedia, setLoyaltyStampMedia] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
-  const [cardsError, setCardsError] = useState(null);
+  const [, setCardsError] = useState(null);
   const [snapshotSummary, setSnapshotSummary] = useState({});
   const loyaltySnapshotRequestRef = useRef(0);
   const isMountedRef = useRef(true);
@@ -208,29 +202,6 @@ export default function ShopLoyaltyPage() {
       isMountedRef.current = false;
     };
   }, []);
-
-  const loadLoyaltyStampMedia = useCallback(async () => {
-    if (!sessionChecked || !isLogged || !loyaltyProviderCompanyId) {
-      setLoyaltyStampMedia(null);
-      return;
-    }
-
-    try {
-      const response = await api.fetch('/people_media', {
-        params: {
-          people: `/people/${loyaltyProviderCompanyId}`,
-          'mediaType.type': 'stamp',
-          'mediaType.peopleType': 'J',
-          itemsPerPage: 1,
-        },
-      });
-
-      const [media] = normalizeCollection(response);
-      setLoyaltyStampMedia(media || null);
-    } catch {
-      setLoyaltyStampMedia(null);
-    }
-  }, [isLogged, loyaltyProviderCompanyId, sessionChecked]);
 
   useEffect(() => {
     let cancelled = false;
@@ -415,12 +386,6 @@ export default function ShopLoyaltyPage() {
     }, [loadLoyaltyCards]),
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      loadLoyaltyStampMedia();
-    }, [loadLoyaltyStampMedia]),
-  );
-
   const loyaltyCardGroups = useMemo(
     () => groupCardsByProvider(loyaltyCards),
     [loyaltyCards],
@@ -475,25 +440,7 @@ export default function ShopLoyaltyPage() {
                   },
                 ]}>
                 {slot.completed ? (
-                  loyaltyStampMedia?.file ? (
-                    <View
-                      style={[
-                        styles.stampImageWrap,
-                        {
-                          transform: resolveStampTransform(
-                            cardData?.card?.id,
-                            slot.number,
-                          ),
-                        },
-                      ]}>
-                      <DefaultFile
-                        source={loyaltyStampMedia.file}
-                        company={loyaltyProviderCompany}
-                        style={styles.stampImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  ) : loyaltyStampIconSource ? (
+                  loyaltyStampIconSource ? (
                     <View
                       style={[
                         styles.stampImageWrap,
