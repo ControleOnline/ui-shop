@@ -242,8 +242,9 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await fetchShopCollectionPage('products', {
+        const response = await fetchShopCollectionPage('product-showcases/catalog', {
           company: normalizedCompanyId,
+          integration_key: 'shop',
           active: 1,
           type: normalizedCatalogProductTypes,
           'productCategory.category': `/categories/${normalizedCategoryId}`,
@@ -562,8 +563,9 @@ export default function useShopCatalogState({
     setIsLoadingSearch(true);
 
     Promise.all([
-      fetchShopCollectionPage('products', {
+      fetchShopCollectionPage('product-showcases/catalog', {
         company: salesCompany.id,
+        integration_key: 'shop',
         active: 1,
         type: normalizedCatalogProductTypes,
         'order[product]': 'ASC',
