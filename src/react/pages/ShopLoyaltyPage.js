@@ -132,6 +132,10 @@ const resolveLoyaltyEmptyMessage = summary =>
       'Nenhum cartão aberto foi encontrado para este cliente.';
 
 const resolvePublicStampUrl = (...companies) => {
+  /*
+   * @agents Loyalty stamp artwork belongs to people_media type "stamp".
+   * Shop must not read a URL from configs because company media is the shared source.
+   */
   const companyWithStamp = companies.find(company => company?.stamp);
   return companyWithStamp?.stamp
     ? buildFileUrl(companyWithStamp.stamp, companyWithStamp)
@@ -154,7 +158,6 @@ export default function ShopLoyaltyPage() {
     loyaltyGiftProductId,
     loyaltyProductIds,
     loyaltyRequiredSales,
-    loyaltyStampIconUrl,
     primaryEntryRouteName,
   } = useShopSettings();
   const {
@@ -184,8 +187,7 @@ export default function ShopLoyaltyPage() {
     muted: palette.textMuted,
   };
   const loyaltyStampIconSource =
-    resolvePublicStampUrl(salesCompany, cartDefaultCompany, defaultCompany) ||
-    String(loyaltyStampIconUrl || '').trim();
+    resolvePublicStampUrl(salesCompany, cartDefaultCompany, defaultCompany);
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
