@@ -58,9 +58,11 @@ const groupCardsByProvider = cards => {
 const formatStampNumber = value => String(value).padStart(2, '0');
 const tt = (type, key) => global.t?.t('configs', type, key);
 
-const STAMP_OFFSET_LIMIT_X = 25;
-const STAMP_OFFSET_LIMIT_Y = 25;
-const STAMP_ROTATION_LIMIT = 15;
+// TO DO // 21/06/2026 // ALEMAC
+// passar isso para config ou theme
+// deixei zerado para LAVE-GO
+const STAMP_OFFSET_LIMIT = 0; // era 25
+const STAMP_ROTATION_LIMIT = 0; // era 15
 
 const createSeededValue = seed => {
   const text = String(seed || 'stamp');
@@ -100,13 +102,13 @@ const resolveStampTransform = (cardId, slotNumber) => {
     baseSeed,
     slotNumber,
     'x',
-    STAMP_OFFSET_LIMIT_X,
+    STAMP_OFFSET_LIMIT,
   );
   const offsetY = resolveSeededOffset(
     baseSeed,
     slotNumber,
     'y',
-    STAMP_OFFSET_LIMIT_Y,
+    STAMP_OFFSET_LIMIT,
   );
   const rotation = Math.round(
     (createSeededValue(`${baseSeed}:rotation`) * 2 - 1) *
@@ -581,10 +583,9 @@ export default function ShopLoyaltyPage() {
                   Acompanhe a sua fidelidade
                 </Text>
                 <Text style={[styles.heroText, {color: palette.badgeText}]}>
-                  Cada pedido fechado com produtos participantes ganha um carimbo.
-                  Quando o cartão completa a meta, a proxima venda fechada com
-                  o brinde encerra esse cartão; se vier sem brinde, abre um
-                  novo cartão.
+                  Cada pedido fechado com produtos ou serviços participantes ganha um carimbo.
+                  Quando o cartão completa a meta, a próxima venda fechada com
+                  o brinde encerra esse cartão.
                 </Text>
               </View>
 
