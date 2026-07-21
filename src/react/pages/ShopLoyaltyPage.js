@@ -500,13 +500,6 @@ export default function ShopLoyaltyPage() {
                       ]}>
                       {formatStampNumber(slot.number)}
                     </Text>
-                    <Text
-                      style={[
-                        styles.pendingStampLabel,
-                        {color: palette.textMuted},
-                      ]}>
-                      aguardando pedido
-                    </Text>
                   </>
                 )}
               </View>
