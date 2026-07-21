@@ -51,12 +51,7 @@ export const extractAddressCoordinates = address => {
 
 export const buildFranchiseMarkerAddresses = ({
   directory = [],
-  franchisePinIconUrl = '',
 }) => {
-  const normalizedConfiguredIconUrl = normalizeShopTextConfig(
-    franchisePinIconUrl,
-  );
-
   return directory.flatMap(company =>
     (company?.shopAddresses || [])
       .map(address => {
@@ -70,9 +65,15 @@ export const buildFranchiseMarkerAddresses = ({
           return null;
         }
 
-        const resolvedMarkerIconUrl =
-          normalizedConfiguredIconUrl ||
-          normalizeShopTextConfig(address?.markerIconUrl);
+        /*
+         * @agents Franchise map pins are company media assets from people_media
+         * type "pin"; configs must not override institutional media.
+         */
+        const resolvedMarkerIconUrl = normalizeShopTextConfig(
+          resolveFileImageUrl(address?.pin || company?.pin || null, {
+            company,
+          }),
+        );
         const unitAlias = normalizeShopTextConfig(
           address?.alias ||
             company?.alias ||

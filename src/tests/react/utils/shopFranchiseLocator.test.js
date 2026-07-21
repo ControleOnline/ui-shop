@@ -4,13 +4,13 @@ import {
 } from '@controleonline/ui-shop/src/react/utils/shopFranchiseLocator';
 
 describe('shopFranchiseLocator', () => {
-  it('adds the configured general-settings pin icon URL to franchise markers', () => {
+  it('uses the company pin media as the franchise marker icon', () => {
     const markers = buildFranchiseMarkerAddresses({
-      franchisePinIconUrl:
-        'https://app.lave-go.com/assets/src/assets/go_google_maps_pin.png',
       directory: [
         {
           alias: 'Lave-go Unidade 5',
+          pin: {id: 654},
+          domain: 'maincompany.controleonline.com',
           shopAddresses: [
             {
               id: 10,
@@ -30,15 +30,15 @@ describe('shopFranchiseLocator', () => {
         unitAlias: 'Lave-go Unidade 5',
         latitude: -15.6001,
         longitude: -56.1001,
-        markerIconUrl:
-          'https://app.lave-go.com/assets/src/assets/go_google_maps_pin.png',
+        markerIconUrl: expect.stringContaining(
+          '/files/654/download?app-domain=maincompany.controleonline.com',
+        ),
       }),
     ]);
   });
 
   it('keeps the default pin when there is no custom icon configured', () => {
     const markers = buildFranchiseMarkerAddresses({
-      franchisePinIconUrl: '',
       directory: [
         {
           shopAddresses: [
@@ -61,7 +61,6 @@ describe('shopFranchiseLocator', () => {
 
   it('prefers the company alias from People over the address nickname', () => {
     const markers = buildFranchiseMarkerAddresses({
-      franchisePinIconUrl: '',
       directory: [
         {
           alias: 'Alias do People',
@@ -89,7 +88,6 @@ describe('shopFranchiseLocator', () => {
 
   it('uses the People logo as the popup logo source', () => {
     const markers = buildFranchiseMarkerAddresses({
-      franchisePinIconUrl: '',
       directory: [
         {
           alias: 'Alias do People',

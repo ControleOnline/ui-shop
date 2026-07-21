@@ -272,9 +272,8 @@ export default function ShopFranchiseLocatorPage() {
     () =>
       buildFranchiseMarkerAddresses({
         directory: effectiveDirectory,
-        franchisePinIconUrl: mapSettings.franchisePinIconUrl,
       }),
-    [effectiveDirectory, mapSettings.franchisePinIconUrl],
+    [effectiveDirectory],
   );
 
   const selectedCompanyId = normalizeShopEntityId(salesCompany);
