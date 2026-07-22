@@ -123,16 +123,9 @@ const resolveStampTransform = (cardId, slotNumber) => {
   ];
 };
 
-/*
- * @agents History responses carry a dedicated empty-state flag so the UI can keep
- * the "no open card" and "no history found" messages separated.
- */
-const resolveLoyaltyEmptyMessage = summary =>
-  summary?.historyEmpty
-    ? tt('loyalty_text', 'historyEmpty') ||
-      'Nenhum histórico encontrado para este cliente.'
-    : tt('loyalty_text', 'openCardEmpty') ||
-      'Nenhum cartão aberto foi encontrado para este cliente.';
+const resolveLoyaltyEmptyMessage = () =>
+  tt('loyalty_text', 'openCardEmpty') ||
+  'Nenhum cartão aberto foi encontrado para este cliente.';
 
 const resolvePublicStampUrl = (...companies) => {
   /*
@@ -195,7 +188,6 @@ export default function ShopLoyaltyPage() {
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
   const [loyaltyCards, setLoyaltyCards] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [showHeroHelpModal, setShowHeroHelpModal] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
   const [, setCardsError] = useState(null);
@@ -325,7 +317,7 @@ export default function ShopLoyaltyPage() {
     try {
       const response = await ordersStore.actions.getFidelitySnapshot({
         clientId,
-        history: showHistory,
+        history: false,
       });
 
       if (
@@ -338,10 +330,6 @@ export default function ShopLoyaltyPage() {
       /*
        * @agents Accept both the wrapped API response and a direct array so the screen
        * stays resilient to the store contract while still rendering only the canonical snapshot.
-       */
-      /*
-       * @agents The backend summary flags the empty-history branch so the screen can
-       * keep the empty-state copy aligned with the requested mode.
        */
       const nextSummary =
         response?.summary && typeof response.summary === 'object'
@@ -382,7 +370,6 @@ export default function ShopLoyaltyPage() {
     ordersStore.actions,
     salesCompany?.id,
     sessionChecked,
-    showHistory,
     user?.people,
   ]);
 
@@ -418,7 +405,7 @@ export default function ShopLoyaltyPage() {
           <View style={styles.summaryTitleGroup}>
             {cardData?.card?.id ? (
               <Text style={[styles.summaryLabel, {color: palette.textMuted}]}>
-                Meus carimbos #{cardData.card.id}
+                Cartão #{cardData.card.id}
               </Text>
             ) : null}
           </View>
@@ -514,16 +501,16 @@ export default function ShopLoyaltyPage() {
         )}
         {stampSlots.length > 0 && (
           <Text style={[styles.summaryHelp, {color: palette.textMuted}]}>
-            {remainingSales > 0
-              ? `Faltam ${remainingSales} pedido(s) para liberar o brinde.`
-              : 'Brinde liberado para o próximo pedido.'}
+            {remainingSales === 0
+              ? 'Brinde liberado para o próximo pedido.'
+              : null}
           </Text>
         )}
       </>
     );
   };
 
-  const emptyLoyaltyMessage = resolveLoyaltyEmptyMessage(snapshotSummary);
+  const emptyLoyaltyMessage = resolveLoyaltyEmptyMessage();
 
   return (
     <ShopShell
@@ -631,33 +618,6 @@ export default function ShopLoyaltyPage() {
                 </View>
               </Modal>
 
-              <View style={styles.loyaltyToolbar}>
-                <View style={styles.toolbarTitleGroup}>
-                  <Text style={[styles.toolbarTitle, {color: palette.textPrimary}]}>
-                    {showHistory ? 'Últimos cartões' : 'Cartão atual'}
-                  </Text>
-                  <Text style={[styles.toolbarMeta, {color: palette.textMuted}]}>
-                    {loyaltyCardGroups.length} franquia(s),{' '}
-                    {loyaltyCards.length} cartão(ões) carregado(s)
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  activeOpacity={0.84}
-                  onPress={() => setShowHistory(value => !value)}
-                  style={[
-                    styles.historyButton,
-                    {borderColor: palette.buttonBackground},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.historyButtonText,
-                      {color: palette.buttonBackground},
-                    ]}>
-                    {showHistory ? 'Ver atual' : 'Ver últimos'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
               {sessionChecked && !isLogged ? (
                 <ShopAuthRequiredState
                   theme={featureTheme}
@@ -680,15 +640,7 @@ export default function ShopLoyaltyPage() {
               ) : loyaltyCards.length > 0 ? (
                 loyaltyCardGroups.map(group => (
                   <View key={group.key} style={styles.franchiseGroup}>
-                    {group.label ? (
-                      <Text
-                        style={[
-                          styles.franchiseTitle,
-                          {color: palette.textPrimary},
-                        ]}>
-                        {group.label}
-                      </Text>
-                    ) : null}
+
                     {group.cards.map((cardData, index) => (
                       <View
                         key={`loyalty-card-${cardData?.card?.id || `current-${index}`}`}
@@ -700,6 +652,16 @@ export default function ShopLoyaltyPage() {
                             borderColor: palette.headerBorder,
                           },
                         ]}>
+                        {group.label ? (
+                          <Text
+                            style={[
+                              styles.franchiseTitle,
+                              styles.franchiseTitleInsideCard,
+                              {color: palette.textPrimary},
+                            ]}>
+                            {group.label}
+                          </Text>
+                        ) : null}
                         {renderStampGrid(cardData)}
                       </View>
                     ))}

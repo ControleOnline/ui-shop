@@ -103,35 +103,12 @@ export default StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
-    justifyContent: 'space-between',
     marginHorizontal: 14,
     marginTop: 16,
-  },
-  toolbarTitleGroup: {
-    flex: 1,
-    minWidth: 0,
   },
   toolbarTitle: {
     fontSize: 18,
     fontWeight: '800',
-  },
-  toolbarMeta: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 3,
-  },
-  historyButton: {
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  historyButtonText: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
   },
   summaryHeader: {
     alignItems: 'center',
@@ -147,6 +124,9 @@ export default StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     lineHeight: 22,
+  },
+  franchiseTitleInsideCard: {
+    marginBottom: 10,
   },
   summaryLabel: {
     fontSize: 13,
