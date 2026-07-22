@@ -535,8 +535,7 @@ export default function ShopLoyaltyPage() {
       showBottomCart={false}
       showHomeEntryControls
       showSalesShortcuts={false}
-      showSearch={false}
-      subtitle="Programa de fidelidade">
+      showSearch={false}>
       {() => (
         <ScrollView
           style={[styles.page, {backgroundColor: palette.pageBackground}]}
@@ -569,11 +568,8 @@ export default function ShopLoyaltyPage() {
                     borderColor: palette.chipSelectedBorder,
                   },
                 ]}>
-                <Text style={[styles.heroEyebrow, {color: palette.chipSelectedBackground}]}>
-                  FIDELIDADE
-                </Text>
-                <Text style={[styles.heroTitle, {color: palette.badgeText}]}>
-                  Acompanhe a sua fidelidade
+                <Text style={[styles.heroTitle, {color: palette.chipSelectedBackground}]}>
+                  Acompanhe sua fidelidade
                 </Text>
                 <Text style={[styles.heroText, {color: palette.badgeText}]}>
                   Cada pedido fechado com produtos ou serviços participantes ganha um carimbo.

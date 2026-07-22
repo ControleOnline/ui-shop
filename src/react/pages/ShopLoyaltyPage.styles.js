@@ -21,9 +21,9 @@ export default StyleSheet.create({
     letterSpacing: 0.6,
   },
   heroTitle: {
-    fontSize: 27,
+    fontSize: 18,
     fontWeight: '800',
-    marginTop: 8,
+    marginTop: 0,
   },
   heroText: {
     fontSize: 14,

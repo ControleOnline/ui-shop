@@ -90,7 +90,7 @@ export const inlineStyle_180_20 = (
   },
 ) => ({
   color: '#fff',
-  fontSize: isMobile ? 15 : 18,
+  fontSize: isMobile ? 18 : 18,
   fontWeight: '700',
   flexShrink: 1,
 });

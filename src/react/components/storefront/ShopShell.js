@@ -381,11 +381,6 @@ export default function ShopShell({
                       {purchaseCompanyLabel}
                     </Text>
                   </View>
-                  <Text
-                    numberOfLines={1}
-                    style={inlineStyle_214_18}>
-                    {subtitle}
-                  </Text>
                 </View>
               </View>
 
