@@ -618,7 +618,7 @@ export default function ShopLoyaltyPage() {
                 </View>
               </Modal>
 
-              {sessionChecked && !isLogged ? (
+              {!isLogged ? (
                 <ShopAuthRequiredState
                   theme={featureTheme}
                   title="Entre para ver seus carimbos"
@@ -699,9 +699,6 @@ export default function ShopLoyaltyPage() {
                   <Text style={[styles.infoTitle, {color: palette.textPrimary}]}>
                     Produtos participantes
                   </Text>
-                  <Text style={[styles.infoMeta, {color: palette.textMuted}]}>
-                    {loyaltyProductIds.length} produto(s) configurado(s)
-                  </Text>
                   {participantProducts.length > 0 ? (
                     participantProducts.map(product => (
                       <Text
@@ -729,7 +726,7 @@ export default function ShopLoyaltyPage() {
                     Brinde configurado
                   </Text>
                   <Text style={[styles.infoMeta, {color: palette.textMuted}]}>
-                    Produto liberado ao bater a meta
+                    Produto é liberado ao bater a meta
                   </Text>
                   <Text style={[styles.giftTitle, {color: palette.buttonBackground}]}>
                     {giftProduct
@@ -737,7 +734,7 @@ export default function ShopLoyaltyPage() {
                       : 'Nenhum brinde configurado'}
                   </Text>
                   <Text style={[styles.infoEmpty, {color: palette.textMuted}]}>
-                    Meta configurada: {loyaltyRequiredSales || 0} pedido(s).
+                    Meta configurada: {loyaltyRequiredSales || 0} carimbo(s)
                   </Text>
                 </View>
               </View>
