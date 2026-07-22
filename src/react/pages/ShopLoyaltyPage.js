@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Image,
+  Modal,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -195,6 +196,7 @@ export default function ShopLoyaltyPage() {
   const [giftProduct, setGiftProduct] = useState(null);
   const [loyaltyCards, setLoyaltyCards] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showHeroHelpModal, setShowHeroHelpModal] = useState(false);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
   const [, setCardsError] = useState(null);
   const [snapshotSummary, setSnapshotSummary] = useState({});
@@ -414,15 +416,9 @@ export default function ShopLoyaltyPage() {
       <>
         <View style={styles.summaryHeader}>
           <View style={styles.summaryTitleGroup}>
-            <Text style={[styles.summaryLabel, {color: palette.textMuted}]}>
-              Pedidos carimbados
-            </Text>
-            <Text style={[styles.summaryValue, {color: palette.textPrimary}]}>
-              {completedStampCount} / {requiredSales || 0}
-            </Text>
             {cardData?.card?.id ? (
-              <Text style={[styles.cardMeta, {color: palette.textMuted}]}>
-                Cartão #{cardData.card.id}
+              <Text style={[styles.summaryLabel, {color: palette.textMuted}]}>
+                Meus carimbos #{cardData.card.id}
               </Text>
             ) : null}
           </View>
@@ -568,15 +564,72 @@ export default function ShopLoyaltyPage() {
                     borderColor: palette.chipSelectedBorder,
                   },
                 ]}>
-                <Text style={[styles.heroTitle, {color: palette.chipSelectedBackground}]}>
-                  Acompanhe sua fidelidade
-                </Text>
-                <Text style={[styles.heroText, {color: palette.badgeText}]}>
-                  Cada pedido fechado com produtos ou serviços participantes ganha um carimbo.
-                  Quando o cartão completa a meta, a próxima venda fechada com
-                  o brinde encerra esse cartão.
-                </Text>
+                <View style={styles.heroTitleRow}>
+                  <Text style={[styles.heroTitle, {color: palette.chipSelectedBackground}]}>
+                    Acompanhe sua fidelidade
+                  </Text>
+                  <TouchableOpacity
+                    accessibilityLabel="Mostrar ajuda sobre fidelidade"
+                    onPress={() => setShowHeroHelpModal(true)}
+                    style={[
+                      styles.heroHelpButton,
+                      {
+                        borderColor: palette.chipSelectedBorder,
+                        backgroundColor: palette.cardBackground,
+                      },
+                    ]}>
+                    <Text style={[styles.heroHelpButtonText, {color: palette.buttonBackground}]}>
+                      ?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+
+              <Modal
+                animationType="fade"
+                transparent
+                visible={showHeroHelpModal}
+                onRequestClose={() => setShowHeroHelpModal(false)}>
+                <View style={styles.heroInfoBackdrop}>
+                  <View
+                    style={[
+                      styles.heroInfoCard,
+                      {
+                        backgroundColor: palette.buttonBackground,
+                        borderColor: palette.chipSelectedBorder,
+                      },
+                    ]}>
+                    <View style={styles.heroInfoHeader}>
+                      <Text style={[styles.heroTitle, {color: palette.chipSelectedBackground}]}>
+                        Acompanhe sua fidelidade
+                      </Text>
+                      <TouchableOpacity
+                        accessibilityLabel="Fechar ajuda sobre fidelidade"
+                        onPress={() => setShowHeroHelpModal(false)}
+                        style={[
+                          styles.heroInfoCloseButton,
+                          {
+                            borderColor: palette.chipSelectedBorder,
+                            backgroundColor: palette.cardBackground,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.heroInfoCloseButtonText,
+                            {color: palette.buttonBackground},
+                          ]}>
+                          x
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.heroText, {color: palette.badgeText}]}>
+                      Cada pedido fechado com produtos ou serviços participantes ganha um carimbo.
+                      Quando o cartão completa a meta, a próxima venda fechada com
+                      o brinde encerra esse cartão.
+                    </Text>
+                  </View>
+                </View>
+              </Modal>
 
               <View style={styles.loyaltyToolbar}>
                 <View style={styles.toolbarTitleGroup}>
