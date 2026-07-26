@@ -86,12 +86,13 @@ describe('shopFranchiseLocator', () => {
     ]);
   });
 
-  it('uses the People logo as the popup logo source', () => {
+  it('uses the People icon as the popup image source', () => {
     const markers = buildFranchiseMarkerAddresses({
       directory: [
         {
           alias: 'Alias do People',
-          logo: {id: 321},
+          icon: {id: 321},
+          logo: {id: 999},
           domain: 'maincompany.controleonline.com',
           shopAddresses: [
             {
@@ -112,6 +113,7 @@ describe('shopFranchiseLocator', () => {
         ),
       }),
     ]);
+    expect(markers[0].companyLogoUrl).not.toContain('/files/999/download');
   });
 
   it('extracts coordinates from nested address shapes used by the directory payload', () => {

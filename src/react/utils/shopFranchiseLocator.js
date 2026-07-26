@@ -80,8 +80,8 @@ export const buildFranchiseMarkerAddresses = ({
             address?.nickname ||
             company?.name,
         );
-        const companyLogoUrl = normalizeShopTextConfig(
-          resolveFileImageUrl(company?.logo || address?.logo || null, {
+        const companyIconUrl = normalizeShopTextConfig(
+          resolveFileImageUrl(company?.icon || address?.icon || null, {
             company,
           }),
         );
@@ -90,7 +90,7 @@ export const buildFranchiseMarkerAddresses = ({
           ...address,
           companyName: unitAlias,
           unitAlias,
-          ...(companyLogoUrl ? {companyLogoUrl} : {}),
+          ...(companyIconUrl ? {companyLogoUrl: companyIconUrl} : {}),
           latitude: coordinates?.latitude ?? address?.latitude ?? null,
           longitude: coordinates?.longitude ?? address?.longitude ?? null,
           ...(resolvedMarkerIconUrl
