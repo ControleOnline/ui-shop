@@ -158,12 +158,12 @@ export default StyleSheet.create({
   stampGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 8,
     justifyContent: 'center',
     marginTop: 18,
   },
   stampSlot: {
-    width: 96,
+    width: 80,
     alignItems: 'center',
     aspectRatio: 1,
     borderRadius: 16,
@@ -184,8 +184,8 @@ export default StyleSheet.create({
     width: 72,
   },
   stampImage: {
-    width: 80,
-    height: 80,
+    width: 72,
+    height: 72,
     opacity: 1,
   },
   stampImageWrap: {

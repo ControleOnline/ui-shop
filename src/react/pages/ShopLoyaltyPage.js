@@ -609,7 +609,7 @@ export default function ShopLoyaltyPage() {
                         </Text>
                       </TouchableOpacity>
                     </View>
-                    <Text style={[styles.heroText, {color: palette.badgeText}]}>
+                    <Text style={[styles.heroText, {color: palette.chipSelectedBackground}]}>
                       Cada pedido fechado com produtos ou serviços participantes ganha um carimbo.
                       Quando o cartão completa a meta, a próxima venda fechada com
                       o brinde encerra esse cartão.
