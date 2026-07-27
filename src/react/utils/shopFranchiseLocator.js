@@ -51,7 +51,14 @@ export const extractAddressCoordinates = address => {
 
 export const buildFranchiseMarkerAddresses = ({
   directory = [],
+  fallbackCompany = null,
 }) => {
+  const fallbackCompanyIconUrl = normalizeShopTextConfig(
+    resolveFileImageUrl(fallbackCompany?.icon || null, {
+      company: fallbackCompany,
+    }),
+  );
+
   return directory.flatMap(company =>
     (company?.shopAddresses || [])
       .map(address => {
@@ -80,11 +87,12 @@ export const buildFranchiseMarkerAddresses = ({
             address?.nickname ||
             company?.name,
         );
-        const companyIconUrl = normalizeShopTextConfig(
+        const companyIconUrl =
+          normalizeShopTextConfig(
           resolveFileImageUrl(company?.icon || address?.icon || null, {
             company,
           }),
-        );
+        ) || fallbackCompanyIconUrl;
 
         return {
           ...address,

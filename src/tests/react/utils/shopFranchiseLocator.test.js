@@ -116,6 +116,37 @@ describe('shopFranchiseLocator', () => {
     expect(markers[0].companyLogoUrl).not.toContain('/files/999/download');
   });
 
+  it('falls back to the public company icon used by the shell when the franchise has no icon', () => {
+    const markers = buildFranchiseMarkerAddresses({
+      fallbackCompany: {
+        icon: {id: 777},
+        domain: 'maincompany.controleonline.com',
+      },
+      directory: [
+        {
+          alias: 'Alias do People',
+          domain: 'franchise.controleonline.com',
+          shopAddresses: [
+            {
+              id: 14,
+              latitude: -15.61,
+              longitude: -56.09,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(markers).toEqual([
+      expect.objectContaining({
+        id: 14,
+        companyLogoUrl: expect.stringContaining(
+          '/files/777/download?app-domain=maincompany.controleonline.com',
+        ),
+      }),
+    ]);
+  });
+
   it('extracts coordinates from nested address shapes used by the directory payload', () => {
     expect(
       extractAddressCoordinates({

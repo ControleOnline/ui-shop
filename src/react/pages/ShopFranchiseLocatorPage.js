@@ -272,8 +272,9 @@ export default function ShopFranchiseLocatorPage() {
     () =>
       buildFranchiseMarkerAddresses({
         directory: effectiveDirectory,
+        fallbackCompany: defaultCompany,
       }),
-    [effectiveDirectory],
+    [defaultCompany, effectiveDirectory],
   );
 
   const selectedCompanyId = normalizeShopEntityId(salesCompany);
