@@ -5,10 +5,16 @@ import {useNavigation} from '@react-navigation/native';
 import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
+import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {updateAnonymousCartProduct} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
+import {
+  fetchShopCatalogProduct,
+  hasShopProductCustomizationGroups,
+} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
 const productGroupRequirementCache = new Map();
+const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
 
 const extractItems = response => {
   if (Array.isArray(response)) return response;
@@ -50,6 +56,7 @@ export default function ShopQuantityControl({
   const {actions: orderProductActions} = orderProductsStore;
   const productGroupStore = useStore('product_group');
   const {salesCompany} = useShopSalesCompany();
+  const {catalogProductTypes} = useShopSettings();
   const {width} = useWindowDimensions();
   const [quantity, setQuantity] = useState(defaultQuantity);
   const timeoutRef = useRef(null);
@@ -143,12 +150,8 @@ export default function ShopQuantityControl({
     }
 
     const providerId = salesCompany?.id || '';
-    const inlineHasGroups =
-      Array.isArray(product?.productGroups) && product.productGroups.length > 0;
     if (
-      product?.hasCustomizationGroups === true ||
-      (!providerId && inlineHasGroups) ||
-      product?.type === 'custom'
+      hasShopProductCustomizationGroups(product)
     ) {
       return true;
     }
@@ -173,11 +176,25 @@ export default function ShopQuantityControl({
     };
 
     const groupFilters = providerId
-      ? {...baseFilter, company: providerId}
-      : baseFilter;
+      ? {...baseFilter, company: providerId, ...silentStoreMeta}
+      : {...baseFilter, ...silentStoreMeta};
 
-    const response = await productGroupStore.actions.getItems(groupFilters);
-    const groups = extractItems(response);
+    let groups = [];
+
+    try {
+      const response = await productGroupStore.actions.getItems(groupFilters);
+      groups = extractItems(response);
+    } catch {
+      const catalogProduct = await fetchShopCatalogProduct({
+        companyId: providerId,
+        productId,
+        productTypes: catalogProductTypes,
+      }).catch(() => null);
+
+      const hasCatalogGroups = hasShopProductCustomizationGroups(catalogProduct);
+      productGroupRequirementCache.set(cacheKey, hasCatalogGroups);
+      return hasCatalogGroups;
+    }
 
     const hasGroups = groups.length > 0;
     productGroupRequirementCache.set(cacheKey, hasGroups);
@@ -186,6 +203,7 @@ export default function ShopQuantityControl({
     orderProduct,
     orderProductId,
     product,
+    catalogProductTypes,
     productGroupStore.actions,
     salesCompany?.id,
     shouldCheckCustomization,
@@ -274,3 +292,4 @@ export default function ShopQuantityControl({
     </View>
   );
 }
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.

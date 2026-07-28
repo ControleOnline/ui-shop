@@ -109,6 +109,21 @@ export const productsSectionEmptyTextStyle = ({theme: company}) => {
   };
 };
 
+export const productsSectionFooterStyle = ({theme: company}) => {
+  const theme = resolveTheme(company);
+
+  return {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: theme.cardBorder,
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+};
+
 export const productsSectionLoadingStateStyle = ({theme: company}) => {
   const theme = resolveTheme(company);
 

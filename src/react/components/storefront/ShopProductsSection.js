@@ -1,11 +1,13 @@
 import React, {useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Text,
   View,
 } from 'react-native';
 
 import ShopProductCard from '@controleonline/ui-shop/src/react/components/storefront/ShopProductCard';
 import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
+import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
   productsSectionPanelStyle,
   productsSectionHeaderStyle,
@@ -17,6 +19,7 @@ import {
   productsSectionEmptyStateStyle,
   productsSectionEmptyTitleStyle,
   productsSectionEmptyTextStyle,
+  productsSectionFooterStyle,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopProductsSection.styles';
 
 // Render the main product grid used by the shared storefront page.
@@ -27,11 +30,14 @@ export default function ShopProductsSection({
   emptyDescription = '',
   emptyTitle = '',
   isLoading = false,
+  isLoadingMore = false,
   products = [],
   refreshCart = null,
+  totalProductsCount = 0,
   title = 'Produtos',
 }) {
   const [layoutWidth, setLayoutWidth] = useState(0);
+  const theme = pickTheme(company);
   const normalizedProducts = useMemo(
     () => (Array.isArray(products) ? products.filter(Boolean) : []),
     [products],
@@ -86,7 +92,7 @@ export default function ShopProductsSection({
           style={productsSectionCountStyle({
             theme: company,
           })}>
-          {normalizedProducts.length} item(ns)
+          {totalProductsCount || normalizedProducts.length} item(ns)
         </Text>
       </View>
 
@@ -148,6 +154,12 @@ export default function ShopProductsSection({
               />
             </View>
           ))}
+        </View>
+      ) : null}
+
+      {isLoadingMore && normalizedProducts.length > 0 ? (
+        <View style={productsSectionFooterStyle({theme: company})}>
+          <ActivityIndicator color={theme.primary} />
         </View>
       ) : null}
     </View>

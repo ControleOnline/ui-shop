@@ -90,7 +90,7 @@ export const inlineStyle_180_20 = (
   },
 ) => ({
   color: '#fff',
-  fontSize: isMobile ? 15 : 18,
+  fontSize: isMobile ? 18 : 18,
   fontWeight: '700',
   flexShrink: 1,
 });
@@ -217,10 +217,11 @@ export const inlineStyle_332_18 = (
 export const inlineStyle_345_10 = (
   {
     isMobile: isMobile,
+    menuPalette: menuPalette,
   },
 ) => ({
   flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.22)',
+  backgroundColor: menuPalette.modalOverlay,
   alignItems: 'center',
   justifyContent: isMobile ? 'flex-end' : 'flex-start',
   paddingTop: isMobile ? 0 : 92,
@@ -231,14 +232,14 @@ export const inlineStyle_345_10 = (
 export const inlineStyle_358_12 = (
   {
     isMobile: isMobile,
-    surface: surface,
+    menuPalette: menuPalette,
   },
 ) => ({
   width: isMobile ? '100%' : 700,
   maxWidth: '100%',
-  backgroundColor: surface,
+  backgroundColor: menuPalette.modalBackground,
   borderRadius: 16,
-  shadowColor: '#000',
+  shadowColor: menuPalette.modalShadow,
   shadowOpacity: 0.16,
   shadowRadius: 12,
 
@@ -270,10 +271,10 @@ export const inlineStyle_370_20 = (
 
 export const inlineStyle_372_18 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalHeaderText,
   fontSize: 20,
   fontWeight: '800',
 });
@@ -286,11 +287,11 @@ export const inlineStyle_381_18 = {
 
 export const inlineStyle_388_20 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
   marginLeft: 18,
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 16,
 });
 
@@ -301,10 +302,10 @@ export const inlineStyle_398_18 = {
 
 export const inlineStyle_399_24 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 16,
 });
 
@@ -315,10 +316,10 @@ export const inlineStyle_409_18 = {
 
 export const inlineStyle_410_24 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 16,
 });
 
@@ -329,10 +330,10 @@ export const inlineStyle_420_18 = {
 
 export const inlineStyle_421_24 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 16,
 });
 
@@ -343,10 +344,10 @@ export const inlineStyle_431_18 = {
 
 export const inlineStyle_432_24 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 16,
 });
 
@@ -362,32 +363,32 @@ export const inlineStyle_444_24 = {
 
 export const inlineStyle_445_26 = (
   {
-    muted: muted,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: muted,
+  color: menuPalette.textMuted,
   fontSize: 13,
 });
 
 export const inlineStyle_447_22 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 15,
   fontWeight: '600',
 });
 
 export const inlineStyle_460_16 = (
   {
-    darkMode: darkMode,
     isMobile: isMobile,
+    menuPalette: menuPalette,
   },
 ) => ({
   width: isMobile ? '100%' : 1,
   height: isMobile ? 1 : undefined,
-  backgroundColor: darkMode ? '#2B3A4A' : '#d7dee8',
+  backgroundColor: menuPalette.dividerBorder,
 });
 
 export const inlineStyle_468_16 = (
@@ -401,13 +402,13 @@ export const inlineStyle_468_16 = (
 
 export const inlineStyle_473_18 = (
   {
-    theme: theme,
+    menuPalette: menuPalette,
   },
 ) => ({
   width: 74,
   height: 74,
   borderRadius: 37,
-  backgroundColor: theme.primary,
+  backgroundColor: menuPalette.buttonBackground,
   alignItems: 'center',
   justifyContent: 'center',
   overflow: 'hidden',
@@ -418,20 +419,24 @@ export const inlineStyle_485_22 = {
   height: '100%',
 };
 
-export const inlineStyle_490_22 = {
-  color: '#fff',
+export const inlineStyle_490_22 = (
+  {
+    menuPalette: menuPalette,
+  },
+) => ({
+  color: menuPalette.buttonText,
   fontSize: 24,
   fontWeight: '700',
-};
+});
 
 export const inlineStyle_497_18 = (
   {
-    foreground: foreground,
+    menuPalette: menuPalette,
   },
 ) => ({
   marginTop: 14,
   textAlign: 'center',
-  color: foreground,
+  color: menuPalette.modalText,
   fontSize: 14,
   lineHeight: 20,
 });
@@ -445,17 +450,21 @@ export const inlineStyle_508_18 = {
 
 export const inlineStyle_531_18 = (
   {
-    theme: theme,
+    menuPalette: menuPalette,
   },
 ) => ({
   marginTop: 18,
-  backgroundColor: theme.primary,
+  backgroundColor: menuPalette.buttonBackground,
   paddingHorizontal: 20,
   paddingVertical: 11,
   borderRadius: 10,
 });
 
-export const inlineStyle_538_24 = {
-  color: '#fff',
+export const inlineStyle_538_24 = (
+  {
+    menuPalette: menuPalette,
+  },
+) => ({
+  color: menuPalette.buttonText,
   fontWeight: '700',
-};
+});

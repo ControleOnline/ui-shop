@@ -34,6 +34,23 @@ const CSS_VAR_FALLBACK_HEX_REGEX =
   /^var\([^,]+,\s*(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})\s*\)$/;
 const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
+const resolveThemeColors = source => {
+  if (source?.theme?.colors && typeof source.theme.colors === 'object') {
+    return source.theme.colors;
+  }
+
+  if (source?.colors && typeof source.colors === 'object') {
+    return source.colors;
+  }
+
+  return source && typeof source === 'object' ? source : {};
+};
+
+const pickColor = (...candidates) =>
+  candidates.find(
+    candidate => typeof candidate === 'string' && candidate.trim().length > 0,
+  );
+
 const normalizeHexColor = value => {
   if (typeof value !== 'string') return null;
 
@@ -108,45 +125,188 @@ const resolveReadableColor = ({
   return readableCandidate || preferred || fallback;
 };
 
-export const pickTheme = company => {
-  const companyColors = company?.theme?.colors || {};
-  const background = companyColors.background || '#F3F7FB';
-  const surface = companyColors.surface || '#ffffff';
-  const textBackgrounds = [surface, background];
-  const primary = companyColors.primary || '#0E7490';
+export const pickTheme = source => {
+  const themeColors = resolveThemeColors(source);
+  const pageBackground = pickColor(
+    themeColors.pageBackground,
+    themeColors.background,
+    '#F3F7FB',
+  );
+  const cardBackground = pickColor(
+    themeColors.cardBackground,
+    themeColors.surface,
+    '#FFFFFF',
+  );
+  const headerBackground = pickColor(
+    themeColors.headerBackground,
+    themeColors['header-primary'],
+    themeColors.primary,
+    '#0B3A53',
+  );
+  const headerBorder = pickColor(
+    themeColors.headerBorder,
+    themeColors.cardBorder,
+    themeColors.border,
+    '#D7E1EC',
+  );
+  const buttonBackground = pickColor(
+    themeColors.buttonBackground,
+    themeColors.primary,
+    '#0E7490',
+  );
+  const chipSelectedBackground = pickColor(
+    themeColors.chipSelectedBackground,
+    themeColors.accent,
+    themeColors.secondary,
+    '#E67E22',
+  );
+  const chipSelectedBorder = pickColor(
+    themeColors.chipSelectedBorder,
+    themeColors.buttonBorder,
+    buttonBackground,
+  );
+  const chipSelectedText = pickColor(
+    themeColors.chipSelectedText,
+    themeColors.accent,
+    themeColors.secondary,
+    '#E67E22',
+  );
+  const dividerBorder = pickColor(
+    themeColors.dividerBorder,
+    themeColors.headerBorder,
+    themeColors.border,
+    '#D7E1EC',
+  );
+  const modalBackground = pickColor(
+    themeColors.modalBackground,
+    cardBackground,
+    '#FFFFFF',
+  );
+  const modalHeaderText = pickColor(
+    themeColors.modalHeaderText,
+    themeColors.textPrimary,
+    themeColors['text-primary'],
+    '#1A1A1A',
+  );
+  const modalText = pickColor(
+    themeColors.modalText,
+    themeColors.textPrimary,
+    themeColors['text-primary'],
+    '#1A1A1A',
+  );
+  const modalOverlay = pickColor(
+    themeColors.modalOverlay,
+    'rgba(0,0,0,0.22)',
+  );
+  const modalShadow = pickColor(
+    themeColors.modalShadow,
+    '#000000',
+  );
+  const textBackgrounds = [cardBackground, pageBackground];
+  const textPrimary = resolveReadableColor({
+    backgrounds: textBackgrounds,
+    candidates: [
+      themeColors.textPrimary,
+      themeColors['text-primary'],
+      '#111827',
+      '#F8FAFC',
+    ],
+    fallback: pickColor(
+      themeColors.textPrimary,
+      themeColors['text-primary'],
+      '#111827',
+    ),
+    minimumRatio: 4.5,
+    preferred: pickColor(themeColors.textPrimary, themeColors['text-primary']),
+  });
+  const textMuted = resolveReadableColor({
+    backgrounds: textBackgrounds,
+    candidates: [
+      themeColors.textMuted,
+      themeColors.textSecondary,
+      themeColors['text-secondary'],
+      '#475569',
+      '#CBD5E1',
+      '#64748B',
+    ],
+    fallback: pickColor(
+      themeColors.textMuted,
+      themeColors.textSecondary,
+      themeColors['text-secondary'],
+      '#64748B',
+    ),
+    minimumRatio: 3,
+    preferred: pickColor(
+      themeColors.textMuted,
+      themeColors.textSecondary,
+      themeColors['text-secondary'],
+    ),
+  });
+  const buttonText = resolveReadableColor({
+    backgrounds: [buttonBackground],
+    candidates: [
+      themeColors.buttonText,
+      themeColors['text-on-primary'],
+      '#FFFFFF',
+      '#111827',
+    ],
+    fallback: pickColor(
+      themeColors.buttonText,
+      themeColors['text-on-primary'],
+      '#FFFFFF',
+    ),
+    minimumRatio: 4.5,
+    preferred: pickColor(
+      themeColors.buttonText,
+      themeColors['text-on-primary'],
+    ),
+  });
+  const palette = {
+    pageBackground,
+    cardBackground,
+    headerBackground,
+    headerBorder,
+    buttonBackground,
+    buttonText,
+    chipSelectedBackground,
+    chipSelectedBorder,
+    chipSelectedText,
+    dividerBorder,
+    modalBackground,
+    modalHeaderText,
+    modalText,
+    modalOverlay,
+    modalShadow,
+    textPrimary,
+    textMuted,
+    textSecondary: pickColor(themeColors.textSecondary, textMuted),
+    textSuccess: pickColor(
+      themeColors.textSuccess,
+      themeColors.success,
+      '#10B981',
+    ),
+    textDanger: pickColor(
+      themeColors.textDanger,
+      themeColors.danger,
+      '#C10015',
+    ),
+  };
 
   return {
-    header: companyColors['header-primary'] || companyColors.primary || '#0B3A53',
-    primary,
-    accent: companyColors.accent || companyColors.secondary || '#F59E0B',
-    background,
-    surface,
-    text: resolveReadableColor({
-      backgrounds: textBackgrounds,
-      candidates: ['#111827', '#F8FAFC'],
-      fallback: '#111827',
-      minimumRatio: 4.5,
-      preferred: companyColors['text-primary'] || '#111827',
-    }),
-    muted: resolveReadableColor({
-      backgrounds: textBackgrounds,
-      candidates: ['#475569', '#CBD5E1', '#64748b'],
-      fallback: '#64748b',
-      minimumRatio: 3,
-      preferred: companyColors['text-secondary'] || '#64748b',
-    }),
-    cardBorder: companyColors.border || '#D7E1EC',
-    onPrimary: resolveReadableColor({
-      backgrounds: [primary],
-      candidates: ['#ffffff', '#111827'],
-      fallback: '#ffffff',
-      minimumRatio: 4.5,
-      preferred: companyColors['text-on-primary'] || '#ffffff',
-    }),
-    success: companyColors.success || '#22C55E',
-    danger: companyColors.danger || '#EF4444',
-    darkCard: companyColors['card-dark'] || '#163042',
-    darkBorder: companyColors['card-dark-border'] || '#406179',
+    ...palette,
+    header: palette.headerBackground,
+    primary: palette.buttonBackground,
+    accent: palette.chipSelectedText,
+    background: palette.pageBackground,
+    surface: palette.cardBackground,
+    text: palette.textPrimary,
+    muted: palette.textMuted,
+    cardBorder: palette.headerBorder,
+    onPrimary: palette.buttonText,
+    success: palette.textSuccess,
+    danger: palette.textDanger,
+    darkCard: palette.buttonBackground,
+    darkBorder: palette.chipSelectedBorder,
   };
 };
 

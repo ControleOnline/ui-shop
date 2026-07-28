@@ -28,6 +28,7 @@ import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/
 import {
   buildFileUrl,
   getInitials,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {
@@ -90,6 +91,12 @@ const SALES_FLOW_ROUTE_NAMES = new Set([
   'ShopProductPage',
 ]);
 
+const HOME_ENTRY_ROUTE_NAMES = new Set([
+  'ShopIndex',
+  'ShopFranchiseLocatorPage',
+  'ShopLoyaltyPage',
+]);
+
 const getSession = () => {
   try {
     return JSON.parse(localStorage.getItem('session') || '{}');
@@ -112,6 +119,7 @@ export default function ShopShell({
   showSalesShortcuts = true,
   showBottomCart = null,
   activeHomeEntry = '',
+  showHomeEntryControls = false,
   showSearch = true,
   subtitle = 'Cardapio digital',
   searchPlaceholder = 'Busque pratos, bebidas ou categorias',
@@ -130,6 +138,7 @@ export default function ShopShell({
     homeEntries,
     loyaltyCouponsEnabled,
     primaryEntryRouteName,
+    salesPageEnabled,
   } = useShopSettings();
 
   const {isLogged, user} = authStore.getters;
@@ -143,6 +152,7 @@ export default function ShopShell({
     return companyConfigs || {};
   }, [companyConfigs, salesCompany?.configs]);
   const cardRegistrationEnabled = Boolean(effectiveCompanyConfigs?.['asaas-key']);
+  const canShowSalesShortcuts = showSalesShortcuts && salesPageEnabled;
 
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -182,10 +192,12 @@ export default function ShopShell({
         defaultCompany?.alias ||
         defaultCompany?.name ||
         'Empresa';
-  const purchaseCompanyLabel = `Compra atual: ${displayCompany}`;
+  const purchaseCompanyLabel = displayCompany;
+  const headerCompany = salesCompany || defaultCompany || null;
+  const publicHeaderIconFile = headerCompany?.icon || null;
 
-  const logoUrl = defaultCompany?.logo
-    ? buildFileUrl(defaultCompany.logo, defaultCompany)
+  const logoUrl = publicHeaderIconFile
+    ? buildFileUrl(publicHeaderIconFile, headerCompany)
     : '';
 
   const submitSearch = useCallback(() => {
@@ -222,6 +234,17 @@ export default function ShopShell({
   const surface = theme.surface;
   const foreground = theme.text;
   const muted = theme.muted;
+  const menuPalette = {
+    buttonBackground: theme.buttonBackground,
+    buttonText: theme.buttonText,
+    dividerBorder: theme.dividerBorder,
+    modalBackground: theme.modalBackground,
+    modalHeaderText: theme.modalHeaderText,
+    modalOverlay: theme.modalOverlay,
+    modalShadow: theme.modalShadow,
+    modalText: theme.modalText,
+    textMuted: theme.textMuted,
+  };
 
   const routeActiveHomeEntry = useMemo(() => {
     if (route?.name === 'ShopFranchiseLocatorPage') {
@@ -239,12 +262,16 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
-  const shouldShowHomeEntryBottomBar = Boolean(
-    bottomBarEnabled && homeEntries.length > 1,
-  );
-  const shouldShowHomeEntryTopControl = false;
-  const homeEntryBottomOffset =
-    typeof showBottomCart === 'boolean' && showBottomCart ? 88 : 14;
+  const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
+  const showHomeAction =
+    !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
+  const menuIconName = isMobile || isHomeEntryRoute ? 'menu' : 'account-circle';
+  const showConfiguredBottomBar =
+    showHomeEntryControls && bottomBarEnabled && homeEntries.length > 1;
+  const bottomBarOffset = showBottomCart === true ? 88 : 18;
+  const publicHomeRouteName =
+    homeEntries.find(entry => entry.routeName !== 'ShopLoyaltyPage')?.routeName ||
+    'HomePage';
 
   const handleSelectHomeEntry = useCallback(
     entry => {
@@ -275,6 +302,28 @@ export default function ShopShell({
     primaryEntryRouteName,
     resolvedActiveHomeEntry,
     route?.name,
+  ]);
+
+  const navigateToSignIn = useCallback(
+    () =>
+      navigation.navigate('SignInPage', {
+        redirectRoute: route?.name || primaryEntryRouteName || 'HomePage',
+      }),
+    [navigation, primaryEntryRouteName, route?.name],
+  );
+
+  const openAccountMenu = useCallback(() => {
+    if (!isLogged && (showConfiguredBottomBar || homeEntries.length <= 1)) {
+      navigateToSignIn();
+      return;
+    }
+
+    setAccountOpen(true);
+  }, [
+    homeEntries.length,
+    isLogged,
+    navigateToSignIn,
+    showConfiguredBottomBar,
   ]);
 
   return (
@@ -313,7 +362,9 @@ export default function ShopShell({
                         style={inlineStyle_164_22({
                           isMobile: isMobile,
                         })}>
-                        {getInitials(defaultCompany?.alias || 'CO')}
+                        {getInitials(
+                          headerCompany?.alias || headerCompany?.name || 'CO',
+                        )}
                       </Text>
                     </View>
                   )}
@@ -330,16 +381,19 @@ export default function ShopShell({
                       {purchaseCompanyLabel}
                     </Text>
                   </View>
-                  <Text
-                    numberOfLines={1}
-                    style={inlineStyle_214_18}>
-                    {subtitle}
-                  </Text>
                 </View>
               </View>
 
               <View style={inlineStyle_224_18}>
-                {!isMobile && (
+                {showHomeAction && (
+                  <TouchableOpacity
+                    accessibilityLabel="Voltar ao inicio do shop"
+                    onPress={handleNavigateHome}
+                    style={inlineStyle_228_18}>
+                    <Icon name="home" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                {!isMobile && !showHomeAction && (
                   <TouchableOpacity
                     onPress={() => setAccountOpen(true)}
                     style={inlineStyle_228_18}>
@@ -347,9 +401,10 @@ export default function ShopShell({
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                  onPress={() => setAccountOpen(true)}
+                  accessibilityLabel="Abrir menu do shop"
+                  onPress={openAccountMenu}
                   style={inlineStyle_241_16}>
-                  <Icon name="account-circle" size={22} color="#fff" />
+                  <Icon name={menuIconName} size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -369,35 +424,29 @@ export default function ShopShell({
               </View>
             )}
 
-            {shouldShowHomeEntryTopControl && (
-              <ShopHomeEntryControls
-                entries={homeEntries}
-                activeEntryKey={resolvedActiveHomeEntry}
-                showBottomBar={false}
-                showTopControl
-                theme={theme}
-                onSelect={handleSelectHomeEntry}
-              />
-            )}
           </View>
         </View>
       )}
-      {children({foreground, openAccountMenu: () => setAccountOpen(true), surface, theme})}
-      {shouldShowHomeEntryBottomBar && (
-        <ShopHomeEntryControls
-          entries={homeEntries}
-          activeEntryKey={resolvedActiveHomeEntry}
-          bottomOffset={homeEntryBottomOffset}
-          showBottomBar
-          showTopControl={false}
-          theme={theme}
-          onSelect={handleSelectHomeEntry}
-        />
-      )}
+      {children({
+        foreground,
+        openAccountMenu,
+        surface,
+        theme,
+      })}
+      <ShopHomeEntryControls
+        activeEntryKey={resolvedActiveHomeEntry}
+        bottomOffset={bottomBarOffset}
+        entries={homeEntries}
+        onSelect={handleSelectHomeEntry}
+        showBottomBar={showConfiguredBottomBar}
+        showTopControl={false}
+        theme={theme}
+      />
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({
             isMobile: isMobile,
+            menuPalette: menuPalette,
           })}
           activeOpacity={1}
           onPress={() => setAccountOpen(false)}>
@@ -405,7 +454,7 @@ export default function ShopShell({
             activeOpacity={1}
             style={inlineStyle_358_12({
               isMobile: isMobile,
-              surface: surface,
+              menuPalette: menuPalette,
             })}>
             <View style={inlineStyle_369_18({
               isMobile: isMobile,
@@ -415,7 +464,7 @@ export default function ShopShell({
               })}>
                 <Text
                   style={inlineStyle_372_18({
-                    foreground: foreground,
+                    menuPalette: menuPalette,
                   })}>
                   Menu
                 </Text>
@@ -428,10 +477,14 @@ export default function ShopShell({
                       handleSelectHomeEntry(entry);
                     }}
                     style={inlineStyle_381_18}>
-                    <Icon name={entry.iconName} size={22} color={foreground} />
+                    <Icon
+                      name={entry.iconName}
+                      size={22}
+                      color={menuPalette.modalText}
+                    />
                     <Text
                       style={inlineStyle_388_20({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       {entry.label}
                     </Text>
@@ -445,17 +498,17 @@ export default function ShopShell({
                       navigation.navigate('ShopProfilePage');
                     }}
                     style={inlineStyle_381_18}>
-                    <Icon name="face" size={22} color={foreground} />
+                    <Icon name="face" size={22} color={menuPalette.modalText} />
                     <Text
                       style={inlineStyle_388_20({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       Meu Perfil
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {isLogged && (
+                {isLogged && salesPageEnabled && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -463,14 +516,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_398_18}>
                     <Text style={inlineStyle_399_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Meus Pedidos
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && cardRegistrationEnabled && (
+                {canShowSalesShortcuts && cardRegistrationEnabled && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -478,14 +531,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_409_18}>
                     <Text style={inlineStyle_410_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Carrinho
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && (
+                {canShowSalesShortcuts && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -493,14 +546,14 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_420_18}>
                     <Text style={inlineStyle_421_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Pagamento e Pix
                     </Text>
                   </TouchableOpacity>
                 )}
 
-                {showSalesShortcuts && (
+                {canShowSalesShortcuts && (
                   <TouchableOpacity
                     onPress={() => {
                       setAccountOpen(false);
@@ -508,7 +561,7 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_431_18}>
                     <Text style={inlineStyle_432_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Meus Cartões
                     </Text>
@@ -523,7 +576,7 @@ export default function ShopShell({
                     }}
                     style={inlineStyle_431_18}>
                     <Text style={inlineStyle_432_24({
-                      foreground: foreground,
+                      menuPalette: menuPalette,
                     })}>
                       Fidelidade
                     </Text>
@@ -532,14 +585,18 @@ export default function ShopShell({
 
                 <View
                   style={inlineStyle_438_18}>
-                  <Icon name="g-translate" size={22} color={foreground} />
+                  <Icon
+                    name="g-translate"
+                    size={22}
+                    color={menuPalette.modalText}
+                  />
                   <View style={inlineStyle_444_24}>
                     <Text style={inlineStyle_445_26({
-                      muted: muted,
+                      menuPalette: menuPalette,
                     })}>Idioma</Text>
                     <Text
                       style={inlineStyle_447_22({
-                        foreground: foreground,
+                        menuPalette: menuPalette,
                       })}>
                       {JSON.parse(localStorage.getItem('config') || '{}')
                         ?.language || 'Pt-BR'}
@@ -550,8 +607,8 @@ export default function ShopShell({
 
               <View
                 style={inlineStyle_460_16({
-                  darkMode: false,
                   isMobile: isMobile,
+                  menuPalette: menuPalette,
                 })}
               />
 
@@ -561,7 +618,7 @@ export default function ShopShell({
                 })}>
                 <View
                   style={inlineStyle_473_18({
-                    theme: theme,
+                    menuPalette: menuPalette,
                   })}>
                   {avatarUrl ? (
                     <Image
@@ -571,7 +628,9 @@ export default function ShopShell({
                     />
                   ) : (
                     <Text
-                      style={inlineStyle_490_22}>
+                      style={inlineStyle_490_22({
+                        menuPalette: menuPalette,
+                      })}>
                       {getInitials(displayName)}
                     </Text>
                   )}
@@ -579,7 +638,7 @@ export default function ShopShell({
 
                 <Text
                   style={inlineStyle_497_18({
-                    foreground: foreground,
+                    menuPalette: menuPalette,
                   })}>
                   {displayName}
                 </Text>
@@ -589,19 +648,40 @@ export default function ShopShell({
                     setAccountOpen(false);
                     if (isLogged) {
                       authActions.logOut();
+                      navigation.reset({
+                        index: 0,
+                        routes: [{name: publicHomeRouteName}],
+                      });
+                      return;
                     }
-                    navigation.reset({
-                      index: 0,
-                      routes: [{name: 'SignInPage'}],
-                    });
+                    navigateToSignIn();
                   }}
                   style={inlineStyle_531_18({
-                    theme: theme,
+                    menuPalette: menuPalette,
                   })}>
-                  <Text style={inlineStyle_538_24}>
+                  <Text style={inlineStyle_538_24({
+                    menuPalette: menuPalette,
+                  })}>
                     {isLogged ? 'Sair' : 'Entrar'}
                   </Text>
                 </TouchableOpacity>
+                {!isLogged && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAccountOpen(false);
+                      navigation.navigate('CreateAccount', {
+                        redirectRoute:
+                          route?.name || primaryEntryRouteName || 'HomePage',
+                      });
+                    }}
+                    style={inlineStyle_531_18({
+                      menuPalette: menuPalette,
+                    })}>
+                    <Text style={inlineStyle_538_24({
+                      menuPalette: menuPalette,
+                    })}>Criar conta</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </TouchableOpacity>

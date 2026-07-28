@@ -5,6 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
+import {rememberShopCatalogProduct} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 import {
   formatMoney,
   getImageFromRelations,
@@ -51,6 +52,7 @@ export default function ShopMobileProductCard({
       return;
     }
 
+    rememberShopCatalogProduct(product);
     navigation.navigate('ShopProductPage', {id: productId});
   };
 

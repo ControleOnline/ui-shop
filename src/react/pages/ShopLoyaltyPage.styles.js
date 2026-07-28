@@ -5,7 +5,7 @@ export default StyleSheet.create({
     flex: 1,
   },
   pageContent: {
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   hero: {
     marginHorizontal: 14,
@@ -21,9 +21,63 @@ export default StyleSheet.create({
     letterSpacing: 0.6,
   },
   heroTitle: {
-    fontSize: 27,
+    fontSize: 18,
     fontWeight: '800',
-    marginTop: 8,
+    marginTop: 0,
+  },
+  heroTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  heroHelpButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  heroHelpButtonText: {
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  heroInfoBackdrop: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  heroInfoCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    maxWidth: 520,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    width: '100%',
+  },
+  heroInfoHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  heroInfoCloseButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  heroInfoCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 18,
+    textTransform: 'uppercase',
   },
   heroText: {
     fontSize: 14,
@@ -37,39 +91,24 @@ export default StyleSheet.create({
     borderWidth: 1,
     padding: 18,
   },
+  franchiseGroup: {
+    marginHorizontal: 14,
+    marginTop: 14,
+  },
+  groupedSummaryCard: {
+    marginHorizontal: 0,
+    marginTop: 10,
+  },
   loyaltyToolbar: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
-    justifyContent: 'space-between',
     marginHorizontal: 14,
     marginTop: 16,
-  },
-  toolbarTitleGroup: {
-    flex: 1,
-    minWidth: 0,
   },
   toolbarTitle: {
     fontSize: 18,
     fontWeight: '800',
-  },
-  toolbarMeta: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 3,
-  },
-  historyButton: {
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  historyButtonText: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
   },
   summaryHeader: {
     alignItems: 'center',
@@ -80,6 +119,14 @@ export default StyleSheet.create({
   summaryTitleGroup: {
     flex: 1,
     minWidth: 0,
+  },
+  franchiseTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  franchiseTitleInsideCard: {
+    marginBottom: 10,
   },
   summaryLabel: {
     fontSize: 13,
@@ -111,20 +158,21 @@ export default StyleSheet.create({
   stampGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     justifyContent: 'center',
     marginTop: 18,
   },
   stampSlot: {
+    width: 80,
     alignItems: 'center',
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: 16,
     borderStyle: 'dashed',
     borderWidth: 2,
     justifyContent: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
     padding: 8,
-    width: 98,
+    position: 'relative',
   },
   stampMark: {
     alignItems: 'center',
@@ -134,6 +182,22 @@ export default StyleSheet.create({
     height: 72,
     justifyContent: 'center',
     width: 72,
+  },
+  stampImage: {
+    width: 72,
+    height: 72,
+    opacity: 1,
+  },
+  stampImageWrap: {
+    alignItems: 'center',
+    width: 92,
+    height: 92,
+    justifyContent: 'center',
+    top: '50%',
+    left: '50%',
+    marginLeft: -46,
+    marginTop: -46,
+    position: 'absolute',
   },
   stampMarkMain: {
     fontSize: 22,

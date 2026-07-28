@@ -13,17 +13,18 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useStore} from '@store';
 import {api} from '@controleonline/ui-common/src/api';
 import Formatter from '@controleonline/ui-common/src/utils/formatter';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import ShopPaymentBar from '@controleonline/ui-shop/src/react/components/storefront/ShopPaymentBar';
 import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
-  buildWalletIdsForGateway,
   filterDeviceConfigsByCompany,
-  getPaymentGatewayFromConfigs,
+  filterWalletPaymentTypesByAllowedIds,
   isOrderChargeOnDeliveryEnabled,
   resolveRemotePaymentDeviceOptions,
+  resolveDevicePaymentTypeIds,
 } from '@controleonline/ui-common/src/react/utils/paymentDevices';
 import {
   detectPaymentOptionKind,
@@ -103,6 +104,8 @@ const extractItems = response => {
   return [];
 };
 
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
+
 const normalizeText = value =>
   String(value || '')
     .trim()
@@ -146,6 +149,15 @@ const getQuotePrice = quote => {
   const price = Number(quote?.price);
   return Number.isFinite(price) ? price : 0;
 };
+
+const hasQuotePrice = quote =>
+  quote?.price !== null &&
+  quote?.price !== undefined &&
+  quote?.price !== '' &&
+  Number.isFinite(Number(quote.price));
+
+const isSelectableDeliveryQuote = quote =>
+  quote?.available !== false && hasQuotePrice(quote);
 
 const formatApiError = error => {
   if (!error) {
@@ -309,6 +321,8 @@ const CheckoutSkeletonRows = ({theme}) => (
 
 export default function CheckoutPage() {
   const navigation = useNavigation();
+  const authStore = useStore('auth');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {
     cart,
     currentCompany,
@@ -417,9 +431,28 @@ export default function CheckoutPage() {
     0,
   );
   const cartTotal = Number(cart?.price || 0);
-  const configuredDeliveryFee = deliveryFeeEnabled ? Number(deliveryFeeValue || 0) : 0;
+  const configuredDeliveryFee = deliveryFeeEnabled
+    ? Number(deliveryFeeValue || 0)
+    : 0;
   const quotedDeliveryFee = getQuotePrice(selectedDeliveryQuote);
-  const deliveryFee = quotedDeliveryFee > 0 ? quotedDeliveryFee : configuredDeliveryFee;
+  const hasSelectedDeliveryQuote = isSelectableDeliveryQuote(selectedDeliveryQuote);
+  const deliveryFee = hasSelectedDeliveryQuote
+    ? quotedDeliveryFee
+    : configuredDeliveryFee;
+  const deliveryFeeProviderLabel =
+    selectedDeliveryQuote?.providerLabel ||
+    selectedDeliveryQuote?.providerKey ||
+    selectedDeliveryQuote?.app ||
+    'cotacao';
+  let deliveryFeeSourceLabel = 'Nenhuma taxa de entrega aplicada no momento.';
+  if (hasSelectedDeliveryQuote) {
+    deliveryFeeSourceLabel = `Cotacao selecionada: ${deliveryFeeProviderLabel}.`;
+  } else if (configuredDeliveryFee > 0) {
+    deliveryFeeSourceLabel = 'Taxa fixa configurada pela loja.';
+  } else if (deliveryQuotes.length > 0) {
+    deliveryFeeSourceLabel =
+      'Selecione uma cotacao disponivel para aplicar a taxa.';
+  }
   const financialTotal = cartTotal + deliveryFee;
   const paidAmount = useMemo(
     () =>
@@ -447,25 +480,6 @@ export default function CheckoutPage() {
         totalAmount: pendingAmount,
       }),
     [changeForAmount, pendingAmount],
-  );
-  const selectedDeliveryAddress = useMemo(() => {
-    if (cartAddressDestination && typeof cartAddressDestination === 'object') {
-      return cartAddressDestination;
-    }
-
-    return (
-      deliveryAddresses.find(
-        address =>
-          toEntityIri(address, 'addresses') === cartAddressDestinationIri,
-      ) || null
-    );
-  }, [cartAddressDestination, cartAddressDestinationIri, deliveryAddresses]);
-  const selectedDeliveryAddressSummary = useMemo(
-    () =>
-      selectedDeliveryAddress
-        ? buildAddressOptionSummary(selectedDeliveryAddress)
-        : null,
-    [selectedDeliveryAddress],
   );
   const shouldShowAddressForm =
     !addressOptionsLoading &&
@@ -797,19 +811,21 @@ export default function CheckoutPage() {
     updateCartDeliveryAddress,
   ]);
 
-  const loadDeliveryQuotes = useCallback(async () => {
-    if (!cart?.id) {
+  const loadDeliveryQuotes = useCallback(async orderId => {
+    const targetOrderId = normalizeEntityId(orderId || cart?.id);
+
+    if (!targetOrderId) {
       return [];
     }
 
-    const response = await api.fetch(`orders/${cart.id}/logistic`, {
+    const response = await api.fetch(`orders/${targetOrderId}/logistic`, {
       method: 'GET',
     });
     const quotes = extractQuotesFromResponse(response);
     setDeliveryQuotes(quotes);
     setSelectedDeliveryQuote(current => {
       if (!current?.id) {
-        return quotes.find(item => getQuotePrice(item) > 0) || null;
+        return quotes.find(isSelectableDeliveryQuote) || null;
       }
 
       return quotes.find(item => item?.id === current.id) || current;
@@ -844,7 +860,7 @@ export default function CheckoutPage() {
       const quotes = extractQuotesFromResponse(response);
       if (quotes.length > 0) {
         setDeliveryQuotes(quotes);
-        setSelectedDeliveryQuote(quotes.find(item => getQuotePrice(item) > 0) || null);
+        setSelectedDeliveryQuote(quotes.find(isSelectableDeliveryQuote) || null);
       } else {
         await loadDeliveryQuotes();
       }
@@ -857,6 +873,10 @@ export default function CheckoutPage() {
   }, [cart?.id, cartAddressDestinationIri, loadDeliveryQuotes]);
 
   const loadData = useCallback(async () => {
+    if (!sessionChecked || !isLogged) {
+      return;
+    }
+
     setIsLoading(true);
     setAddressOptionsLoading(true);
     setError('');
@@ -877,27 +897,29 @@ export default function CheckoutPage() {
         sellerCompanyId
           ? walletPaymentTypeActions.getItems({
               people: `/people/${sellerCompanyId}`,
-              itemsPerPage: 200,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             })
           : Promise.resolve([]),
         asaasConfigured
-          ? cardActions.getItems({itemsPerPage: 200})
+          ? cardActions.getItems({
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
+            })
           : Promise.resolve([]),
         statusActions.getItems({
           context: 'invoice',
-          itemsPerPage: 200,
+          itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
         }),
         resolvedCart?.id
           ? invoiceActions.getItems({
               orderId: resolvedCart.id,
               'order.order': `/orders/${resolvedCart.id}`,
-              itemsPerPage: 50,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             })
           : Promise.resolve([]),
         clientIri
           ? addressActions.getItems({
               people: clientIri,
-              itemsPerPage: 50,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             }).catch(() => [])
           : Promise.resolve([]),
       ]);
@@ -909,8 +931,16 @@ export default function CheckoutPage() {
         extractItems(invoicesResponse),
       );
       const fetchedAddresses = extractItems(addressesResponse);
+      const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
+        effectiveCompanyConfigs,
+        fetchedPaymentTypes,
+      );
+      const filteredPaymentTypes = filterWalletPaymentTypesByAllowedIds(
+        fetchedPaymentTypes,
+        allowedPaymentTypeIds,
+      );
 
-      setPaymentTypes(fetchedPaymentTypes);
+      setPaymentTypes(filteredPaymentTypes);
       setCards(fetchedCards);
       setInvoices(fetchedInvoices);
       setDeliveryAddresses(fetchedAddresses);
@@ -923,7 +953,7 @@ export default function CheckoutPage() {
       setPendingStatus(pickPendingStatus(fetchedStatuses));
 
       if (resolvedCart?.id) {
-        await loadDeliveryQuotes().catch(() => {});
+        await loadDeliveryQuotes(resolvedCart.id).catch(() => {});
       }
     } catch (e) {
       setError(
@@ -939,18 +969,23 @@ export default function CheckoutPage() {
     cardActions,
     cart,
     currentCompany,
+    isLogged,
     invoiceActions,
     loadDeliveryQuotes,
     refreshCart,
     sellerCompanyId,
+    sessionChecked,
     statusActions,
     walletPaymentTypeActions,
   ]);
-
   useFocusEffect(
     useCallback(() => {
+      if (!sessionChecked || !isLogged) {
+        return;
+      }
+
       loadData();
-    }, [loadData]),
+    }, [isLogged, loadData, sessionChecked]),
   );
 
   useEffect(() => {
@@ -969,13 +1004,19 @@ export default function CheckoutPage() {
         return undefined;
       }
 
+      if (!sessionChecked || !isLogged) {
+        setCompanyDeviceConfigs([]);
+        setLoadingRemoteDevices(false);
+        return undefined;
+      }
+
       let isMounted = true;
       setLoadingRemoteDevices(true);
 
       deviceConfigActions
         .getItems({
           people: `/people/${sellerCompanyId}`,
-          itemsPerPage: 200,
+          itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
         })
         .then(data => {
           if (!isMounted) {
@@ -1000,41 +1041,22 @@ export default function CheckoutPage() {
       return () => {
         isMounted = false;
       };
-    }, [chargeOnDeliveryEnabled, deviceConfigActions, sellerCompanyId]),
+    }, [
+      chargeOnDeliveryEnabled,
+      deviceConfigActions,
+      isLogged,
+      sellerCompanyId,
+      sessionChecked,
+    ]),
   );
 
   useEffect(() => {
-    if (!sellerCompanyId || !chargeOnDeliveryEnabled) {
-      setDeliveryPaymentTypes([]);
-      return undefined;
-    }
-
-    const deliveryGateways = [
-      ...new Set(
-        [
-          ...remotePaymentDevices.map(device => device.gateway),
-          getPaymentGatewayFromConfigs(effectiveCompanyConfigs),
-        ].filter(Boolean),
-      ),
-    ];
-    const walletIds = [
-      ...new Set([
-        ...deliveryGateways.flatMap(gateway =>
-          buildWalletIdsForGateway({
-            gateway,
-            companyConfigs: effectiveCompanyConfigs,
-            includeCashWallet: false,
-          }),
-        ),
-        ...buildWalletIdsForGateway({
-          gateway: null,
-          companyConfigs: effectiveCompanyConfigs,
-          includeCashWallet: true,
-        }),
-      ]),
-    ];
-
-    if (!walletIds.length) {
+    if (
+      !sellerCompanyId ||
+      !chargeOnDeliveryEnabled ||
+      !sessionChecked ||
+      !isLogged
+    ) {
       setDeliveryPaymentTypes([]);
       return undefined;
     }
@@ -1044,12 +1066,22 @@ export default function CheckoutPage() {
     walletPaymentTypeActions
       .getItems({
         people: `/people/${sellerCompanyId}`,
-        wallet: walletIds,
-        itemsPerPage: 200,
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       })
       .then(response => {
         if (isMounted) {
-          setDeliveryPaymentTypes(extractItems(response));
+          const allPaymentTypes = extractItems(response);
+          const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
+            effectiveCompanyConfigs,
+            allPaymentTypes,
+          );
+
+          setDeliveryPaymentTypes(
+            filterWalletPaymentTypesByAllowedIds(
+              allPaymentTypes,
+              allowedPaymentTypeIds,
+            ),
+          );
         }
       })
       .catch(() => {
@@ -1064,8 +1096,10 @@ export default function CheckoutPage() {
   }, [
     chargeOnDeliveryEnabled,
     effectiveCompanyConfigs,
+    isLogged,
     remotePaymentDevices,
     sellerCompanyId,
+    sessionChecked,
     walletPaymentTypeActions,
   ]);
 
@@ -1491,6 +1525,23 @@ export default function CheckoutPage() {
     ],
   );
 
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para finalizar o pedido"
+            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
+          />
+        )}
+      </ShopShell>
+    );
+  }
+
   return (
     <ShopShell
       onSearch={query =>
@@ -1595,37 +1646,7 @@ export default function CheckoutPage() {
                 })}>
                 Entrega
               </Text>
-              <Text
-                style={[
-                  styles.methodCardHint,
-                  {color: theme.text},
-                ]}>
-                Informe o endereco para cotar entrega. Se nenhuma cotacao for
-                selecionada, o checkout usa a taxa fixa configurada na loja.
-              </Text>
-
-              {selectedDeliveryAddressSummary ? (
-                <View
-                  style={[
-                    styles.quoteCard,
-                    {
-                      borderColor: theme.primary,
-                      backgroundColor: `${theme.primary}10`,
-                    },
-                  ]}>
-                  <Text style={[styles.quoteTitle, {color: theme.text}]}>
-                    Endereco selecionado
-                  </Text>
-                  <Text style={[styles.quoteMeta, {color: theme.text}]}>
-                    {selectedDeliveryAddressSummary.primary || 'Endereco sem nome'}
-                  </Text>
-                  {!!selectedDeliveryAddressSummary.secondary && (
-                    <Text style={[styles.quoteMeta, {color: theme.muted}]}>
-                      {selectedDeliveryAddressSummary.secondary}
-                    </Text>
-                  )}
-                </View>
-              ) : (
+              {!hasDeliveryAddress ? (
                 <Text
                   style={[
                     styles.methodCardHint,
@@ -1633,7 +1654,7 @@ export default function CheckoutPage() {
                   ]}>
                   Selecione ou cadastre um endereco para liberar o pagamento.
                 </Text>
-              )}
+              ) : null}
 
               {addressOptionsLoading ? (
                 <CheckoutSkeletonRows theme={theme} />
@@ -1893,6 +1914,7 @@ export default function CheckoutPage() {
                 <View style={{marginTop: 8}}>
                   {deliveryQuotes.map(quote => {
                     const quotePrice = getQuotePrice(quote);
+                    const canSelectQuote = isSelectableDeliveryQuote(quote);
                     const isSelected = selectedDeliveryQuote?.id === quote?.id;
                     const providerLabel =
                       quote?.providerLabel || quote?.providerKey || quote?.app || 'Entrega';
@@ -1909,19 +1931,40 @@ export default function CheckoutPage() {
                               : theme.background,
                           },
                         ]}
-                        disabled={quotePrice <= 0}
+                        disabled={!canSelectQuote}
                         onPress={() => setSelectedDeliveryQuote(quote)}>
                         <Text style={[styles.quoteTitle, {color: theme.text}]}>
                           {providerLabel}
                         </Text>
                         <Text style={[styles.quoteMeta, {color: theme.muted}]}>
-                          {quotePrice > 0
+                          {canSelectQuote
                             ? `Valor: ${formatMoney(quotePrice)}`
                             : quote?.quoteStateLabel || 'Aguardando cotacao'}
                         </Text>
                       </TouchableOpacity>
                     );
                   })}
+                </View>
+              ) : null}
+
+              {hasDeliveryAddress ? (
+                <View
+                  style={[
+                    styles.quoteCard,
+                    {
+                      borderColor: theme.cardBorder,
+                      backgroundColor: theme.background,
+                    },
+                  ]}>
+                  <Text style={[styles.quoteTitle, {color: theme.text}]}>
+                    Valor da entrega
+                  </Text>
+                  <Text style={[styles.quoteMeta, {color: theme.primary}]}>
+                    {formatMoney(deliveryFee)}
+                  </Text>
+                  <Text style={[styles.quoteMeta, {color: theme.muted}]}>
+                    {deliveryFeeSourceLabel}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -2025,16 +2068,6 @@ export default function CheckoutPage() {
                   </View>
                 </View>
 
-                <Text
-                  style={[
-                    styles.methodCardMeta,
-                    {color: theme.muted},
-                  ]}>
-                  No Shop, o cliente apenas informa se vai pagar agora ou na
-                  entrega. Se for na entrega, ele escolhe uma das formas
-                  liberadas pela loja.
-                </Text>
-
                 {loadingRemoteDevices ? (
                   <CheckoutSkeletonRows theme={theme} />
                 ) : deliveryModeLabels.length > 0 ? (
@@ -2044,8 +2077,8 @@ export default function CheckoutPage() {
                         styles.methodCardHint,
                         {color: theme.text},
                       ]}>
-                      O cliente escolhe uma forma liberada para cobrar quando o
-                      motoboy chegar.
+                      Escolha uma forma liberada para pagar quando o pedido
+                      chegar.
                     </Text>
                     <Text
                       style={[
@@ -2401,3 +2434,4 @@ export default function CheckoutPage() {
     </ShopShell>
   );
 }
+// TODO(store-first): quando este arquivo for mexido, mover a leitura para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.

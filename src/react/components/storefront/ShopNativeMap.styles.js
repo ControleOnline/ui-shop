@@ -1,9 +1,30 @@
 import {StyleSheet} from 'react-native';
 
 export default StyleSheet.create({
+  mapContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    backgroundColor: '#E5EEF5',
+  },
   mapViewport: {
     width: '100%',
     height: '100%',
+  },
+  mapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(248, 250, 252, 0.9)',
+    gap: 12,
+  },
+  mapOverlayText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#0F172A',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   markerWrap: {
     width: 44,

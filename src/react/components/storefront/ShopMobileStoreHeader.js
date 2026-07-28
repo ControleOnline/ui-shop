@@ -26,8 +26,6 @@ import {
   mobileStoreTextColumnStyle,
 } from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileStoreHeader.styles';
 
-const gyrosDeliveryCoverPreview = require('@controleonline/ui-shop/src/react/assets/storefront/gyros-combos-cover-mobile.png');
-
 const isColorValue = value =>
   typeof value === 'string' &&
   (/^#([0-9a-f]{3,8})$/i.test(value.trim()) ||
@@ -57,26 +55,7 @@ const resolveCategoryCoverUrl = (company, categories) => {
   return firstCategoryFile ? buildFileUrl(firstCategoryFile, company) : '';
 };
 
-const isGyrosCompany = company => {
-  const companyIdentity = [
-    company?.alias,
-    company?.name,
-    company?.domain,
-    company?.appDomain,
-    company?.app_domain,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return companyIdentity.includes('gyros');
-};
-
 const resolveCoverSource = (company, categories) => {
-  if (isGyrosCompany(company)) {
-    return gyrosDeliveryCoverPreview;
-  }
-
   const coverUrl = resolveCompanyCoverUrl(company);
 
   if (coverUrl) {

@@ -2,30 +2,21 @@ import {useCallback, useEffect, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import {env} from '@env';
+import {app_type} from '@appType';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import {
   clearAnonymousCart,
   readAnonymousCart,
   subscribeAnonymousCart,
 } from '@controleonline/ui-shop/src/react/utils/anonymousCart';
+import {
+  normalizeNumericId,
+  readShopSessionClientId,
+} from '@controleonline/ui-shop/src/react/utils/shopSession';
 
 let cartRequestInFlight = null;
 let cartRequestKey = '';
 let cartRequestAt = 0;
-
-const normalizeId = value => {
-  const clean = String(value || '').replace(/\D/g, '');
-  return clean ? Number(clean) : null;
-};
-
-const readSessionClientId = () => {
-  try {
-    const session = JSON.parse(localStorage.getItem('session') || '{}');
-    return normalizeId(session?.mycompany || session?.people);
-  } catch {
-    return null;
-  }
-};
 
 export default function useShopCart({autoRefresh = false} = {}) {
   const cartStore = useStore('cart');
@@ -43,7 +34,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
     salesCompanyOptions,
     selectSalesCompany,
   } = useShopSalesCompany();
-  const providerId = normalizeId(salesCompany?.id || defaultCompany?.id);
+  const providerId = normalizeNumericId(salesCompany?.id || defaultCompany?.id);
   const [anonymousCart, setAnonymousCart] = useState(() =>
     readAnonymousCart(providerId),
   );
@@ -51,7 +42,10 @@ export default function useShopCart({autoRefresh = false} = {}) {
   useEffect(() => {
     setAnonymousCart(readAnonymousCart(providerId));
     return subscribeAnonymousCart(({providerId: changedProviderId}) => {
-      if (!changedProviderId || normalizeId(changedProviderId) === providerId) {
+      if (
+        !changedProviderId ||
+        normalizeNumericId(changedProviderId) === providerId
+      ) {
         setAnonymousCart(readAnonymousCart(providerId));
       }
     });
@@ -73,14 +67,17 @@ export default function useShopCart({autoRefresh = false} = {}) {
       }
 
       for (const item of localItems) {
-        const productId = normalizeId(item?.product?.id || item?.product?.['@id']);
+        const productId =
+          normalizeNumericId(item?.product?.id || item?.product?.['@id']);
         if (!productId || Number(item?.quantity || 0) <= 0) {
           continue;
         }
 
         const existing = (backendCart.orderProducts || []).find(
           orderProduct =>
-            normalizeId(orderProduct?.product?.id || orderProduct?.product?.['@id']) ===
+            normalizeNumericId(
+              orderProduct?.product?.id || orderProduct?.product?.['@id'],
+            ) ===
             productId,
         );
 
@@ -97,18 +94,18 @@ export default function useShopCart({autoRefresh = false} = {}) {
 
       return cartActions.discoveryCart({
         provider: providerId,
-        client: normalizeId(currentCompany?.id) || readSessionClientId(),
+        client: normalizeNumericId(currentCompany?.id) || readShopSessionClientId(),
       });
     },
     [cartActions, currentCompany?.id, orderProductActions, providerId],
   );
 
   const refreshCart = useCallback(() => {
-    const appType = String(env.APP_TYPE || '').toUpperCase();
+    const appType = String(app_type || '').toUpperCase();
     const isShopApp = appType === 'SHOP';
 
-    const currentCompanyId = normalizeId(currentCompany?.id);
-    const sessionClientId = readSessionClientId();
+    const currentCompanyId = normalizeNumericId(currentCompany?.id);
+    const sessionClientId = readShopSessionClientId();
     const clientId = isShopApp
       ? currentCompanyId || sessionClientId
       : currentCompanyId;

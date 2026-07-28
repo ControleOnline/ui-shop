@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image, Text, TouchableOpacity, View} from 'react-native';
+import {ActivityIndicator, Image, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {
@@ -31,6 +31,7 @@ export default function ShopCategorySidebar({
   activeCategoryId = '',
   compact = false,
   company = null,
+  isLoadingMoreCategories = false,
   onSelect = null,
   onToggleCompact = null,
 }) {
@@ -128,6 +129,17 @@ export default function ShopCategorySidebar({
             </TouchableOpacity>
           );
         })}
+
+        {isLoadingMoreCategories ? (
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 10,
+            }}>
+            <ActivityIndicator color={company?.theme?.colors?.primary || '#0E7490'} />
+          </View>
+        ) : null}
       </View>
     </View>
   );

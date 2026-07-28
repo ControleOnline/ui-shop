@@ -18,43 +18,12 @@ export default function ShopLandingPage() {
   const navigation = useNavigation();
   const {
     defaultCompany,
-    franchiseLocatorEnabled,
-    loyaltyCouponsEnabled,
-    primaryEntry,
-    salesPageEnabled,
+    homeEntries,
   } = useShopSettings();
   const theme = pickTheme(defaultCompany);
-  const resolvedPrimaryEntry = (() => {
-    if (salesPageEnabled && primaryEntry === SHOP_HOME_OPTION_SALES) {
-      return SHOP_HOME_OPTION_SALES;
-    }
-
-    if (
-      franchiseLocatorEnabled &&
-      primaryEntry === SHOP_HOME_OPTION_FRANCHISE_LOCATOR
-    ) {
-      return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
-    }
-
-    if (loyaltyCouponsEnabled && primaryEntry === SHOP_HOME_OPTION_LOYALTY) {
-      return SHOP_HOME_OPTION_LOYALTY;
-    }
-
-    if (salesPageEnabled) {
-      return SHOP_HOME_OPTION_SALES;
-    }
-
-    if (franchiseLocatorEnabled) {
-      return SHOP_HOME_OPTION_FRANCHISE_LOCATOR;
-    }
-
-    if (loyaltyCouponsEnabled) {
-      return SHOP_HOME_OPTION_LOYALTY;
-    }
-
-    return '';
-  })();
+  const resolvedPrimaryEntry = homeEntries[0]?.key || '';
   const shouldRenderSales = resolvedPrimaryEntry === SHOP_HOME_OPTION_SALES;
+  const isLoadingDefaultCompany = !defaultCompany?.id;
 
   useLayoutEffect(() => {
     navigation.setParams({showBottomCart: shouldRenderSales});
@@ -70,6 +39,22 @@ export default function ShopLandingPage() {
 
   if (resolvedPrimaryEntry === SHOP_HOME_OPTION_LOYALTY) {
     return <ShopLoyaltyPage />;
+  }
+
+  if (isLoadingDefaultCompany) {
+    return (
+      <ShopShell hideHeader showSearch={false}>
+        {() => (
+          <ShopFeatureState
+            theme={theme}
+            iconName="hourglass-empty"
+            title="Carregando shop"
+            description="Aguarde enquanto as configuracoes da empresa sao carregadas."
+            secondaryText="Tente novamente em instantes se esta mensagem permanecer."
+          />
+        )}
+      </ShopShell>
+    );
   }
 
   return (

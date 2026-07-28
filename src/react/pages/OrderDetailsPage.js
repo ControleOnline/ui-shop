@@ -3,6 +3,7 @@ import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import ShopAuthRequiredState from '@controleonline/ui-shop/src/react/components/storefront/ShopAuthRequiredState';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import {formatMoney, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -44,20 +45,40 @@ export default function OrderDetailsPage() {
   const navigation = useNavigation();
   const route = useRoute();
   const orderId = String(route.params?.id || '');
+  const authStore = useStore('auth');
   const ordersStore = useStore('orders');
   const peopleStore = useStore('people');
+  const {isLogged, sessionChecked} = authStore.getters;
   const {defaultCompany} = peopleStore.getters;
   const theme = pickTheme(defaultCompany);
   const [order, setOrder] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
-      if (!orderId) return;
+      if (!orderId || !sessionChecked || !isLogged) return;
       ordersStore.actions.get(orderId).then(setOrder);
-    }, [orderId, ordersStore.actions]),
+    }, [isLogged, orderId, ordersStore.actions, sessionChecked]),
   );
 
   const items = order?.orderProducts || [];
+
+  if (sessionChecked && !isLogged) {
+    return (
+      <ShopShell
+        onSearch={query =>
+          navigation.navigate(query ? 'ShopSearchPage' : 'ShopIndex', {q: query})
+        }>
+        {() => (
+          <ShopAuthRequiredState
+            theme={theme}
+            title="Entre para ver o pedido"
+            description="Detalhes de pedidos ficam disponiveis apenas para o cliente autenticado."
+            redirectRoute="ShopOrderDetailsPage"
+          />
+        )}
+      </ShopShell>
+    );
+  }
 
   return (
     <ShopShell

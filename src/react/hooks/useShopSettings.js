@@ -18,8 +18,10 @@ const hasShopConfigEntries = configs =>
   Object.keys(configs).some(key => String(key).startsWith('shop-'));
 
 export default function useShopSettings() {
+  const authStore = useStore('auth');
   const peopleStore = useStore('people');
   const configsStore = useStore('configs');
+  const {isLogged} = authStore.getters;
   const {defaultCompany, currentCompany} = peopleStore.getters;
   const {items: runtimeConfigs} = configsStore.getters;
 
@@ -36,6 +38,7 @@ export default function useShopSettings() {
       : {};
 
     if (
+      isLogged &&
       defaultCompanyId &&
       currentCompanyId &&
       defaultCompanyId === currentCompanyId &&
@@ -48,6 +51,7 @@ export default function useShopSettings() {
     }
 
     if (
+      isLogged &&
       isConfigMap(runtimeConfigs) &&
       (!defaultCompanyId || hasShopConfigEntries(runtimeConfigs))
     ) {
@@ -62,6 +66,7 @@ export default function useShopSettings() {
     currentCompanyId,
     defaultCompany?.configs,
     defaultCompanyId,
+    isLogged,
     runtimeConfigs,
   ]);
 
@@ -69,6 +74,9 @@ export default function useShopSettings() {
     () => resolveShopSettings(companyConfigs),
     [companyConfigs],
   );
+  const franchiseLocatorEnabled =
+    settings.franchiseLocatorEnabled &&
+    settings.visibleFranchiseCompanyIds.length > 0;
 
   const homeEntries = useMemo(() => {
     const entries = [];
@@ -77,17 +85,17 @@ export default function useShopSettings() {
       entries.push({
         key: SHOP_HOME_OPTION_SALES,
         label: 'Compras',
-        description: 'Cardapio, categorias e produtos',
+        description: 'Cardápio, categorias e produtos',
         iconName: 'storefront',
         routeName: 'ShopIndex',
       });
     }
 
-    if (settings.franchiseLocatorEnabled) {
+    if (franchiseLocatorEnabled) {
       entries.push({
         key: SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
         label: 'Franquias',
-        description: 'Mapa e enderecos das unidades',
+        description: 'Mapa e endereços das unidades',
         iconName: 'place',
         routeName: 'ShopFranchiseLocatorPage',
       });
@@ -97,7 +105,7 @@ export default function useShopSettings() {
       entries.push({
         key: SHOP_HOME_OPTION_LOYALTY,
         label: 'Fidelidade',
-        description: 'Cartao fidelidade e brindes',
+        description: 'Cartão fidelidade e brindes',
         iconName: 'loyalty',
         routeName: 'ShopLoyaltyPage',
       });
@@ -105,18 +113,16 @@ export default function useShopSettings() {
 
     return entries;
   }, [
-    settings.franchiseLocatorEnabled,
+    franchiseLocatorEnabled,
     settings.loyaltyCouponsEnabled,
     settings.salesPageEnabled,
   ]);
 
-  const primaryEntryRouteName =
-    homeEntries.find(entry => entry.key === settings.primaryEntry)?.routeName ||
-    homeEntries[0]?.routeName ||
-    'HomePage';
+  const primaryEntryRouteName = homeEntries[0]?.routeName || 'HomePage';
 
   return {
     ...settings,
+    franchiseLocatorEnabled,
     companyConfigs,
     currentCompany,
     defaultCompany,

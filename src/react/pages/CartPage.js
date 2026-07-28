@@ -86,6 +86,8 @@ const groupOrderProductComponents = orderProduct => {
   }, {});
 };
 
+const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
+
 export default function CartPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
@@ -118,6 +120,7 @@ export default function CartPage() {
       .getItems({
         order: `orders/${cart.id}`,
         'exists[parentProduct]': 'false',
+        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       })
       .then(data => {
         setOrderProducts(data || []);
