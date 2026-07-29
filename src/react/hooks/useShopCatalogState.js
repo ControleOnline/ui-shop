@@ -240,7 +240,7 @@ export default function useShopCatalogState({
             integration_key: 'shop',
             active: 1,
             type: normalizedCatalogProductTypes,
-            'productCategory.category': `/categories/${normalizedCategoryId}`,
+            category: `/categories/${normalizedCategoryId}`,
             'order[product]': 'ASC',
             page: normalizedPage,
             ...productFileFilters,
