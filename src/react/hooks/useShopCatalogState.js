@@ -84,6 +84,8 @@ export default function useShopCatalogState({
   const productsPageRef = useRef(0);
   const categoryLoadKeyRef = useRef('');
   const productLoadKeyRef = useRef('');
+  const categoryTotalItemsRef = useRef(0);
+  const productTotalItemsRef = useRef(0);
 
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingMoreCategories, setIsLoadingMoreCategories] = useState(false);
@@ -119,6 +121,14 @@ export default function useShopCatalogState({
   }, [activeCategoryDetails, activeCategoryId, topLevelCategories]);
   const theme = useMemo(() => pickTheme(defaultCompany), [defaultCompany]);
 
+  useEffect(() => {
+    categoryTotalItemsRef.current = categoryTotalItems;
+  }, [categoryTotalItems]);
+
+  useEffect(() => {
+    productTotalItemsRef.current = productTotalItems;
+  }, [productTotalItems]);
+
   const resetPaginationState = useCallback(() => {
     categoryRequestTokenRef.current += 1;
     productRequestTokenRef.current += 1;
@@ -126,6 +136,8 @@ export default function useShopCatalogState({
     activeCategoryRequestTokenRef.current += 1;
     categoriesPageRef.current = 0;
     productsPageRef.current = 0;
+    categoryTotalItemsRef.current = 0;
+    productTotalItemsRef.current = 0;
     setIsLoadingCategories(false);
     setIsLoadingMoreCategories(false);
     setIsLoadingProducts(false);
@@ -160,7 +172,7 @@ export default function useShopCatalogState({
       const requestKey = `${normalizedCompanyId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
 
       if (categoryLoadKeyRef.current === requestKey) {
-        return {items: [], totalItems: categoryTotalItems};
+        return {items: [], totalItems: categoryTotalItemsRef.current};
       }
 
       categoryLoadKeyRef.current = requestKey;
@@ -213,7 +225,7 @@ export default function useShopCatalogState({
         }
       }
     },
-    [categoryTotalItems, requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
+    [requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
   );
 
   const loadProductsPage = useCallback(
@@ -240,7 +252,7 @@ export default function useShopCatalogState({
       const requestKey = `${normalizedCompanyId}:${normalizedCategoryId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
 
       if (productLoadKeyRef.current === requestKey) {
-        return {items: [], totalItems: productTotalItems};
+        return {items: [], totalItems: productTotalItemsRef.current};
       }
 
       productLoadKeyRef.current = requestKey;
@@ -309,7 +321,6 @@ export default function useShopCatalogState({
       mode,
       normalizedCatalogProductTypes,
       productFileFilters,
-      productTotalItems,
       requiresCompanySelection,
       salesCompany?.['@id'],
       salesCompany?.id,

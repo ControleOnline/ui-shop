@@ -55,6 +55,7 @@ import {
   inlineStyle_241_16,
   inlineStyle_255_12,
   inlineStyle_273_14,
+  inlineStyle_282_14,
   inlineStyle_345_10,
   inlineStyle_358_12,
   inlineStyle_369_18,
