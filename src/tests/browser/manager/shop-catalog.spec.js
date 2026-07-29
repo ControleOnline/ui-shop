@@ -70,6 +70,7 @@ const products = [
 
 const setupShopCatalogApi = async page => {
   const pageErrors = [];
+  const apiRequests = [];
   page.on('pageerror', error => {
     pageErrors.push(error);
   });
@@ -79,6 +80,10 @@ const setupShopCatalogApi = async page => {
     const url = new URL(request.url());
     const pathname = url.pathname.replace(/^\/+/, '');
     const method = request.method().toUpperCase();
+
+    if (method !== 'OPTIONS') {
+      apiRequests.push(pathname);
+    }
 
     if (method === 'OPTIONS') {
       return route.fulfill({
@@ -177,6 +182,14 @@ const setupShopCatalogApi = async page => {
       });
     }
 
+    if (pathname === 'order_products') {
+      return route.fulfill({
+        status: 200,
+        headers: jsonHeaders(),
+        body: JSON.stringify(collection([])),
+      });
+    }
+
     return route.fulfill({
       status: 200,
       headers: jsonHeaders(),
@@ -221,24 +234,41 @@ const setupShopCatalogApi = async page => {
     {appVersion: APP_VERSION},
   );
 
-  return pageErrors;
+  return {apiRequests, pageErrors};
 };
 
 test.describe('shop catalog browser smoke', () => {
   test('loads catalog products and keeps product detail open after click', async ({
     page,
   }) => {
-    const pageErrors = await setupShopCatalogApi(page);
+    const {apiRequests, pageErrors} = await setupShopCatalogApi(page);
 
     await page.goto('/shop?store=categories&q=');
 
     await expect(page.getByText('Utilidades', {exact: true}).first()).toBeVisible();
     await expect(page.getByText('Tesoura Aviação Eda Corte Reto')).toBeVisible();
 
+    apiRequests.length = 0;
     await page.getByText('Tesoura Aviação Eda Corte Reto').click();
 
     await expect(page).toHaveURL(/\/shop\/product\/381/);
     await expect(page.getByText('Detalhes do produto')).toBeVisible();
+    await expect(page.getByText('Tesoura Aviação Eda Corte Reto')).toBeVisible();
+    await page.waitForTimeout(350);
+    expect(apiRequests.filter(pathname => pathname.startsWith('shop/categories'))).toEqual([]);
+    expect(pageErrors.map(error => error.message)).toEqual([]);
+  });
+
+  test('reloads catalog after returning home from the cart', async ({page}) => {
+    const {pageErrors} = await setupShopCatalogApi(page);
+
+    await page.goto('/cart');
+
+    await expect(page.getByText('Continuar comprando')).toBeVisible();
+    await page.getByText('Continuar comprando').click();
+
+    await expect(page).toHaveURL(/\/shop/);
+    await expect(page.getByText('Utilidades', {exact: true}).first()).toBeVisible();
     await expect(page.getByText('Tesoura Aviação Eda Corte Reto')).toBeVisible();
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });

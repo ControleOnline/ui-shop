@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useIsFocused} from '@react-navigation/native';
 import {useStore} from '@store';
 import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
@@ -41,6 +42,7 @@ export default function useShopCatalogState({
   routeCategoryId = '',
   searchQuery = '',
 }) {
+  const isFocused = useIsFocused();
   const shopCatalogStore = useStore('shop_catalog');
   const shopCatalogActions = shopCatalogStore.actions;
   const shopCatalogActionsRef = useRef(shopCatalogActions);
@@ -168,6 +170,10 @@ export default function useShopCatalogState({
         return {items: [], totalItems: 0};
       }
 
+      if (!isFocused) {
+        return {items: [], totalItems: categoryTotalItemsRef.current};
+      }
+
       const normalizedPage = Math.max(Number(page) || 1, 1);
       const requestKey = `${normalizedCompanyId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
 
@@ -225,7 +231,7 @@ export default function useShopCatalogState({
         }
       }
     },
-    [requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
+    [isFocused, requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
   );
 
   const loadProductsPage = useCallback(
@@ -237,6 +243,7 @@ export default function useShopCatalogState({
 
       if (
         mode === 'search' ||
+        !isFocused ||
         !normalizedCompanyId ||
         requiresCompanySelection ||
         !normalizedCategoryId
@@ -318,6 +325,7 @@ export default function useShopCatalogState({
     },
     [
       activeCategoryId,
+      isFocused,
       mode,
       normalizedCatalogProductTypes,
       productFileFilters,
@@ -384,17 +392,43 @@ export default function useShopCatalogState({
     };
   }, []);
 
+  useEffect(() => {
+    if (isFocused) {
+      return;
+    }
+
+    categoryRequestTokenRef.current += 1;
+    productRequestTokenRef.current += 1;
+    searchRequestTokenRef.current += 1;
+    activeCategoryRequestTokenRef.current += 1;
+    categoryLoadKeyRef.current = '';
+    productLoadKeyRef.current = '';
+    setIsLoadingCategories(false);
+    setIsLoadingMoreCategories(false);
+    setIsLoadingProducts(false);
+    setIsLoadingMoreProducts(false);
+    setIsLoadingSearch(false);
+  }, [isFocused]);
+
   // Keep the active category aligned with route-driven category pages.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (mode !== 'category') {
       return;
     }
 
     setActiveCategoryId(String(routeCategoryId || ''));
-  }, [mode, routeCategoryId]);
+  }, [isFocused, mode, routeCategoryId]);
 
   // Reset and reload the catalog whenever the store context changes.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (!salesCompany?.id || requiresCompanySelection) {
       resetPaginationState();
       setActiveCategoryId('');
@@ -406,6 +440,7 @@ export default function useShopCatalogState({
     loadCategoriesPage({page: 1, replace: true});
   }, [
     loadCategoriesPage,
+    isFocused,
     requiresCompanySelection,
     resetPaginationState,
     salesCompany?.id,
@@ -413,6 +448,10 @@ export default function useShopCatalogState({
 
   // Resolve the selected storefront category from the loaded catalog.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (mode === 'search') {
       return;
     }
@@ -437,6 +476,7 @@ export default function useShopCatalogState({
   }, [
     activeCategoryId,
     categories,
+    isFocused,
     mode,
     requiresCompanySelection,
     routeCategoryId,
@@ -445,6 +485,10 @@ export default function useShopCatalogState({
 
   // Fetch a direct category payload when the active category has not arrived in the first pages yet.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (mode === 'search') {
       setActiveCategoryDetails(null);
       return;
@@ -502,6 +546,7 @@ export default function useShopCatalogState({
       });
   }, [
     activeCategoryId,
+    isFocused,
     mode,
     requiresCompanySelection,
     salesCompany?.id,
@@ -510,6 +555,10 @@ export default function useShopCatalogState({
 
   // Load the currently selected category products using small pages.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (mode === 'search') {
       setProducts([]);
       setProductTotalItems(0);
@@ -533,6 +582,7 @@ export default function useShopCatalogState({
     });
   }, [
     activeCategoryId,
+    isFocused,
     loadProductsPage,
     mode,
     requiresCompanySelection,
@@ -541,6 +591,10 @@ export default function useShopCatalogState({
 
   // Load search results without changing the category directory used for navigation.
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     if (mode !== 'search') {
       setSearchProducts([]);
       setSearchProductsTotalItems(0);
@@ -615,6 +669,7 @@ export default function useShopCatalogState({
         }
       });
   }, [
+    isFocused,
     mode,
     normalizedCatalogProductTypes,
     normalizedSearchQuery,
