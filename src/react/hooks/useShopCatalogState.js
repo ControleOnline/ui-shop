@@ -5,9 +5,7 @@ import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/sh
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
-  buildShopCatalogStorageKey,
   getTopLevelShopCategories,
-  persistShopCatalogCategoryId,
   resolveShopCatalogCategoryId,
   rememberShopCatalogProduct,
   SHOP_CATEGORIES_RESOURCE,
@@ -104,14 +102,6 @@ export default function useShopCatalogState({
   const [searchCategoriesTotalItems, setSearchCategoriesTotalItems] = useState(0);
 
   const normalizedSearchQuery = String(searchQuery || '').trim();
-  const storageKey = useMemo(
-    () =>
-      buildShopCatalogStorageKey({
-        defaultCompanyId: defaultCompany?.id || defaultCompany?.['@id'],
-        salesCompanyId: salesCompany?.id || salesCompany?.['@id'],
-      }),
-    [defaultCompany?.['@id'], defaultCompany?.id, salesCompany?.['@id'], salesCompany?.id],
-  );
   const topLevelCategories = useMemo(
     () => getTopLevelShopCategories(categories),
     [categories],
@@ -179,8 +169,6 @@ export default function useShopCatalogState({
           params: {
             company: normalizedCompanyId,
             context: 'products',
-            exists: {categoryFiles: 'true'},
-            categoryFiles: {file: {fileType: 'image'}},
             'order[name]': 'ASC',
             page: normalizedPage,
           },
@@ -420,7 +408,6 @@ export default function useShopCatalogState({
       categories,
       routeCategoryId: mode === 'category' ? routeCategoryId : '',
       preferredCategoryId: '',
-      storageKey,
     });
 
     if (nextCategoryId) {
@@ -434,7 +421,6 @@ export default function useShopCatalogState({
     requiresCompanySelection,
     routeCategoryId,
     salesCompany?.id,
-    storageKey,
   ]);
 
   // Fetch a direct category payload when the active category has not arrived in the first pages yet.
@@ -535,15 +521,6 @@ export default function useShopCatalogState({
     salesCompany?.id,
   ]);
 
-  // Persist the latest storefront category for this company pairing.
-  useEffect(() => {
-    if (mode === 'search' || !activeCategoryId) {
-      return;
-    }
-
-    persistShopCatalogCategoryId(storageKey, activeCategoryId);
-  }, [activeCategoryId, mode, storageKey]);
-
   // Load search results without changing the category directory used for navigation.
   useEffect(() => {
     if (mode !== 'search') {
@@ -590,8 +567,6 @@ export default function useShopCatalogState({
         params: {
           company: salesCompany.id,
           context: 'products',
-          exists: {categoryFiles: 'true'},
-          categoryFiles: {file: {fileType: 'image'}},
           'order[name]': 'ASC',
           page: 1,
           name: normalizedSearchQuery,

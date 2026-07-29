@@ -2,23 +2,10 @@
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import {api} from '@controleonline/ui-common/src/api';
 
-const SHOP_CATALOG_CATEGORY_STORAGE_PREFIX = 'shop-purchases-active-category';
 export const SHOP_CATEGORIES_RESOURCE = 'shop/categories';
 export const SHOP_CATALOG_PAGE_SIZE = 30;
 export const SHOP_CATALOG_MAX_PAGE_SIZE = 50;
 const shopCatalogProductCache = new Map();
-// Read a persisted category id without breaking native or private browsing.
-const readStorageItem = storageKey => {
-  if (!storageKey || typeof localStorage === 'undefined') {
-    return '';
-  }
-
-  try {
-    return String(localStorage.getItem(storageKey) || '');
-  } catch {
-    return '';
-  }
-};
 
 export const normalizeShopCollectionResponse = payload => {
   const items = Array.isArray(payload)
@@ -55,8 +42,13 @@ export const rememberShopCatalogProduct = product => {
 export const getRememberedShopCatalogProduct = productId =>
   shopCatalogProductCache.get(normalizeId(productId)) || null;
 
-export const fetchShopCatalogProduct = async ({productId} = {}) => {
+export const fetchShopCatalogProduct = async ({
+  companyId = '',
+  productId,
+  productTypes = [],
+} = {}) => {
   const normalizedProductId = normalizeId(productId);
+  const normalizedCompanyId = normalizeId(companyId);
 
   if (!normalizedProductId) {
     return null;
@@ -67,45 +59,29 @@ export const fetchShopCatalogProduct = async ({productId} = {}) => {
     return cachedProduct;
   }
 
-  const catalogProduct = await api
-    .fetch(`products/${normalizedProductId}`)
-    .catch(() => null);
+  const response = normalizedCompanyId
+    ? await api
+        .fetch('product-showcases/catalog', {
+          params: {
+            company: normalizedCompanyId,
+            integration_key: 'shop',
+            active: 1,
+            id: normalizedProductId,
+            type: Array.isArray(productTypes) && productTypes.length
+              ? productTypes
+              : undefined,
+            itemsPerPage: 1,
+          },
+        })
+        .catch(() => null)
+    : null;
+  const catalogProduct = normalizeShopCollectionResponse(response).items[0] || null;
 
   if (catalogProduct) {
     rememberShopCatalogProduct(catalogProduct);
   }
 
   return catalogProduct;
-};
-
-// Build a stable storage key per default company and active sales company.
-export const buildShopCatalogStorageKey = ({
-  defaultCompanyId,
-  salesCompanyId,
-}) => {
-  const normalizedDefaultCompanyId = normalizeId(defaultCompanyId);
-  const normalizedSalesCompanyId = normalizeId(salesCompanyId);
-
-  if (!normalizedDefaultCompanyId && !normalizedSalesCompanyId) {
-    return '';
-  }
-
-  return [
-    SHOP_CATALOG_CATEGORY_STORAGE_PREFIX,
-    normalizedDefaultCompanyId || 'default',
-    normalizedSalesCompanyId || 'sales',
-  ].join(':');
-};
-
-// Persist the active category for the current store context.
-export const persistShopCatalogCategoryId = (storageKey, categoryId) => {
-  if (!storageKey || !categoryId || typeof localStorage === 'undefined') {
-    return;
-  }
-
-  try {
-    localStorage.setItem(storageKey, String(categoryId));
-  } catch {}
 };
 
 // Keep only top-level categories in the storefront navigation.
@@ -160,7 +136,6 @@ export const resolveShopCatalogCategoryId = ({
   categories,
   routeCategoryId = '',
   preferredCategoryId = '',
-  storageKey = '',
 }) => {
   const normalizedRouteCategoryId = normalizeId(routeCategoryId);
   if (normalizedRouteCategoryId) {
@@ -170,11 +145,6 @@ export const resolveShopCatalogCategoryId = ({
   const normalizedPreferredCategoryId = normalizeId(preferredCategoryId);
   if (normalizedPreferredCategoryId) {
     return normalizedPreferredCategoryId;
-  }
-
-  const persistedCategoryId = normalizeId(readStorageItem(storageKey));
-  if (persistedCategoryId) {
-    return persistedCategoryId;
   }
 
   const topLevelCategories = getTopLevelShopCategories(categories);

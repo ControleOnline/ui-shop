@@ -54,6 +54,29 @@ export const productPageMediaStyle = ({isMobile}) => ({
   height: isMobile ? 300 : 420,
 });
 
+export const productPageMediaThumbsStyle = {
+  position: 'absolute',
+  left: 14,
+  right: 14,
+  bottom: 14,
+};
+
+export const productPageMediaThumbStyle = ({isSelected, theme}) => ({
+  width: 58,
+  height: 58,
+  marginRight: 8,
+  borderRadius: 12,
+  borderWidth: isSelected ? 2 : 1,
+  borderColor: isSelected ? theme.primary : theme.cardBorder,
+  backgroundColor: theme.surface,
+  overflow: 'hidden',
+});
+
+export const productPageMediaThumbImageStyle = {
+  width: '100%',
+  height: '100%',
+};
+
 export const productPageMediaEmptyStyle = ({theme}) => ({
   color: theme.primary,
   fontWeight: '800',

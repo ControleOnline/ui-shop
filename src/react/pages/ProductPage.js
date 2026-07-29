@@ -62,6 +62,9 @@ import {
   productPageHeroStyle,
   productPageMediaPanelStyle,
   productPageMediaStyle,
+  productPageMediaThumbImageStyle,
+  productPageMediaThumbsStyle,
+  productPageMediaThumbStyle,
   productPageMediaEmptyStyle,
   productPageInfoColumnStyle,
   productPageEyebrowStyle,
@@ -103,6 +106,7 @@ export default function ProductPage() {
   const productsStore = useStore('products');
   const productGroupStore = useStore('product_group');
   const [product, setProduct] = useState({});
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
   const [isCheckingGroups, setIsCheckingGroups] = useState(false);
   const {cart, refreshCart, defaultCompany} = useShopCart();
@@ -156,28 +160,21 @@ export default function ProductPage() {
         try {
           let nextProduct = {};
           const cachedProduct = getRememberedShopCatalogProduct(productId);
-
-          try {
-            nextProduct =
-              (await productsStore.actions.get({
-                id: productId,
-                ...silentStoreMeta,
-              })) || {};
-          } catch {
-            nextProduct =
-              cachedProduct ||
-              (await fetchShopCatalogProduct({
-                companyId: salesCompany.id,
-                productId,
-                productTypes: catalogProductTypes,
-              }).catch(() => null)) || {};
-          }
+          nextProduct =
+            cachedProduct ||
+            (await fetchShopCatalogProduct({
+              companyId: salesCompany.id,
+              productId,
+              productTypes: catalogProductTypes,
+            }).catch(() => null)) ||
+            {};
 
           if (!isMounted) {
             return;
           }
 
           setProduct(nextProduct);
+          setSelectedImageIndex(0);
           productsStore.actions.setItem(nextProduct);
 
           const nextProductId = normalizeId(
@@ -251,9 +248,18 @@ export default function ProductPage() {
     ]),
   );
 
-  const imageUrl = product?.productFiles?.[0]?.file
-    ? buildFileUrl(product.productFiles[0].file, salesCompany || defaultCompany)
-    : '';
+  const productImages = useMemo(
+    () =>
+      (Array.isArray(product?.productFiles) ? product.productFiles : [])
+        .map(productFile =>
+          productFile?.file
+            ? buildFileUrl(productFile.file, salesCompany || defaultCompany)
+            : '',
+        )
+        .filter(Boolean),
+    [defaultCompany, product?.productFiles, salesCompany],
+  );
+  const imageUrl = productImages[selectedImageIndex] || productImages[0] || '';
   const requiresCustomization = Boolean(
     product?.type === 'custom' || hasCustomizationGroups,
   );
@@ -368,6 +374,29 @@ export default function ProductPage() {
                         SEM IMAGEM
                       </Text>
                     )}
+                    {productImages.length > 1 ? (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={productPageMediaThumbsStyle}>
+                        {productImages.map((thumbUrl, index) => (
+                          <TouchableOpacity
+                            activeOpacity={0.85}
+                            key={`${thumbUrl}-${index}`}
+                            onPress={() => setSelectedImageIndex(index)}
+                            style={productPageMediaThumbStyle({
+                              isSelected: index === selectedImageIndex,
+                              theme,
+                            })}>
+                            <Image
+                              resizeMode="cover"
+                              source={{uri: thumbUrl}}
+                              style={productPageMediaThumbImageStyle}
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    ) : null}
                   </View>
 
                   <View
