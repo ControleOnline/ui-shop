@@ -4,17 +4,45 @@ import {
 } from '@controleonline/ui-common/src/react/utils/entityDisplay';
 import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/shopConfig';
 
-const SHOP_SALES_COMPANY_STORAGE_PREFIX = 'shop-sales-company';
 const shopSalesCompanyListeners = new Set();
+const shopSalesCompanySelections = new Map();
 
-const getStorageKey = defaultCompanyId => {
+const getSelectionKey = defaultCompanyId => {
   const normalizedDefaultCompanyId = normalizeShopEntityId(defaultCompanyId);
 
   if (!normalizedDefaultCompanyId) {
     return '';
   }
 
-  return `${SHOP_SALES_COMPANY_STORAGE_PREFIX}:${normalizedDefaultCompanyId}`;
+  return normalizedDefaultCompanyId;
+};
+
+let legacyShopStorageCleaned = false;
+
+export const cleanupLegacyShopStorage = () => {
+  if (legacyShopStorageCleaned || typeof localStorage === 'undefined') {
+    return;
+  }
+
+  legacyShopStorageCleaned = true;
+
+  try {
+    const legacyPrefixes = [
+      'shop-purchases-active-category:',
+      'shop-sales-company:',
+    ];
+    const keysToRemove = [];
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+
+      if (legacyPrefixes.some(prefix => key?.startsWith(prefix))) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch {}
 };
 
 const getPrimaryAddress = company =>
@@ -49,34 +77,29 @@ const notifyShopSalesCompanyListeners = payload => {
 };
 
 export const readStoredShopSalesCompany = defaultCompanyId => {
-  const storageKey = getStorageKey(defaultCompanyId);
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
-  if (!storageKey) {
+  if (!selectionKey) {
     return null;
   }
 
-  try {
-    const storedValue = JSON.parse(localStorage.getItem(storageKey) || 'null');
-    return storedValue && typeof storedValue === 'object' ? storedValue : null;
-  } catch {
-    return null;
-  }
+  return shopSalesCompanySelections.get(selectionKey) || null;
 };
 
 export const readStoredShopSalesCompanyId = defaultCompanyId =>
   normalizeShopEntityId(readStoredShopSalesCompany(defaultCompanyId));
 
 export const persistShopSalesCompany = (defaultCompanyId, company) => {
-  const storageKey = getStorageKey(defaultCompanyId);
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
-  if (!storageKey) {
+  if (!selectionKey) {
     return;
   }
 
   const snapshot = buildSnapshot(company);
 
   if (!snapshot) {
-    localStorage.removeItem(storageKey);
+    shopSalesCompanySelections.delete(selectionKey);
     notifyShopSalesCompanyListeners({
       company: null,
       defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
@@ -84,7 +107,7 @@ export const persistShopSalesCompany = (defaultCompanyId, company) => {
     return;
   }
 
-  localStorage.setItem(storageKey, JSON.stringify(snapshot));
+  shopSalesCompanySelections.set(selectionKey, snapshot);
   notifyShopSalesCompanyListeners({
     company: snapshot,
     defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
@@ -92,13 +115,13 @@ export const persistShopSalesCompany = (defaultCompanyId, company) => {
 };
 
 export const clearStoredShopSalesCompany = defaultCompanyId => {
-  const storageKey = getStorageKey(defaultCompanyId);
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
-  if (!storageKey) {
+  if (!selectionKey) {
     return;
   }
 
-  localStorage.removeItem(storageKey);
+  shopSalesCompanySelections.delete(selectionKey);
   notifyShopSalesCompanyListeners({
     company: null,
     defaultCompanyId: normalizeShopEntityId(defaultCompanyId),

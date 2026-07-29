@@ -10,6 +10,7 @@ import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/s
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
   clearStoredShopSalesCompany,
+  cleanupLegacyShopStorage,
   persistShopSalesCompany,
   readStoredShopSalesCompany,
   subscribeShopSalesCompany,
@@ -69,6 +70,10 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
   const [storedSelection, setStoredSelection] = useState(() =>
     readStoredShopSalesCompany(defaultCompanyId),
   );
+
+  useEffect(() => {
+    cleanupLegacyShopStorage();
+  }, []);
 
   useEffect(() => {
     setStoredSelection(readStoredShopSalesCompany(defaultCompanyId));
