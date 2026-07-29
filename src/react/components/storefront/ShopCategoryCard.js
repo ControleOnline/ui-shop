@@ -1,6 +1,7 @@
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 import {getImageFromRelations, pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
+import {getShopCategoryDescription} from '@controleonline/ui-shop/src/react/utils/shopCatalog';
 
 import {
   inlineStyle_13_6,
@@ -15,6 +16,7 @@ import {
 export default function ShopCategoryCard({category, onPress, company}) {
   const theme = pickTheme(company);
   const imageUrl = getImageFromRelations(category?.categoryFiles);
+  const description = getShopCategoryDescription(category);
 
   return (
     <TouchableOpacity
@@ -46,12 +48,14 @@ export default function ShopCategoryCard({category, onPress, company}) {
           })}>
           {category?.name}
         </Text>
-        <Text
-          style={inlineStyle_50_10({
-            theme: theme,
-          })}>
-          {category?.description || 'Toque para ver os pratos'}
-        </Text>
+        {description ? (
+          <Text
+            style={inlineStyle_50_10({
+              theme: theme,
+            })}>
+            {description}
+          </Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
