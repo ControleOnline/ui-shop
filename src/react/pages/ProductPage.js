@@ -47,6 +47,7 @@ import {
 import {
   buildFileUrl,
   formatMoney,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -91,6 +92,11 @@ export default function ProductPage() {
   const {width} = useWindowDimensions();
   const isMobile = width < 900;
   const productId = String(route.params?.id || '');
+  const routeCompanyId = normalizeId(
+    route.params?.companyId ||
+      route.params?.company ||
+      route.params?.providerId,
+  );
   const [product, setProduct] = useState({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
@@ -108,7 +114,7 @@ export default function ProductPage() {
     salesCompany,
     salesCompanyOptions,
     selectSalesCompany,
-  } = useShopSalesCompany();
+  } = useShopSalesCompany({preferredCompanyId: routeCompanyId});
   const detailCompany = useMemo(() => {
     const activeCompany = salesCompany || defaultCompany;
     const companyTheme = activeCompany?.theme || {};

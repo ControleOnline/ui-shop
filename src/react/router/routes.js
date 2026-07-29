@@ -66,7 +66,7 @@ const shopRoutes = [
   },
   {
     name: 'ShopProductPage',
-    path: 'product/:id/details',
+    path: 'shop/product/:id',
     component: ProductPage,
     options: {
       headerShown: false,

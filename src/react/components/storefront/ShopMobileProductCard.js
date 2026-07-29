@@ -40,6 +40,12 @@ export default function ShopMobileProductCard({
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = normalizeId(product?.id || product?.['@id']);
+  const companyId = normalizeId(
+    company?.id ||
+      company?.['@id'] ||
+      defaultCompany?.id ||
+      defaultCompany?.['@id'],
+  );
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
   const requiresCustomization =
@@ -53,7 +59,7 @@ export default function ShopMobileProductCard({
     }
 
     rememberShopCatalogProduct(product);
-    navigation.navigate('ShopProductPage', {id: productId});
+    navigation.navigate('ShopProductPage', {id: productId, companyId});
   };
 
   const openCustomize = () =>

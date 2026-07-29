@@ -54,7 +54,10 @@ const loadDirectory = async companyId => {
   return request;
 };
 
-export default function useShopSalesCompany({loadOptions = true} = {}) {
+export default function useShopSalesCompany({
+  loadOptions = true,
+  preferredCompanyId = '',
+} = {}) {
   const {
     defaultCompany,
     salesPageEnabled,
@@ -62,6 +65,7 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     visibleFranchiseCompanyIds,
   } = useShopSettings();
   const defaultCompanyId = normalizeShopEntityId(defaultCompany);
+  const preferredSelectionId = normalizeShopEntityId(preferredCompanyId);
   const hasConfiguredSalesCompanies = visibleFranchiseCompanyIds.length > 0;
 
   const [directory, setDirectory] = useState([]);
@@ -172,9 +176,15 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
   const matchedSelection = useMemo(
     () =>
       selectionOptions.find(
-        company => normalizeShopEntityId(company) === storedSelectionId,
+        company => {
+          const companyId = normalizeShopEntityId(company);
+          return (
+            companyId === storedSelectionId ||
+            (preferredSelectionId && companyId === preferredSelectionId)
+          );
+        },
       ) || null,
-    [selectionOptions, storedSelectionId],
+    [preferredSelectionId, selectionOptions, storedSelectionId],
   );
   const fallbackStoredSelection =
     !loadOptions && hasConfiguredSalesCompanies ? storedSelection : null;
@@ -224,6 +234,16 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
       return;
     }
 
+    if (
+      preferredSelectionId &&
+      matchedSelection &&
+      storedSelectionId !== preferredSelectionId
+    ) {
+      persistShopSalesCompany(defaultCompanyId, matchedSelection);
+      setStoredSelection(matchedSelection);
+      return;
+    }
+
     if (storedSelectionId && !matchedSelection) {
       clearStoredShopSalesCompany(defaultCompanyId);
       setStoredSelection(null);
@@ -234,6 +254,7 @@ export default function useShopSalesCompany({loadOptions = true} = {}) {
     isLoading,
     loadOptions,
     matchedSelection,
+    preferredSelectionId,
     selectionOptions,
     storedSelectionId,
   ]);

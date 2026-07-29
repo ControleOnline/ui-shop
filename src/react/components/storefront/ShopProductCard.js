@@ -9,6 +9,7 @@ import {rememberShopCatalogProduct} from '@controleonline/ui-shop/src/react/util
 import {
   formatMoney,
   getImageFromRelations,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -43,6 +44,12 @@ export default function ShopProductCard({
   const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = String(product?.id || '');
+  const companyId = normalizeId(
+    company?.id ||
+      company?.['@id'] ||
+      defaultCompany?.id ||
+      defaultCompany?.['@id'],
+  );
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
   const requiresCustomization =
@@ -54,6 +61,7 @@ export default function ShopProductCard({
 
     navigation.navigate('ShopProductPage', {
       id: productId,
+      companyId,
     });
   };
 
