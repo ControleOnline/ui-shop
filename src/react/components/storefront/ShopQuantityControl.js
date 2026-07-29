@@ -6,7 +6,6 @@ import {useStore} from '@store';
 import {normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {updateAnonymousCartProduct} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 import {
   fetchShopCatalogProduct,
@@ -87,33 +86,30 @@ export default function ShopQuantityControl({
           if (!activeCart?.id && refreshCart) {
             activeCart = await refreshCart();
           }
-          if (activeCart?.anonymous) {
-            updateAnonymousCartProduct({
-              providerId: activeCart.providerId || salesCompany?.id,
-              product,
-              quantity: nextQuantity,
-            });
-            return;
-          }
           if (!activeCart?.id) return;
 
           const targetId =
             currentOrderProduct?.id || normalizeId(orderProductId);
           const orderIri = activeCart?.['@id'] || `/orders/${activeCart.id}`;
+          const providerId = normalizeId(
+            activeCart?.provider?.id ||
+              activeCart?.provider?.['@id'] ||
+              activeCart?.provider ||
+              salesCompany?.id,
+          );
 
-          if (nextQuantity <= 0 && targetId) {
-            await orderProductActions.remove(targetId);
-          } else if (nextQuantity > 0) {
-            await orderProductActions.save({
-              id: targetId || null,
-              parentProduct:
-                currentOrderProduct?.parentProduct?.['@id'] || null,
-              product: productIri,
-              product_group_id: currentOrderProduct?.productGroup?.id || null,
-              quantity: nextQuantity,
-              order: orderIri,
-            });
-          }
+          await orderProductActions.saveQuantityQueued({
+            anonymous: activeCart?.anonymous === true,
+            externalCode: activeCart?.externalCode,
+            id: targetId || null,
+            parentProduct:
+              currentOrderProduct?.parentProduct?.['@id'] || null,
+            product: productIri,
+            product_group_id: currentOrderProduct?.productGroup?.id || null,
+            provider: providerId,
+            quantity: nextQuantity,
+            order: orderIri,
+          });
         } finally {
           await refreshCart?.();
         }

@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
 import {
   ActivityIndicator,
@@ -17,12 +17,8 @@ import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/S
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import {
-  clearAnonymousCart,
-  updateAnonymousCartProduct,
-} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
-
-import {
   formatMoney,
+  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 
@@ -99,16 +95,17 @@ export default function CartPage() {
 
   const [orderProducts, setOrderProducts] = useState([]);
   const [isClearing, setIsClearing] = useState(false);
+  const removeTimeoutsRef = useRef({});
 
   const isMobile = width < 980;
 
   const reloadRows = React.useCallback(() => {
-    if (cart?.anonymous) {
-      const localRows = Array.isArray(cart.orderProducts)
+    if (cart?.anonymous === true) {
+      const anonymousRows = Array.isArray(cart.orderProducts)
         ? cart.orderProducts
         : [];
-      setOrderProducts(localRows);
-      return Promise.resolve(localRows);
+      setOrderProducts(anonymousRows);
+      return Promise.resolve(anonymousRows);
     }
 
     if (!cart?.id) {
@@ -154,20 +151,44 @@ export default function CartPage() {
 
   const handleRemoveRow = async row => {
     if (!row?.id) return;
-    if (cart?.anonymous) {
-      updateAnonymousCartProduct({
-        providerId: cart.providerId,
-        product: row.product,
-        quantity: 0,
-      });
-      await refreshCart();
-      await reloadRows();
-      return;
+
+    const rowId = String(row.id);
+    if (removeTimeoutsRef.current[rowId]) {
+      clearTimeout(removeTimeoutsRef.current[rowId]);
     }
 
-    await orderProductsStore.actions.remove(row.id);
-    await refreshCart();
-    await reloadRows();
+    removeTimeoutsRef.current[rowId] = setTimeout(async () => {
+      try {
+        const orderIri = cart?.['@id'] || (cart?.id ? `/orders/${cart.id}` : null);
+        const productIri =
+          row?.product?.['@id'] ||
+          (row?.product?.id ? `/products/${row.product.id}` : null);
+
+        if (!orderIri || !productIri) {
+          return;
+        }
+        const providerId = normalizeId(
+          cart?.provider?.id ||
+            cart?.provider?.['@id'] ||
+            cart?.provider ||
+            salesCompany?.id,
+        );
+
+        await orderProductsStore.actions.saveQuantityQueued({
+          anonymous: cart?.anonymous === true,
+          externalCode: cart?.externalCode,
+          id: row.id,
+          order: orderIri,
+          product: productIri,
+          provider: providerId,
+          quantity: 0,
+        });
+        await refreshCart();
+        await reloadRows();
+      } finally {
+        delete removeTimeoutsRef.current[rowId];
+      }
+    }, 300);
   };
 
   const handleClearCart = () => {
@@ -176,17 +197,32 @@ export default function CartPage() {
     const clearAction = async () => {
       setIsClearing(true);
       try {
-        if (cart?.anonymous) {
-          clearAnonymousCart(cart.providerId);
-          await refreshCart();
-          await reloadRows();
-          return;
-        }
-
         await Promise.all(
           rows
             .filter(item => item?.id)
-            .map(item => orderProductsStore.actions.remove(item.id)),
+            .map(item => {
+              const orderIri =
+                cart?.['@id'] || (cart?.id ? `/orders/${cart.id}` : null);
+              const productIri =
+                item?.product?.['@id'] ||
+                (item?.product?.id ? `/products/${item.product.id}` : null);
+              const providerId = normalizeId(
+                cart?.provider?.id ||
+                  cart?.provider?.['@id'] ||
+                  cart?.provider ||
+                  salesCompany?.id,
+              );
+
+              return orderProductsStore.actions.saveQuantityQueued({
+                anonymous: cart?.anonymous === true,
+                externalCode: cart?.externalCode,
+                id: item.id,
+                order: orderIri,
+                product: productIri,
+                provider: providerId,
+                quantity: 0,
+              });
+            }),
         );
         await refreshCart();
         await reloadRows();

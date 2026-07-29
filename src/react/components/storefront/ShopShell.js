@@ -331,7 +331,9 @@ export default function ShopShell({
               shellPadding: shellPadding,
             })}>
             <View
-              style={inlineStyle_128_12}>
+              style={inlineStyle_128_12({
+                isMobile: isMobile,
+              })}>
               <View
                 style={inlineStyle_135_14}>
                 <TouchableOpacity

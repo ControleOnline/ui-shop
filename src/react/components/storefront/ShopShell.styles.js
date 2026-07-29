@@ -33,12 +33,13 @@ export const inlineStyle_121_10 = (
       }),
 });
 
-export const inlineStyle_128_12 = {
+export const inlineStyle_128_12 = ({isMobile} = {}) => ({
+  width: isMobile ? '100%' : undefined,
   flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'flex-start',
+  justifyContent: isMobile ? 'center' : 'flex-start',
   gap: 12,
-};
+});
 
 export const inlineStyle_135_14 = {
   flexDirection: 'row',

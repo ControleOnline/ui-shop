@@ -1,14 +1,8 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
-import {env} from '@env';
 import {app_type} from '@appType';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
-import {
-  clearAnonymousCart,
-  readAnonymousCart,
-  subscribeAnonymousCart,
-} from '@controleonline/ui-shop/src/react/utils/anonymousCart';
 import {
   normalizeNumericId,
   readShopSessionClientId,
@@ -22,8 +16,6 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartStore = useStore('cart');
   const cartActions = cartStore.actions;
   const cartGetters = cartStore.getters;
-  const orderProductsStore = useStore('order_products');
-  const orderProductActions = orderProductsStore.actions;
   const peopleStore = useStore('people');
   const {currentCompany, defaultCompany} = peopleStore.getters;
   const {
@@ -35,70 +27,6 @@ export default function useShopCart({autoRefresh = false} = {}) {
     selectSalesCompany,
   } = useShopSalesCompany();
   const providerId = normalizeNumericId(salesCompany?.id || defaultCompany?.id);
-  const [anonymousCart, setAnonymousCart] = useState(() =>
-    readAnonymousCart(providerId),
-  );
-
-  useEffect(() => {
-    setAnonymousCart(readAnonymousCart(providerId));
-    return subscribeAnonymousCart(({providerId: changedProviderId}) => {
-      if (
-        !changedProviderId ||
-        normalizeNumericId(changedProviderId) === providerId
-      ) {
-        setAnonymousCart(readAnonymousCart(providerId));
-      }
-    });
-  }, [providerId]);
-
-  const migrateAnonymousCart = useCallback(
-    async backendCart => {
-      if (!backendCart?.id || !providerId) {
-        return backendCart;
-      }
-
-      const localCart = readAnonymousCart(providerId);
-      const localItems = Array.isArray(localCart?.orderProducts)
-        ? localCart.orderProducts
-        : [];
-
-      if (localItems.length === 0) {
-        return backendCart;
-      }
-
-      for (const item of localItems) {
-        const productId =
-          normalizeNumericId(item?.product?.id || item?.product?.['@id']);
-        if (!productId || Number(item?.quantity || 0) <= 0) {
-          continue;
-        }
-
-        const existing = (backendCart.orderProducts || []).find(
-          orderProduct =>
-            normalizeNumericId(
-              orderProduct?.product?.id || orderProduct?.product?.['@id'],
-            ) ===
-            productId,
-        );
-
-        await orderProductActions.save({
-          id: existing?.id || null,
-          product: `/products/${productId}`,
-          quantity:
-            Number(existing?.quantity || 0) + Number(item.quantity || 0),
-          order: backendCart?.['@id'] || `/orders/${backendCart.id}`,
-        });
-      }
-
-      clearAnonymousCart(providerId);
-
-      return cartActions.discoveryCart({
-        provider: providerId,
-        client: normalizeNumericId(currentCompany?.id) || readShopSessionClientId(),
-      });
-    },
-    [cartActions, currentCompany?.id, orderProductActions, providerId],
-  );
 
   const refreshCart = useCallback(() => {
     const appType = String(app_type || '').toUpperCase();
@@ -110,15 +38,14 @@ export default function useShopCart({autoRefresh = false} = {}) {
       ? currentCompanyId || sessionClientId
       : currentCompanyId;
 
-    if (requiresCompanySelection || !providerId || !clientId) {
-      const localCart = isShopApp && providerId ? readAnonymousCart(providerId) : null;
+    if (requiresCompanySelection || !providerId) {
       if (cartGetters.item?.id) {
         cartActions.setItem({});
       }
-      return Promise.resolve(localCart);
+      return Promise.resolve(null);
     }
 
-    const key = `${providerId}:${clientId}`;
+    const key = clientId ? `${providerId}:${clientId}` : `anonymous:${providerId}`;
     const now = Date.now();
 
     if (cartRequestInFlight?.key === key) {
@@ -129,11 +56,15 @@ export default function useShopCart({autoRefresh = false} = {}) {
       return Promise.resolve(cartGetters.item || null);
     }
 
-    const promise = cartActions.discoveryCart({
-      provider: providerId,
-      client: clientId,
-    })
-      .then(migrateAnonymousCart)
+    const promise = (clientId
+      ? cartActions.discoveryCart({
+          provider: providerId,
+          client: clientId,
+        })
+      : cartActions.discoveryAnonymousCart({
+          provider: providerId,
+          externalCode: cartGetters.item?.externalCode,
+        }))
       .finally(() => {
         if (cartRequestInFlight?.key === key) {
           cartRequestInFlight = null;
@@ -148,7 +79,6 @@ export default function useShopCart({autoRefresh = false} = {}) {
     cartActions,
     cartGetters.item,
     currentCompany?.id,
-    migrateAnonymousCart,
     providerId,
     requiresCompanySelection,
   ]);
@@ -161,7 +91,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
   );
 
   return {
-    cart: cartGetters.item?.id ? cartGetters.item : anonymousCart || cartGetters.item,
+    cart: cartGetters.item || {},
     cartGetters,
     clearSalesCompanySelection,
     currentCompany,
