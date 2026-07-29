@@ -31,7 +31,7 @@ describe('shopFranchiseLocator', () => {
         latitude: -15.6001,
         longitude: -56.1001,
         markerIconUrl: expect.stringContaining(
-          '/files/654/download?app-domain=maincompany.controleonline.com',
+          '/maincompany.controleonline.com/files/654/download',
         ),
       }),
     ]);
@@ -109,7 +109,7 @@ describe('shopFranchiseLocator', () => {
       expect.objectContaining({
         id: 13,
         companyLogoUrl: expect.stringContaining(
-          '/files/321/download?app-domain=maincompany.controleonline.com',
+          '/maincompany.controleonline.com/files/321/download',
         ),
       }),
     ]);
@@ -141,7 +141,7 @@ describe('shopFranchiseLocator', () => {
       expect.objectContaining({
         id: 14,
         companyLogoUrl: expect.stringContaining(
-          '/files/777/download?app-domain=maincompany.controleonline.com',
+          '/maincompany.controleonline.com/files/777/download',
         ),
       }),
     ]);
