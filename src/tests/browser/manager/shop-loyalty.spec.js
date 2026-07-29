@@ -31,8 +31,8 @@ const collection = (member = []) => ({
 
 const createCompany = (configs = {}) => ({
   id: 3,
-  name: 'Gyros',
-  alias: 'GYROS',
+  name: 'Produto Exemplo',
+  alias: 'EXEMPLO',
   panel_enabled: true,
   enabled: true,
   commercial_enabled: true,
@@ -59,7 +59,7 @@ const createCardSnapshot = ({
   requiredSales,
   stampIds = [],
   closed = false,
-  provider = {id: 3, name: 'Gyros', alias: 'GYROS'},
+  provider = {id: 3, name: 'Produto Exemplo', alias: 'EXEMPLO'},
 }) => ({
   provider,
   card: {

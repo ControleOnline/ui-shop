@@ -1,13 +1,11 @@
-// TODO(store-first): quando esta tela for mexida, mover a carga para stores, remover api.fetch e evitar repassar dados em objetos quando o store ja resolver isso.
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
-import {api} from '@controleonline/ui-common/src/api';
+import {useStore} from '@store';
 import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
   buildShopCatalogStorageKey,
-  fetchShopCollectionPage,
   getTopLevelShopCategories,
   persistShopCatalogCategoryId,
   resolveShopCatalogCategoryId,
@@ -46,6 +44,8 @@ export default function useShopCatalogState({
   routeCategoryId = '',
   searchQuery = '',
 }) {
+  const shopCatalogStore = useStore('shop_catalog');
+  const shopCatalogActions = shopCatalogStore.actions;
   const {
     cart,
     defaultCompany,
@@ -174,13 +174,16 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await fetchShopCollectionPage(SHOP_CATEGORIES_RESOURCE, {
-          company: normalizedCompanyId,
-          context: 'products',
-          exists: {categoryFiles: 'true'},
-          categoryFiles: {file: {fileType: 'image'}},
-          'order[name]': 'ASC',
-          page: normalizedPage,
+        const response = await shopCatalogActions.fetchCollectionPage({
+          resource: SHOP_CATEGORIES_RESOURCE,
+          params: {
+            company: normalizedCompanyId,
+            context: 'products',
+            exists: {categoryFiles: 'true'},
+            categoryFiles: {file: {fileType: 'image'}},
+            'order[name]': 'ASC',
+            page: normalizedPage,
+          },
         });
 
         if (!mountedRef.current || requestToken !== categoryRequestTokenRef.current) {
@@ -209,7 +212,7 @@ export default function useShopCatalogState({
         }
       }
     },
-    [requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
+    [requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id, shopCatalogActions],
   );
 
   const loadProductsPage = useCallback(
@@ -242,15 +245,18 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await fetchShopCollectionPage('product-showcases/catalog', {
-          company: normalizedCompanyId,
-          integration_key: 'shop',
-          active: 1,
-          type: normalizedCatalogProductTypes,
-          'productCategory.category': `/categories/${normalizedCategoryId}`,
-          'order[product]': 'ASC',
-          page: normalizedPage,
-          ...productFileFilters,
+        const response = await shopCatalogActions.fetchCollectionPage({
+          resource: 'product-showcases/catalog',
+          params: {
+            company: normalizedCompanyId,
+            integration_key: 'shop',
+            active: 1,
+            type: normalizedCatalogProductTypes,
+            'productCategory.category': `/categories/${normalizedCategoryId}`,
+            'order[product]': 'ASC',
+            page: normalizedPage,
+            ...productFileFilters,
+          },
         });
 
         if (!mountedRef.current || requestToken !== productRequestTokenRef.current) {
@@ -294,6 +300,7 @@ export default function useShopCatalogState({
       requiresCompanySelection,
       salesCompany?.['@id'],
       salesCompany?.id,
+      shopCatalogActions,
     ],
   );
 
@@ -455,9 +462,10 @@ export default function useShopCatalogState({
 
     const requestToken = ++activeCategoryRequestTokenRef.current;
 
-    api
-      .fetch(`${SHOP_CATEGORIES_RESOURCE}/${normalizedActiveCategoryId}`, {
-        params: {company: salesCompany.id},
+    shopCatalogActions
+      .getCategory({
+        categoryId: normalizedActiveCategoryId,
+        company: salesCompany.id,
       })
       .then(category => {
         if (!mountedRef.current || requestToken !== activeCategoryRequestTokenRef.current) {
@@ -491,6 +499,7 @@ export default function useShopCatalogState({
     mode,
     requiresCompanySelection,
     salesCompany?.id,
+    shopCatalogActions,
     topLevelCategories,
   ]);
 
@@ -563,24 +572,30 @@ export default function useShopCatalogState({
     setIsLoadingSearch(true);
 
     Promise.all([
-      fetchShopCollectionPage('product-showcases/catalog', {
-        company: salesCompany.id,
-        integration_key: 'shop',
-        active: 1,
-        type: normalizedCatalogProductTypes,
-        'order[product]': 'ASC',
-        page: 1,
-        product: normalizedSearchQuery,
-        ...productFileFilters,
+      shopCatalogActions.fetchCollectionPage({
+        resource: 'product-showcases/catalog',
+        params: {
+          company: salesCompany.id,
+          integration_key: 'shop',
+          active: 1,
+          type: normalizedCatalogProductTypes,
+          'order[product]': 'ASC',
+          page: 1,
+          product: normalizedSearchQuery,
+          ...productFileFilters,
+        },
       }),
-      fetchShopCollectionPage(SHOP_CATEGORIES_RESOURCE, {
-        company: salesCompany.id,
-        context: 'products',
-        exists: {categoryFiles: 'true'},
-        categoryFiles: {file: {fileType: 'image'}},
-        'order[name]': 'ASC',
-        page: 1,
-        name: normalizedSearchQuery,
+      shopCatalogActions.fetchCollectionPage({
+        resource: SHOP_CATEGORIES_RESOURCE,
+        params: {
+          company: salesCompany.id,
+          context: 'products',
+          exists: {categoryFiles: 'true'},
+          categoryFiles: {file: {fileType: 'image'}},
+          'order[name]': 'ASC',
+          page: 1,
+          name: normalizedSearchQuery,
+        },
       }),
     ])
       .then(([productResults, categoryResults]) => {
@@ -613,6 +628,7 @@ export default function useShopCatalogState({
     productFileFilters,
     requiresCompanySelection,
     salesCompany?.id,
+    shopCatalogActions,
   ]);
 
   return {

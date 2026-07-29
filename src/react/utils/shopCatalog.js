@@ -7,25 +7,6 @@ export const SHOP_CATEGORIES_RESOURCE = 'shop/categories';
 export const SHOP_CATALOG_PAGE_SIZE = 30;
 export const SHOP_CATALOG_MAX_PAGE_SIZE = 50;
 const shopCatalogProductCache = new Map();
-const SHOP_CATEGORY_DESCRIPTION_BY_NAME = {
-  'lanches gyros':
-    'Assinaturas e itens principais do Gyros, com organizacao clara de cardapio e preco canonico.',
-  combos:
-    'Combos comerciais organizados na ordem de venda, com base visual padronizada e dados canonicos de custo e preco.',
-  'batatas fritas':
-    'Batatas fritas e porcoes correlatas, mantendo a vitrine do cardapio com rastreio no nucleo.',
-  gratinados:
-    'Linhas gratinadas separadas para operacao, preco e composicao.',
-  'almoco executivo':
-    'Executivos e pratos do almoco com a mesma hierarquia visual do cardapio principal.',
-  'molhos e extras':
-    'Molhos, vinagretes, saches e extras de apoio para complementar o pedido.',
-  sobremesas:
-    'Sobremesas organizadas como fechamento de compra e incremento de ticket medio.',
-  bebidas:
-    'Bebidas para acompanhamento, com leitura rapida e composicao simples no pedido.',
-};
-
 // Read a persisted category id without breaking native or private browsing.
 const readStorageItem = storageKey => {
   if (!storageKey || typeof localStorage === 'undefined') {
@@ -54,31 +35,6 @@ export const normalizeShopCollectionResponse = payload => {
       payload?.totalItems || payload?.['hydra:totalItems'] || items.length || 0,
     ),
   };
-};
-
-export const fetchShopCollectionPage = async (resource, params = {}) => {
-  if (!resource) {
-    return {items: [], totalItems: 0};
-  }
-
-  const requestedItemsPerPage = Number(params?.itemsPerPage);
-  const itemsPerPage = Math.max(
-    1,
-    Math.min(
-      SHOP_CATALOG_MAX_PAGE_SIZE,
-      Number.isFinite(requestedItemsPerPage)
-        ? requestedItemsPerPage
-        : SHOP_CATALOG_PAGE_SIZE,
-    ),
-  );
-
-  const response = await api.fetch(resource, {
-    params: {
-      ...params,
-      itemsPerPage,
-    },
-  });
-  return normalizeShopCollectionResponse(response);
 };
 
 export const hasShopProductCustomizationGroups = product =>
@@ -174,44 +130,19 @@ export const getTopLevelShopCategories = categories =>
 export const getShopCategoryFile = category =>
   Array.isArray(category?.categoryFiles) ? category.categoryFiles[0]?.file || null : null;
 
-// Normalize a short customer-facing description for each category.
+// Normalize a short customer-facing description from API data.
 export const getShopCategoryDescription = category => {
-  const mappedDescription =
-    SHOP_CATEGORY_DESCRIPTION_BY_NAME[getShopCategoryLookupKey(category)];
-
-  if (mappedDescription) {
-    return mappedDescription;
-  }
-
-  const description = String(
+  return String(
     category?.description ||
       category?.subtitle ||
-      category?.productCategory ||
-      category?.category ||
       '',
   ).trim();
-
-  if (description) {
-    return description;
-  }
-
-  return 'Toque para ver os itens desta categoria.';
 };
 
 const getShopCategoryRawName = category =>
   String(
     category?.name || category?.category || category?.productCategory || '',
   ).trim();
-
-const getShopCategoryLookupKey = category =>
-  getShopCategoryRawName(category)
-    .replace(/^\d+\s*[.)-]?\s*/u, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[()]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
 
 const getShopCategorySortOrder = category => {
   const name = getShopCategoryRawName(category);

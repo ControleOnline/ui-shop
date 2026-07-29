@@ -1,5 +1,4 @@
 const {jest} = require('@jest/globals');
-const {beforeEach, describe, expect, it} = global;
 
 jest.mock('@controleonline/ui-common/src/api', () => ({
   api: {
@@ -7,31 +6,27 @@ jest.mock('@controleonline/ui-common/src/api', () => ({
   },
 }));
 
-const {api} = require('@controleonline/ui-common/src/api');
 const {
-  fetchShopCollectionPage,
-  SHOP_CATEGORIES_RESOURCE,
+  getShopCategoryDescription,
+  normalizeShopCollectionResponse,
 } = require('@controleonline/ui-shop/src/react/utils/shopCatalog');
+const {describe, expect, it} = global;
 
 describe('shopCatalog public categories', () => {
-  beforeEach(() => {
-    api.fetch.mockReset();
+  it('normalizes API Platform collection payloads', () => {
+    expect(normalizeShopCollectionResponse({
+      member: [{id: 1}],
+      totalItems: 4,
+    })).toEqual({
+      items: [{id: 1}],
+      totalItems: 4,
+    });
   });
 
-  it('uses the dedicated anonymous Shop resource', async () => {
-    api.fetch.mockResolvedValue({member: [], totalItems: 0});
-
-    await fetchShopCollectionPage(SHOP_CATEGORIES_RESOURCE, {
-      company: 21,
-      context: 'products',
-    });
-
-    expect(api.fetch).toHaveBeenCalledWith('shop/categories', {
-      params: {
-        company: 21,
-        context: 'products',
-        itemsPerPage: 30,
-      },
-    });
+  it('uses only API description fields for category descriptions', () => {
+    expect(getShopCategoryDescription({description: 'Oferta do dia'})).toBe('Oferta do dia');
+    expect(getShopCategoryDescription({subtitle: 'Mais pedidos'})).toBe('Mais pedidos');
+    expect(getShopCategoryDescription({category: 'Refeicoes'})).toBe('');
+    expect(getShopCategoryDescription({productCategory: 'Combos'})).toBe('');
   });
 });
