@@ -1,12 +1,14 @@
 export const mobileStorePanelStyle = {
-  marginBottom: 14,
+  marginBottom: 10,
 };
 
 export const mobileStoreCoverStyle = ({theme}) => ({
-  height: 98,
-  borderBottomLeftRadius: 24,
-  borderBottomRightRadius: 24,
-  overflow: 'hidden',
+  minHeight: 108,
+  paddingTop: 18,
+  paddingBottom: 20,
+  paddingHorizontal: 18,
+  borderBottomLeftRadius: 26,
+  borderBottomRightRadius: 26,
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: theme.header,
@@ -23,22 +25,23 @@ export const mobileStoreCoverFallbackTextStyle = ({theme}) => ({
   fontWeight: '800',
 });
 
-export const mobileStoreCardStyle = ({hasCover, theme}) => ({
+export const mobileStoreCardStyle = ({theme}) => ({
   marginHorizontal: 14,
-  marginTop: hasCover ? -18 : 14,
-  padding: 14,
-  borderRadius: 22,
+  marginTop: -16,
+  padding: 10,
+  borderRadius: 20,
   borderWidth: 1,
   borderColor: theme.cardBorder,
   backgroundColor: theme.surface,
   flexDirection: 'row',
-  gap: 12,
+  alignItems: 'center',
+  gap: 10,
   shadowColor: '#0F172A',
-  shadowOpacity: 0.12,
-  shadowRadius: 14,
+  shadowOpacity: 0.1,
+  shadowRadius: 12,
   shadowOffset: {
     width: 0,
-    height: 6,
+    height: 5,
   },
   elevation: 4,
 });
@@ -55,15 +58,12 @@ export const mobileStoreMenuButtonStyle = ({theme}) => ({
 });
 
 export const mobileStoreLogoStyle = ({theme}) => ({
-  width: 64,
-  height: 64,
-  borderRadius: 18,
-  borderWidth: 1,
-  borderColor: theme.cardBorder,
+  width: 168,
+  height: 68,
 });
 
 export const mobileStoreLogoFallbackStyle = ({theme}) => ({
-  width: 64,
+  width: 82,
   height: 64,
   borderRadius: 18,
   backgroundColor: theme.primary,
@@ -75,6 +75,30 @@ export const mobileStoreLogoFallbackTextStyle = ({theme}) => ({
   color: theme.onPrimary,
   fontSize: 20,
   fontWeight: '800',
+});
+
+export const mobileStoreSearchStyle = ({theme}) => ({
+  flex: 1,
+  minWidth: 0,
+  minHeight: 42,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: theme.cardBorder,
+  backgroundColor: theme.background,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  paddingHorizontal: 11,
+});
+
+export const mobileStoreSearchInputStyle = ({theme}) => ({
+  flex: 1,
+  color: theme.text,
+  fontSize: 14,
+  minHeight: 38,
+  outlineColor: 'transparent',
+  outlineStyle: 'none',
+  outlineWidth: 0,
 });
 
 export const mobileStoreTextColumnStyle = {

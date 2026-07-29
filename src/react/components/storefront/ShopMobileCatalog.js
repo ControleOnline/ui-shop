@@ -4,7 +4,6 @@ import {
   Image,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -25,9 +24,6 @@ import {
   mobileCatalogCategoryStickyStyle,
   mobileCatalogControlsStyle,
   mobileCatalogRootStyle,
-  mobileCatalogSearchInputStyle,
-  mobileCatalogSearchStyle,
-  mobileCatalogSearchWrapStyle,
   mobileCatalogSectionStackStyle,
   mobileCatalogSearchResultsStyle,
   mobileCatalogSearchResultsTitleStyle,
@@ -60,7 +56,6 @@ export default function ShopMobileCatalog({
   searchValue = '',
 }) {
   const theme = pickTheme(company);
-  const [searchTerm, setSearchTerm] = useState(searchValue);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [categoryStripWidth, setCategoryStripWidth] = useState(0);
@@ -82,10 +77,6 @@ export default function ShopMobileCatalog({
     [activeCategory, activeCategoryId, visibleCategories],
   );
 
-  useEffect(() => {
-    setSearchTerm(searchValue);
-  }, [searchValue]);
-
   const handleSelectCategory = useCallback(
     category => {
       const categoryId = getCategoryId(category);
@@ -98,28 +89,6 @@ export default function ShopMobileCatalog({
     },
     [onSelectCategory],
   );
-
-  const handleSubmitSearch = useCallback(() => {
-    const normalizedTerm = String(searchTerm || '').trim();
-    if (normalizedTerm.length === 0 || normalizedTerm.length >= 3) {
-      onSearch?.(normalizedTerm);
-    }
-  }, [onSearch, searchTerm]);
-
-  useEffect(() => {
-    if (!onSearch) {
-      return undefined;
-    }
-
-    const normalizedTerm = String(searchTerm || '').trim();
-    if (normalizedTerm.length > 0 && normalizedTerm.length < 3) {
-      const timeoutId = setTimeout(() => onSearch(''), 250);
-      return () => clearTimeout(timeoutId);
-    }
-
-    const timeoutId = setTimeout(() => onSearch(normalizedTerm), 300);
-    return () => clearTimeout(timeoutId);
-  }, [onSearch, searchTerm]);
 
   const handleRootScroll = useCallback(
     event => {
@@ -214,6 +183,8 @@ export default function ShopMobileCatalog({
         categories={visibleCategories}
         company={company}
         onOpenMenu={onOpenMenu}
+        onSearch={onSearch}
+        searchValue={searchValue}
       />
 
       {mode !== 'search' && isLoadingCatalog && visibleCategories.length === 0 ? (
@@ -307,23 +278,8 @@ export default function ShopMobileCatalog({
         </View>
       ) : null}
 
-      <View style={mobileCatalogControlsStyle({theme})}>
-        <View style={mobileCatalogSearchWrapStyle}>
-          <View style={mobileCatalogSearchStyle({theme})}>
-            <Icon name="search" size={19} color={theme.muted} />
-            <TextInput
-              onChangeText={setSearchTerm}
-              onSubmitEditing={handleSubmitSearch}
-              placeholder="Buscar produtos no cardapio"
-              placeholderTextColor={theme.muted}
-              returnKeyType="search"
-              style={mobileCatalogSearchInputStyle({theme})}
-              value={searchTerm}
-            />
-          </View>
-        </View>
-
-        {mode !== 'search' && visibleCategories.length > 0 ? (
+      {mode !== 'search' && visibleCategories.length > 0 ? (
+        <View style={mobileCatalogControlsStyle({theme})}>
           <ShopMobileCategorySelector
             activeCategoryId={activeCategoryId}
             categories={visibleCategories}
@@ -333,8 +289,8 @@ export default function ShopMobileCatalog({
             onLoadMoreCategories={onLoadMoreCategories}
             onSelect={handleSelectCategory}
           />
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       <View style={mobileCatalogSectionStackStyle}>
         {mode === 'search' ? (

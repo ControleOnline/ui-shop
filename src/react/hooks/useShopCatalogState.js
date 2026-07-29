@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
@@ -44,6 +43,7 @@ export default function useShopCatalogState({
 }) {
   const shopCatalogStore = useStore('shop_catalog');
   const shopCatalogActions = shopCatalogStore.actions;
+  const shopCatalogActionsRef = useRef(shopCatalogActions);
   const {
     cart,
     defaultCompany,
@@ -76,15 +76,15 @@ export default function useShopCatalogState({
   );
 
   const mountedRef = useRef(true);
-  const hasFocusedRef = useRef(false);
   const categoryRequestTokenRef = useRef(0);
   const productRequestTokenRef = useRef(0);
   const searchRequestTokenRef = useRef(0);
   const activeCategoryRequestTokenRef = useRef(0);
   const categoriesPageRef = useRef(0);
   const productsPageRef = useRef(0);
+  const categoryLoadKeyRef = useRef('');
+  const productLoadKeyRef = useRef('');
 
-  const [refreshKey, setRefreshKey] = useState(0);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingMoreCategories, setIsLoadingMoreCategories] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -100,6 +100,8 @@ export default function useShopCatalogState({
   const [searchProductsTotalItems, setSearchProductsTotalItems] = useState(0);
   const [searchCategories, setSearchCategories] = useState([]);
   const [searchCategoriesTotalItems, setSearchCategoriesTotalItems] = useState(0);
+
+  shopCatalogActionsRef.current = shopCatalogActions;
 
   const normalizedSearchQuery = String(searchQuery || '').trim();
   const topLevelCategories = useMemo(
@@ -155,6 +157,13 @@ export default function useShopCatalogState({
       }
 
       const normalizedPage = Math.max(Number(page) || 1, 1);
+      const requestKey = `${normalizedCompanyId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
+
+      if (categoryLoadKeyRef.current === requestKey) {
+        return {items: [], totalItems: categoryTotalItems};
+      }
+
+      categoryLoadKeyRef.current = requestKey;
       const requestToken = ++categoryRequestTokenRef.current;
 
       if (replace) {
@@ -164,7 +173,7 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await shopCatalogActions.fetchCollectionPage({
+        const response = await shopCatalogActionsRef.current.fetchCollectionPage({
           resource: SHOP_CATEGORIES_RESOURCE,
           params: {
             company: normalizedCompanyId,
@@ -198,9 +207,13 @@ export default function useShopCatalogState({
           setIsLoadingCategories(false);
           setIsLoadingMoreCategories(false);
         }
+
+        if (categoryLoadKeyRef.current === requestKey) {
+          categoryLoadKeyRef.current = '';
+        }
       }
     },
-    [requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id, shopCatalogActions],
+    [categoryTotalItems, requiresCompanySelection, salesCompany?.['@id'], salesCompany?.id],
   );
 
   const loadProductsPage = useCallback(
@@ -224,6 +237,13 @@ export default function useShopCatalogState({
       }
 
       const normalizedPage = Math.max(Number(page) || 1, 1);
+      const requestKey = `${normalizedCompanyId}:${normalizedCategoryId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
+
+      if (productLoadKeyRef.current === requestKey) {
+        return {items: [], totalItems: productTotalItems};
+      }
+
+      productLoadKeyRef.current = requestKey;
       const requestToken = ++productRequestTokenRef.current;
 
       if (replace) {
@@ -233,7 +253,7 @@ export default function useShopCatalogState({
       }
 
       try {
-        const response = await shopCatalogActions.fetchCollectionPage({
+        const response = await shopCatalogActionsRef.current.fetchCollectionPage({
           resource: 'product-showcases/catalog',
           params: {
             company: normalizedCompanyId,
@@ -278,6 +298,10 @@ export default function useShopCatalogState({
           setIsLoadingProducts(false);
           setIsLoadingMoreProducts(false);
         }
+
+        if (productLoadKeyRef.current === requestKey) {
+          productLoadKeyRef.current = '';
+        }
       }
     },
     [
@@ -285,10 +309,10 @@ export default function useShopCatalogState({
       mode,
       normalizedCatalogProductTypes,
       productFileFilters,
+      productTotalItems,
       requiresCompanySelection,
       salesCompany?.['@id'],
       salesCompany?.id,
-      shopCatalogActions,
     ],
   );
 
@@ -341,19 +365,6 @@ export default function useShopCatalogState({
     products.length,
   ]);
 
-  // Refresh the shared catalog whenever the user returns to this stack.
-  useFocusEffect(
-    useCallback(() => {
-      if (!hasFocusedRef.current) {
-        hasFocusedRef.current = true;
-        return undefined;
-      }
-
-      setRefreshKey(currentValue => currentValue + 1);
-      return undefined;
-    }, []),
-  );
-
   useEffect(() => {
     mountedRef.current = true;
 
@@ -387,7 +398,6 @@ export default function useShopCatalogState({
     requiresCompanySelection,
     resetPaginationState,
     salesCompany?.id,
-    refreshKey,
   ]);
 
   // Resolve the selected storefront category from the loaded catalog.
@@ -417,7 +427,6 @@ export default function useShopCatalogState({
     activeCategoryId,
     categories,
     mode,
-    refreshKey,
     requiresCompanySelection,
     routeCategoryId,
     salesCompany?.id,
@@ -448,7 +457,7 @@ export default function useShopCatalogState({
 
     const requestToken = ++activeCategoryRequestTokenRef.current;
 
-    shopCatalogActions
+    shopCatalogActionsRef.current
       .getCategory({
         categoryId: normalizedActiveCategoryId,
         company: salesCompany.id,
@@ -485,7 +494,6 @@ export default function useShopCatalogState({
     mode,
     requiresCompanySelection,
     salesCompany?.id,
-    shopCatalogActions,
     topLevelCategories,
   ]);
 
@@ -516,7 +524,6 @@ export default function useShopCatalogState({
     activeCategoryId,
     loadProductsPage,
     mode,
-    refreshKey,
     requiresCompanySelection,
     salesCompany?.id,
   ]);
@@ -549,7 +556,7 @@ export default function useShopCatalogState({
     setIsLoadingSearch(true);
 
     Promise.all([
-      shopCatalogActions.fetchCollectionPage({
+      shopCatalogActionsRef.current.fetchCollectionPage({
         resource: 'product-showcases/catalog',
         params: {
           company: salesCompany.id,
@@ -562,7 +569,7 @@ export default function useShopCatalogState({
           ...productFileFilters,
         },
       }),
-      shopCatalogActions.fetchCollectionPage({
+      shopCatalogActionsRef.current.fetchCollectionPage({
         resource: SHOP_CATEGORIES_RESOURCE,
         params: {
           company: salesCompany.id,
@@ -603,7 +610,6 @@ export default function useShopCatalogState({
     productFileFilters,
     requiresCompanySelection,
     salesCompany?.id,
-    shopCatalogActions,
   ]);
 
   return {

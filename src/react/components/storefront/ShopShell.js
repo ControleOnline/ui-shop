@@ -194,7 +194,7 @@ export default function ShopShell({
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
   const headerCompany = salesCompany || defaultCompany || null;
-  const publicHeaderIconFile = headerCompany?.icon || null;
+  const publicHeaderIconFile = headerCompany?.logo || null;
 
   const logoUrl = publicHeaderIconFile
     ? buildFileUrl(publicHeaderIconFile, headerCompany)
@@ -313,18 +313,8 @@ export default function ShopShell({
   );
 
   const openAccountMenu = useCallback(() => {
-    if (!isLogged && (showConfiguredBottomBar || homeEntries.length <= 1)) {
-      navigateToSignIn();
-      return;
-    }
-
     setAccountOpen(true);
-  }, [
-    homeEntries.length,
-    isLogged,
-    navigateToSignIn,
-    showConfiguredBottomBar,
-  ]);
+  }, []);
 
   return (
     <View style={inlineStyle_118_10({
@@ -351,7 +341,7 @@ export default function ShopShell({
                       style={inlineStyle_146_20({
                         isMobile: isMobile,
                       })}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   ) : (
                     <View
@@ -370,57 +360,71 @@ export default function ShopShell({
                   )}
                 </TouchableOpacity>
 
-                <View style={inlineStyle_175_20}>
-                  <View
-                    style={inlineStyle_177_18}>
-                    <Text
-                      numberOfLines={1}
-                      style={inlineStyle_180_20({
-                        isMobile: isMobile,
-                      })}>
-                      {purchaseCompanyLabel}
-                    </Text>
+                {!logoUrl ? (
+                  <View style={inlineStyle_175_20}>
+                    <View
+                      style={inlineStyle_177_18}>
+                      <Text
+                        numberOfLines={1}
+                        style={inlineStyle_180_20({
+                          isMobile: isMobile,
+                        })}>
+                        {purchaseCompanyLabel}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                ) : null}
               </View>
 
-              <View style={inlineStyle_224_18}>
-                {showHomeAction && (
-                  <TouchableOpacity
-                    accessibilityLabel="Voltar ao inicio do shop"
-                    onPress={handleNavigateHome}
-                    style={inlineStyle_228_18}>
-                    <Icon name="home" size={20} color="#fff" />
-                  </TouchableOpacity>
-                )}
-                {!isMobile && !showHomeAction && (
-                  <TouchableOpacity
-                    onPress={() => setAccountOpen(true)}
-                    style={inlineStyle_228_18}>
-                    <Icon name="notifications" size={20} color="#fff" />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  accessibilityLabel="Abrir menu do shop"
-                  onPress={openAccountMenu}
-                  style={inlineStyle_241_16}>
-                  <Icon name={menuIconName} size={22} color="#fff" />
-                </TouchableOpacity>
-              </View>
             </View>
 
             {showSearch && (
               <View
-                style={inlineStyle_255_12}>
-                <Icon name="search" size={20} color="rgba(255,255,255,0.85)" />
-                <TextInput
-                  value={searchTerm}
-                  onChangeText={setSearchTerm}
-                  onSubmitEditing={submitSearch}
-                  placeholder={searchPlaceholder}
-                  placeholderTextColor="rgba(255,255,255,0.75)"
-                  style={inlineStyle_273_14}
-                />
+                style={inlineStyle_255_12({
+                  isMobile,
+                  theme,
+                })}>
+                <View style={inlineStyle_282_14({isMobile, theme})}>
+                  <Icon
+                    name="search"
+                    size={20}
+                    color={isMobile ? theme.muted : 'rgba(255,255,255,0.85)'}
+                  />
+                  <TextInput
+                    value={searchTerm}
+                    onChangeText={setSearchTerm}
+                    onSubmitEditing={submitSearch}
+                    placeholder={searchPlaceholder}
+                    placeholderTextColor={
+                      isMobile ? theme.muted : 'rgba(255,255,255,0.75)'
+                    }
+                    style={inlineStyle_273_14({isMobile, theme})}
+                  />
+                </View>
+                <View style={inlineStyle_224_18}>
+                  {showHomeAction && (
+                    <TouchableOpacity
+                      accessibilityLabel="Voltar ao inicio do shop"
+                      onPress={handleNavigateHome}
+                      style={inlineStyle_228_18({isMobile, theme})}>
+                      <Icon
+                        name="home"
+                        size={20}
+                        color={isMobile ? theme.primary : '#fff'}
+                      />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    accessibilityLabel="Abrir menu do shop"
+                    onPress={openAccountMenu}
+                    style={inlineStyle_241_16({isMobile, theme})}>
+                    <Icon
+                      name={menuIconName}
+                      size={22}
+                      color={isMobile ? theme.primary : '#fff'}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
 

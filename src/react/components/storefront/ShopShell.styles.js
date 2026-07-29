@@ -22,15 +22,21 @@ export const inlineStyle_121_10 = (
   },
 ) => ({
   paddingHorizontal: shellPadding,
-  paddingTop: isMobile ? 12 : 12,
-  paddingBottom: isMobile ? 14 : 12,
-  gap: isMobile ? 14 : 10,
+  paddingTop: isMobile ? 10 : 10,
+  paddingBottom: isMobile ? 10 : 12,
+  gap: 8,
+  ...(isMobile
+    ? {}
+    : {
+        flexDirection: 'row',
+        alignItems: 'center',
+      }),
 });
 
 export const inlineStyle_128_12 = {
   flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'space-between',
+  justifyContent: 'flex-start',
   gap: 12,
 };
 
@@ -38,7 +44,6 @@ export const inlineStyle_135_14 = {
   flexDirection: 'row',
   alignItems: 'center',
   gap: 10,
-  flex: 1,
 };
 
 export const inlineStyle_146_20 = (
@@ -46,9 +51,9 @@ export const inlineStyle_146_20 = (
     isMobile: isMobile,
   },
 ) => ({
-  width: isMobile ? 56 : 58,
-  height: isMobile ? 56 : 54,
-  borderRadius: 10,
+  width: isMobile ? 118 : 142,
+  height: isMobile ? 54 : 56,
+  borderRadius: 0,
 });
 
 export const inlineStyle_155_20 = (
@@ -117,54 +122,70 @@ export const inlineStyle_224_18 = {
   gap: 8,
 };
 
-export const inlineStyle_228_18 = {
+export const inlineStyle_228_18 = ({isMobile, theme} = {}) => ({
   width: 36,
   height: 36,
   borderRadius: 18,
-  backgroundColor: 'rgba(255,255,255,0.2)',
+  backgroundColor:
+    !isMobile || !theme ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
+  borderWidth: isMobile && theme ? 1 : 0,
+  borderColor: isMobile && theme ? `${theme.primary}22` : 'transparent',
   alignItems: 'center',
   justifyContent: 'center',
-};
+});
 
-export const inlineStyle_241_16 = {
+export const inlineStyle_241_16 = ({isMobile, theme} = {}) => ({
   width: 36,
   height: 36,
   borderRadius: 18,
-  backgroundColor: 'rgba(255,255,255,0.2)',
+  backgroundColor:
+    !isMobile || !theme ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
+  borderWidth: isMobile && theme ? 1 : 0,
+  borderColor: isMobile && theme ? `${theme.primary}22` : 'transparent',
   alignItems: 'center',
   justifyContent: 'center',
-};
+});
 
-export const inlineStyle_255_12 = {
+export const inlineStyle_255_12 = ({isMobile, theme}) => ({
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: 'rgba(255,255,255,0.18)',
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.3)',
-  paddingHorizontal: 14,
-  minHeight: 40,
-  gap: 8,
-};
+  flex: isMobile ? undefined : 1,
+  backgroundColor: isMobile ? theme.surface : 'transparent',
+  borderRadius: isMobile ? 18 : 0,
+  borderWidth: isMobile ? 1 : 0,
+  borderColor: isMobile ? theme.cardBorder : 'transparent',
+  paddingHorizontal: isMobile ? 10 : 0,
+  paddingVertical: isMobile ? 8 : 0,
+  minHeight: 52,
+  gap: 10,
+  zIndex: 30,
+  position: isMobile ? 'sticky' : 'relative',
+  top: 0,
+});
 
-export const inlineStyle_273_14 = {
+export const inlineStyle_273_14 = ({isMobile, theme}) => ({
   flex: 1,
-  color: '#fff',
-  fontSize: 13,
+  color: isMobile ? theme.text : '#fff',
+  fontSize: 14,
   minHeight: 36,
   outlineColor: 'transparent',
   outlineStyle: 'none',
   outlineWidth: 0,
-};
+});
 
-export const inlineStyle_282_14 = {
-  width: 30,
-  height: 30,
-  borderRadius: 15,
-  backgroundColor: 'rgba(255,255,255,0.24)',
+export const inlineStyle_282_14 = ({isMobile, theme}) => ({
+  flex: 1,
+  minWidth: 0,
+  minHeight: 42,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: isMobile ? theme.cardBorder : 'rgba(255,255,255,0.3)',
+  backgroundColor: isMobile ? theme.background : 'rgba(255,255,255,0.18)',
+  flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'center',
-};
+  gap: 9,
+  paddingHorizontal: 12,
+});
 
 export const inlineStyle_303_10 = {
   flex: 1,

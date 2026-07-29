@@ -30,7 +30,6 @@ import {
   useRoute,
 } from '@react-navigation/native';
 
-import {useStore} from '@store';
 import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
 import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
@@ -48,7 +47,6 @@ import {
 import {
   buildFileUrl,
   formatMoney,
-  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -87,24 +85,12 @@ import {
   productPageMobileFooterStyle,
 } from './ProductPage.styles';
 
-const extractItems = response => {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.member)) return response.member;
-  if (Array.isArray(response?.['hydra:member']))
-    return response['hydra:member'];
-  return [];
-};
-
-const silentStoreMeta = {__storeMeta: {skipSystemError: true}};
-
 export default function ProductPage() {
   const navigation = useNavigation();
   const route = useRoute();
   const {width} = useWindowDimensions();
   const isMobile = width < 900;
   const productId = String(route.params?.id || '');
-  const productsStore = useStore('products');
-  const productGroupStore = useStore('product_group');
   const [product, setProduct] = useState({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
@@ -175,52 +161,10 @@ export default function ProductPage() {
 
           setProduct(nextProduct);
           setSelectedImageIndex(0);
-          productsStore.actions.setItem(nextProduct);
 
-          const nextProductId = normalizeId(
-            nextProduct?.id || nextProduct?.['@id'],
-          );
-          const providerId = salesCompany?.id || '';
           const inlineRequiresCustomization =
             hasShopProductCustomizationGroups(nextProduct);
-
-          if (!nextProductId || nextProduct?.customizationGroupsLoaded === true) {
-            setHasCustomizationGroups(inlineRequiresCustomization);
-            return;
-          }
-
-          const baseFilter = {
-            product: nextProductId,
-            itemsPerPage: 1,
-          };
-
-          const groupFilters = providerId
-            ? {...baseFilter, company: providerId, ...silentStoreMeta}
-            : {...baseFilter, ...silentStoreMeta};
-
-          try {
-            const response = await productGroupStore.actions.getItems(groupFilters);
-            const groups = extractItems(response);
-
-            if (isMounted) {
-              setHasCustomizationGroups(
-                inlineRequiresCustomization || groups.length > 0,
-              );
-            }
-          } catch {
-            const catalogProduct = await fetchShopCatalogProduct({
-              companyId: salesCompany.id,
-              productId: nextProductId,
-              productTypes: catalogProductTypes,
-            }).catch(() => null);
-
-            if (isMounted) {
-              setHasCustomizationGroups(
-                inlineRequiresCustomization ||
-                  hasShopProductCustomizationGroups(catalogProduct),
-              );
-            }
-          }
+          setHasCustomizationGroups(inlineRequiresCustomization);
         } catch {
           if (isMounted) {
             setProduct({});
@@ -240,9 +184,7 @@ export default function ProductPage() {
       };
     }, [
       catalogProductTypesKey,
-      productGroupStore.actions,
       productId,
-      productsStore.actions,
       requiresCompanySelection,
       salesCompany?.id,
     ]),
