@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Image,
   Modal,
@@ -329,7 +329,7 @@ export default function CheckoutPage() {
     defaultCompany,
     refreshCart,
     salesCompany,
-  } = useShopCart({autoRefresh: true});
+  } = useShopCart({autoRefresh: false});
   const {
     chargeOnDeliveryEnabled: shopChargeOnDeliveryEnabled,
     companyConfigs: settingsCompanyConfigs,
@@ -355,7 +355,6 @@ export default function CheckoutPage() {
   const ordersActions = ordersStore.actions;
 
   const [paymentTypes, setPaymentTypes] = useState([]);
-  const [deliveryPaymentTypes, setDeliveryPaymentTypes] = useState([]);
   const [companyDeviceConfigs, setCompanyDeviceConfigs] = useState([]);
   const [deliveryAddresses, setDeliveryAddresses] = useState([]);
   const [cards, setCards] = useState([]);
@@ -387,6 +386,7 @@ export default function CheckoutPage() {
   const [selectedDeliveryQuote, setSelectedDeliveryQuote] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const loadDataInFlightRef = useRef(false);
 
   const sellerCompany = salesCompany || defaultCompany || null;
   const sellerCompanyId = sellerCompany?.id || null;
@@ -505,6 +505,24 @@ export default function CheckoutPage() {
       ),
     [asaasPixConfigured, paymentTypes],
   );
+  const deliveryPaymentTypes = useMemo(() => {
+    if (
+      !sellerCompanyId ||
+      !chargeOnDeliveryEnabled ||
+      !sessionChecked ||
+      !isLogged
+    ) {
+      return [];
+    }
+
+    return paymentTypes;
+  }, [
+    chargeOnDeliveryEnabled,
+    isLogged,
+    paymentTypes,
+    sellerCompanyId,
+    sessionChecked,
+  ]);
   const paymentMethodChips = useMemo(() => {
     const chips = [];
 
@@ -877,6 +895,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (loadDataInFlightRef.current) {
+      return;
+    }
+
+    loadDataInFlightRef.current = true;
+
     setIsLoading(true);
     setAddressOptionsLoading(true);
     setError('');
@@ -885,7 +909,7 @@ export default function CheckoutPage() {
     try {
       const refreshedCart = await refreshCart();
       const resolvedCart = refreshedCart?.id ? refreshedCart : cart;
-      const clientIri = toEntityIri(currentCompany, 'people');
+      const clientIri = currentCompany?.id ? `/people/${currentCompany.id}` : '';
 
       const [
         paymentTypeResponse,
@@ -962,13 +986,14 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
       setAddressOptionsLoading(false);
+      loadDataInFlightRef.current = false;
     }
   }, [
     addressActions,
     asaasConfigured,
     cardActions,
-    cart,
-    currentCompany,
+    cart?.id,
+    currentCompany?.id,
     isLogged,
     invoiceActions,
     loadDeliveryQuotes,
@@ -1049,59 +1074,6 @@ export default function CheckoutPage() {
       sessionChecked,
     ]),
   );
-
-  useEffect(() => {
-    if (
-      !sellerCompanyId ||
-      !chargeOnDeliveryEnabled ||
-      !sessionChecked ||
-      !isLogged
-    ) {
-      setDeliveryPaymentTypes([]);
-      return undefined;
-    }
-
-    let isMounted = true;
-
-    walletPaymentTypeActions
-      .getItems({
-        people: `/people/${sellerCompanyId}`,
-        itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
-      })
-      .then(response => {
-        if (isMounted) {
-          const allPaymentTypes = extractItems(response);
-          const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
-            effectiveCompanyConfigs,
-            allPaymentTypes,
-          );
-
-          setDeliveryPaymentTypes(
-            filterWalletPaymentTypesByAllowedIds(
-              allPaymentTypes,
-              allowedPaymentTypeIds,
-            ),
-          );
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setDeliveryPaymentTypes([]);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    chargeOnDeliveryEnabled,
-    effectiveCompanyConfigs,
-    isLogged,
-    remotePaymentDevices,
-    sellerCompanyId,
-    sessionChecked,
-    walletPaymentTypeActions,
-  ]);
 
   const ensureInvoiceForPaymentType = useCallback(
     async (
