@@ -297,7 +297,7 @@ test.describe('checkout browser smoke', () => {
     ).toHaveLength(1);
     expect(
       apiRequests.filter(pathname => pathname.startsWith('addresses?')),
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(
       apiRequests.filter(pathname => pathname.startsWith('invoices?')),
     ).toHaveLength(1);

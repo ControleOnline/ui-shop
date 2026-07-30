@@ -338,7 +338,7 @@ export default function CheckoutPage() {
   } = useShopSettings();
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
-  const walletPaymentTypeActions = walletPaymentTypeStore.actions;
+  const walletPaymentTypes = walletPaymentTypeStore.getters.items || [];
   const cardStore = useStore('card');
   const cardActions = cardStore.actions;
   const invoiceStore = useStore('invoice');
@@ -354,7 +354,6 @@ export default function CheckoutPage() {
   const ordersStore = useStore('orders');
   const ordersActions = ordersStore.actions;
 
-  const [paymentTypes, setPaymentTypes] = useState([]);
   const [companyDeviceConfigs, setCompanyDeviceConfigs] = useState([]);
   const [deliveryAddresses, setDeliveryAddresses] = useState([]);
   const [cards, setCards] = useState([]);
@@ -416,6 +415,18 @@ export default function CheckoutPage() {
   const asaasPixConfigured = Boolean(
     effectiveCompanyConfigs?.['asaas-key'] &&
       effectiveCompanyConfigs?.['asaas-receiver-pix-key'],
+  );
+  const allowedPaymentTypeIds = useMemo(
+    () => resolveDevicePaymentTypeIds(effectiveCompanyConfigs, walletPaymentTypes),
+    [effectiveCompanyConfigs, walletPaymentTypes],
+  );
+  const paymentTypes = useMemo(
+    () =>
+      filterWalletPaymentTypesByAllowedIds(
+        walletPaymentTypes,
+        allowedPaymentTypeIds,
+      ),
+    [allowedPaymentTypeIds, walletPaymentTypes],
   );
 
   const hasCart = Boolean(cart?.id);
@@ -912,18 +923,11 @@ export default function CheckoutPage() {
       const clientIri = currentCompany?.id ? `/people/${currentCompany.id}` : '';
 
       const [
-        paymentTypeResponse,
         cardsResponse,
         statusResponse,
         invoicesResponse,
         addressesResponse,
       ] = await Promise.all([
-        sellerCompanyId
-          ? walletPaymentTypeActions.getItems({
-              people: `/people/${sellerCompanyId}`,
-              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
-            })
-          : Promise.resolve([]),
         asaasConfigured
           ? cardActions.getItems({
               itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
@@ -948,23 +952,12 @@ export default function CheckoutPage() {
           : Promise.resolve([]),
       ]);
 
-      const fetchedPaymentTypes = extractItems(paymentTypeResponse);
       const fetchedCards = extractItems(cardsResponse);
       const fetchedStatuses = extractItems(statusResponse);
       const fetchedInvoices = sortInvoicesByDateDesc(
         extractItems(invoicesResponse),
       );
       const fetchedAddresses = extractItems(addressesResponse);
-      const allowedPaymentTypeIds = resolveDevicePaymentTypeIds(
-        effectiveCompanyConfigs,
-        fetchedPaymentTypes,
-      );
-      const filteredPaymentTypes = filterWalletPaymentTypesByAllowedIds(
-        fetchedPaymentTypes,
-        allowedPaymentTypeIds,
-      );
-
-      setPaymentTypes(filteredPaymentTypes);
       setCards(fetchedCards);
       setInvoices(fetchedInvoices);
       setDeliveryAddresses(fetchedAddresses);
@@ -1001,7 +994,6 @@ export default function CheckoutPage() {
     sellerCompanyId,
     sessionChecked,
     statusActions,
-    walletPaymentTypeActions,
   ]);
   useFocusEffect(
     useCallback(() => {
