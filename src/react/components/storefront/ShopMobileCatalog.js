@@ -41,6 +41,7 @@ export default function ShopMobileCatalog({
   hasMoreCategories = false,
   hasMoreProducts = false,
   isLoadingCatalog = false,
+  isAllProductsCatalog = false,
   isLoadingMoreCategories = false,
   isLoadingMoreProducts = false,
   mode = 'default',
@@ -336,6 +337,7 @@ export default function ShopMobileCatalog({
             company={company}
             defaultCompany={defaultCompany}
             isLoading={isLoadingCatalog}
+            isAllProducts={isAllProductsCatalog}
             isLoadingMore={isLoadingMoreProducts}
             products={products}
             refreshCart={refreshCart}

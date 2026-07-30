@@ -68,7 +68,14 @@ const products = [
   },
 ];
 
-const setupShopCatalogApi = async page => {
+const setupShopCatalogApi = async (page, options = {}) => {
+  const categoryRows = Array.isArray(options.categories)
+    ? options.categories
+    : categories;
+  const productRows = Array.isArray(options.products)
+    ? options.products
+    : products;
+  const showcase = options.showcase || null;
   const pageErrors = [];
   const apiRequests = [];
   page.on('pageerror', error => {
@@ -145,7 +152,10 @@ const setupShopCatalogApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection(categories)),
+        body: JSON.stringify({
+          ...collection(categoryRows),
+          ...(showcase ? {showcase} : {}),
+        }),
       });
     }
 
@@ -161,7 +171,10 @@ const setupShopCatalogApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection(products)),
+        body: JSON.stringify({
+          ...collection(productRows),
+          ...(showcase ? {showcase} : {}),
+        }),
       });
     }
 
@@ -270,6 +283,28 @@ test.describe('shop catalog browser smoke', () => {
     await expect(page).toHaveURL(/\/shop/);
     await expect(page.getByText('Utilidades', {exact: true}).first()).toBeVisible();
     await expect(page.getByText('Tesoura Aviação Eda Corte Reto')).toBeVisible();
+    expect(pageErrors.map(error => error.message)).toEqual([]);
+  });
+
+  test('loads ecommerce products without requiring an active category', async ({
+    page,
+  }) => {
+    const {apiRequests, pageErrors} = await setupShopCatalogApi(page, {
+      categories: [],
+      showcase: {
+        id: 1,
+        settings: {
+          shop_type: 'ecommerce',
+        },
+      },
+    });
+
+    await page.goto('/shop?store=categories&q=');
+
+    await expect(page.getByText('Tesoura Aviação Eda Corte Reto')).toBeVisible();
+    await expect(page.getByText('Nenhum produto nesta categoria')).toHaveCount(0);
+    expect(apiRequests.filter(pathname => pathname === 'product-showcases/catalog').length)
+      .toBeGreaterThan(0);
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });
 });

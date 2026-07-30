@@ -4,9 +4,7 @@ import {useStore} from '@store';
 import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/shop';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
-import {
-  normalizeShopShowcaseType,
-} from '@controleonline/ui-common/src/react/utils/shopConfig';
+import {normalizeShopShowcaseType} from '@controleonline/ui-common/src/react/utils/shopConfig';
 import {
   getTopLevelShopCategories,
   resolveShopCatalogCategoryId,
@@ -111,6 +109,9 @@ export default function useShopCatalogState({
   const shopShowcaseType = normalizeShopShowcaseType(
     catalogShowcase?.settings?.shop_type,
   );
+  const canListProductsWithoutCategory = mode === 'default';
+  const isAllProductsCatalog =
+    mode === 'default' && canListProductsWithoutCategory && !activeCategoryId;
 
   shopCatalogActionsRef.current = shopCatalogActions;
 
@@ -215,6 +216,9 @@ export default function useShopCatalogState({
 
         const nextCategories = normalizeCollection(response.items);
         categoriesPageRef.current = normalizedPage;
+        if (response.showcase) {
+          setCatalogShowcase(response.showcase);
+        }
         setCategoryTotalItems(normalizeCollectionCount(response.totalItems));
         setCategories(current =>
           replace ? nextCategories : mergeUniqueById(current, nextCategories),
@@ -254,7 +258,7 @@ export default function useShopCatalogState({
         !isFocused ||
         !normalizedCompanyId ||
         requiresCompanySelection ||
-        !normalizedCategoryId
+        (!canListProductsWithoutCategory && !normalizedCategoryId)
       ) {
         if (replace && mountedRef.current) {
           setProducts([]);
@@ -264,7 +268,7 @@ export default function useShopCatalogState({
       }
 
       const normalizedPage = Math.max(Number(page) || 1, 1);
-      const requestKey = `${normalizedCompanyId}:${normalizedCategoryId}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
+      const requestKey = `${normalizedCompanyId}:${normalizedCategoryId || 'all'}:${normalizedPage}:${replace ? 'replace' : 'append'}`;
 
       if (productLoadKeyRef.current === requestKey) {
         return {items: [], totalItems: productTotalItemsRef.current};
@@ -287,7 +291,7 @@ export default function useShopCatalogState({
             integration_key: 'shop',
             active: 1,
             type: normalizedCatalogProductTypes,
-            category: `/categories/${normalizedCategoryId}`,
+            ...(normalizedCategoryId ? {category: `/categories/${normalizedCategoryId}`} : {}),
             'order[product]': 'ASC',
             page: normalizedPage,
             ...productFileFilters,
@@ -334,6 +338,7 @@ export default function useShopCatalogState({
     },
     [
       activeCategoryId,
+      canListProductsWithoutCategory,
       isFocused,
       mode,
       normalizedCatalogProductTypes,
@@ -372,7 +377,7 @@ export default function useShopCatalogState({
     if (
       isLoadingProducts ||
       isLoadingMoreProducts ||
-      !normalizedCategoryId ||
+      (!canListProductsWithoutCategory && !normalizedCategoryId) ||
       !productTotalItems ||
       products.length >= productTotalItems
     ) {
@@ -386,6 +391,7 @@ export default function useShopCatalogState({
     });
   }, [
     activeCategoryId,
+    canListProductsWithoutCategory,
     isLoadingMoreProducts,
     isLoadingProducts,
     loadProductsPage,
@@ -473,6 +479,10 @@ export default function useShopCatalogState({
       return;
     }
 
+    if (canListProductsWithoutCategory) {
+      return;
+    }
+
     const nextCategoryId = resolveShopCatalogCategoryId({
       categories,
       routeCategoryId: mode === 'category' ? routeCategoryId : '',
@@ -484,6 +494,7 @@ export default function useShopCatalogState({
     }
   }, [
     activeCategoryId,
+    canListProductsWithoutCategory,
     categories,
     isFocused,
     mode,
@@ -576,7 +587,7 @@ export default function useShopCatalogState({
       return;
     }
 
-    if (!salesCompany?.id || requiresCompanySelection || !activeCategoryId) {
+    if (!salesCompany?.id || requiresCompanySelection || (!canListProductsWithoutCategory && !activeCategoryId)) {
       setProducts([]);
       setProductTotalItems(0);
       setIsLoadingProducts(false);
@@ -591,6 +602,7 @@ export default function useShopCatalogState({
     });
   }, [
     activeCategoryId,
+    canListProductsWithoutCategory,
     isFocused,
     loadProductsPage,
     mode,
@@ -702,6 +714,7 @@ export default function useShopCatalogState({
       Boolean(productTotalItems) && products.length < productTotalItems,
     isLoadingCatalog:
       isLoadingCategories || isLoadingProducts || isLoadingSearch,
+    isAllProductsCatalog,
     isLoadingMoreCategories,
     isLoadingMoreProducts,
     isLoadingSalesCompanies,

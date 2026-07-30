@@ -60,6 +60,7 @@ export default function ShopCatalogPage({
     hasMoreCategories,
     hasMoreProducts,
     isLoadingCatalog,
+    isAllProductsCatalog,
     isLoadingMoreCategories,
     isLoadingMoreProducts,
     isLoadingSalesCompanies,
@@ -263,6 +264,7 @@ export default function ShopCatalogPage({
             hasMoreCategories={hasMoreCategories}
             hasMoreProducts={hasMoreProducts}
             isLoadingCatalog={isLoadingCatalog}
+            isAllProductsCatalog={isAllProductsCatalog}
             isLoadingMoreCategories={isLoadingMoreCategories}
             isLoadingMoreProducts={isLoadingMoreProducts}
             mode={mode}
@@ -317,6 +319,7 @@ export default function ShopCatalogPage({
                     categoriesCount={mode === 'search' ? searchCategoriesTotalItems : categoryTotalItems}
                     category={activeCategory}
                     company={catalogCompany}
+                    isAllProducts={isAllProductsCatalog}
                     mode={mode}
                     productsCount={mode === 'search' ? searchProductsTotalItems : productTotalItems}
                     query={normalizedSearchQuery}
@@ -345,11 +348,17 @@ export default function ShopCatalogPage({
                                 'searchFoodOrCategoriesHint',
                                 'Use a busca para encontrar pratos, bebidas e categorias.',
                               )
-                        : t(
-                            'message',
-                            'chooseAnotherCategory',
-                            'Escolha outra categoria ou tente novamente em instantes.',
-                          )
+                        : isAllProductsCatalog
+                          ? t(
+                              'message',
+                              'tryAgainProducts',
+                              'Tente novamente em instantes.',
+                            )
+                          : t(
+                              'message',
+                              'chooseAnotherCategory',
+                              'Escolha outra categoria ou tente novamente em instantes.',
+                            )
                     }
                     emptyTitle={
                       mode === 'search'
@@ -366,11 +375,13 @@ export default function ShopCatalogPage({
                                 'searchMenuItems',
                                 'Busque itens do cardapio',
                               )
-                        : t(
-                            'title',
-                            'emptyCategoryProducts',
-                            'Nenhum produto nesta categoria',
-                          )
+                        : isAllProductsCatalog
+                          ? t('title', 'emptyProducts', 'Nenhum produto encontrado')
+                          : t(
+                              'title',
+                              'emptyCategoryProducts',
+                              'Nenhum produto nesta categoria',
+                            )
                     }
                     isLoading={isLoadingCatalog}
                     isLoadingMore={isLoadingMoreProducts}
@@ -379,7 +390,13 @@ export default function ShopCatalogPage({
                     totalProductsCount={
                       mode === 'search' ? searchProductsTotalItems : productTotalItems
                     }
-                    title={mode === 'search' ? 'Produtos encontrados' : activeCategory?.name || 'Produtos'}
+                    title={
+                      mode === 'search'
+                        ? 'Produtos encontrados'
+                        : isAllProductsCatalog
+                          ? t('title', 'allProducts', 'Produtos')
+                          : activeCategory?.name || 'Produtos'
+                    }
                   />
 
                   {mode === 'search' && searchCategories.length > 0 ? (
