@@ -53,6 +53,7 @@ export default function ShopMobileCatalog({
   products = [],
   refreshCart = null,
   searchProducts = [],
+  searchPlaceholder = 'Busque pratos, bebidas ou categorias',
   searchValue = '',
 }) {
   const theme = pickTheme(company);
@@ -184,6 +185,7 @@ export default function ShopMobileCatalog({
         company={company}
         onOpenMenu={onOpenMenu}
         onSearch={onSearch}
+        searchPlaceholder={searchPlaceholder}
         searchValue={searchValue}
       />
 

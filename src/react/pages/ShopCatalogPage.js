@@ -19,7 +19,10 @@ import ShopPurchasesLayout from '@controleonline/ui-shop/src/react/components/st
 import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
 import useShopCatalogState from '@controleonline/ui-shop/src/react/hooks/useShopCatalogState';
-import {SHOP_HOME_OPTION_SALES} from '@controleonline/ui-common/src/react/utils/shopConfig';
+import {
+  SHOP_HOME_OPTION_SALES,
+  SHOP_SHOWCASE_TYPE_ECOMMERCE,
+} from '@controleonline/ui-common/src/react/utils/shopConfig';
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 
 import {
@@ -29,6 +32,9 @@ import {
   catalogPageSearchCategoryButtonStyle,
   catalogPageSearchCategoryTextStyle,
 } from '@controleonline/ui-shop/src/react/pages/ShopCatalogPage.styles';
+
+const t = (type, key, fallback) =>
+  global.t?.t?.('shop', type, key) || fallback;
 
 // Share the same `Compras` shell across the default, category and search routes.
 export default function ShopCatalogPage({
@@ -70,6 +76,7 @@ export default function ShopCatalogPage({
     searchProducts,
     selectSalesCompany,
     setActiveCategoryId,
+    shopShowcaseType,
     loadMoreCategories,
     loadMoreProducts,
     theme,
@@ -100,6 +107,14 @@ export default function ShopCatalogPage({
   }, [company]);
   const catalogTheme = useMemo(() => pickTheme(catalogCompany), [catalogCompany]);
   const showBottomCart = !requiresCompanySelection && !showCartAside;
+  const isEcommerce = shopShowcaseType === SHOP_SHOWCASE_TYPE_ECOMMERCE;
+  const searchPlaceholder = isEcommerce
+    ? t('placeholder', 'searchProductsOrCategories', 'Busque produtos ou categorias')
+    : t(
+        'placeholder',
+        'searchFoodOrCategories',
+        'Busque pratos, bebidas ou categorias',
+      );
 
   // Compact the desktop sidebar on narrower wide screens while keeping the toggle under user control.
   useEffect(() => {
@@ -222,6 +237,7 @@ export default function ShopCatalogPage({
       activeHomeEntry={SHOP_HOME_OPTION_SALES}
       hideHeader={showMobileCatalog}
       onSearch={handleSearch}
+      searchPlaceholder={searchPlaceholder}
       searchValue={normalizedSearchQuery}
       showBottomCart={showBottomCart}
       showSearch={!showMobileCatalog}
@@ -252,6 +268,7 @@ export default function ShopCatalogPage({
             mode={mode}
             onOpenMenu={openAccountMenu}
             onSearch={handleSearch}
+            searchPlaceholder={searchPlaceholder}
             onLoadMoreCategories={loadMoreCategories}
             onLoadMoreProducts={loadMoreProducts}
             onSelectCategory={handleSelectCategory}
@@ -312,16 +329,48 @@ export default function ShopCatalogPage({
                     emptyDescription={
                       mode === 'search'
                         ? normalizedSearchQuery
-                          ? 'Tente outro termo ou abra uma categoria pelo menu.'
-                          : 'Use a busca para encontrar pratos, bebidas e categorias.'
-                        : 'Escolha outra categoria ou tente novamente em instantes.'
+                          ? t(
+                              'message',
+                              'tryAnotherSearchOrCategory',
+                              'Tente outro termo ou abra uma categoria pelo menu.',
+                            )
+                          : isEcommerce
+                            ? t(
+                                'message',
+                                'searchProductsOrCategoriesHint',
+                                'Use a busca para encontrar produtos e categorias.',
+                              )
+                            : t(
+                                'message',
+                                'searchFoodOrCategoriesHint',
+                                'Use a busca para encontrar pratos, bebidas e categorias.',
+                              )
+                        : t(
+                            'message',
+                            'chooseAnotherCategory',
+                            'Escolha outra categoria ou tente novamente em instantes.',
+                          )
                     }
                     emptyTitle={
                       mode === 'search'
                         ? normalizedSearchQuery
-                          ? 'Nenhum produto encontrado'
-                          : 'Busque itens do cardapio'
-                        : 'Nenhum produto nesta categoria'
+                          ? t(
+                              'title',
+                              'emptyProductSearch',
+                              'Nenhum produto encontrado',
+                            )
+                          : isEcommerce
+                            ? t('title', 'searchProducts', 'Busque produtos')
+                            : t(
+                                'title',
+                                'searchMenuItems',
+                                'Busque itens do cardapio',
+                              )
+                        : t(
+                            'title',
+                            'emptyCategoryProducts',
+                            'Nenhum produto nesta categoria',
+                          )
                     }
                     isLoading={isLoadingCatalog}
                     isLoadingMore={isLoadingMoreProducts}

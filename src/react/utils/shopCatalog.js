@@ -18,6 +18,8 @@ export const normalizeShopCollectionResponse = payload => {
 
   return {
     items,
+    showcase: payload?.showcase || null,
+    source: payload?.source || '',
     totalItems: Number(
       payload?.totalItems || payload?.['hydra:totalItems'] || items.length || 0,
     ),

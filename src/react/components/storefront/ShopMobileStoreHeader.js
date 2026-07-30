@@ -23,6 +23,7 @@ export default function ShopMobileStoreHeader({
   company = null,
   onOpenMenu = null,
   onSearch = null,
+  searchPlaceholder = 'Buscar produtos',
   searchValue = '',
 }) {
   const theme = pickTheme(company);
@@ -61,7 +62,7 @@ export default function ShopMobileStoreHeader({
           <TextInput
             onChangeText={setSearchTerm}
             onSubmitEditing={submitSearch}
-            placeholder="Buscar produtos"
+            placeholder={searchPlaceholder}
             placeholderTextColor={theme.muted}
             returnKeyType="search"
             style={mobileStoreSearchInputStyle({theme})}

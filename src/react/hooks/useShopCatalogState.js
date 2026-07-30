@@ -5,6 +5,9 @@ import {pickTheme, normalizeId} from '@controleonline/ui-shop/src/react/utils/sh
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import {
+  normalizeShopShowcaseType,
+} from '@controleonline/ui-common/src/react/utils/shopConfig';
+import {
   getTopLevelShopCategories,
   resolveShopCatalogCategoryId,
   rememberShopCatalogProduct,
@@ -104,6 +107,10 @@ export default function useShopCatalogState({
   const [searchProductsTotalItems, setSearchProductsTotalItems] = useState(0);
   const [searchCategories, setSearchCategories] = useState([]);
   const [searchCategoriesTotalItems, setSearchCategoriesTotalItems] = useState(0);
+  const [catalogShowcase, setCatalogShowcase] = useState(null);
+  const shopShowcaseType = normalizeShopShowcaseType(
+    catalogShowcase?.settings?.shop_type,
+  );
 
   shopCatalogActionsRef.current = shopCatalogActions;
 
@@ -154,6 +161,7 @@ export default function useShopCatalogState({
     setSearchCategories([]);
     setSearchCategoriesTotalItems(0);
     setActiveCategoryDetails(null);
+    setCatalogShowcase(null);
   }, []);
 
   const loadCategoriesPage = useCallback(
@@ -299,6 +307,7 @@ export default function useShopCatalogState({
         });
 
         productsPageRef.current = normalizedPage;
+        setCatalogShowcase(response.showcase || null);
         setProductTotalItems(normalizeCollectionCount(response.totalItems));
         setProducts(current =>
           replace ? nextProducts : mergeUniqueById(current, nextProducts),
@@ -651,6 +660,7 @@ export default function useShopCatalogState({
         }
 
         setSearchProducts(normalizeCollection(productResults.items));
+        setCatalogShowcase(productResults.showcase || null);
         setSearchProductsTotalItems(normalizeCollectionCount(productResults.totalItems));
         setSearchCategories(normalizeCollection(categoryResults.items));
         setSearchCategoriesTotalItems(normalizeCollectionCount(categoryResults.totalItems));
@@ -710,6 +720,7 @@ export default function useShopCatalogState({
     searchProductsTotalItems,
     selectSalesCompany,
     setActiveCategoryId,
+    shopShowcaseType,
     theme,
   };
 }
