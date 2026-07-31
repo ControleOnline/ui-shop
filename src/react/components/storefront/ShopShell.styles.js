@@ -33,11 +33,11 @@ export const inlineStyle_121_10 = (
       }),
 });
 
-export const inlineStyle_128_12 = ({isMobile} = {}) => ({
+export const inlineStyle_128_12 = ({isMobile, showSearch = true} = {}) => ({
   width: isMobile ? '100%' : undefined,
   flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: isMobile ? 'center' : 'flex-start',
+  justifyContent: isMobile ? (showSearch ? 'center' : 'space-between') : 'flex-start',
   gap: 12,
 });
 

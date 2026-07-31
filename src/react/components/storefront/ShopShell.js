@@ -195,11 +195,12 @@ export default function ShopShell({
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
   const headerCompany = salesCompany || defaultCompany || null;
-  const publicHeaderIconFile = headerCompany?.logo || null;
+  const publicHeaderIconFile = headerCompany?.icon || headerCompany?.logo || null;
 
   const logoUrl = publicHeaderIconFile
     ? buildFileUrl(publicHeaderIconFile, headerCompany)
     : '';
+  const isUsingCompanyIcon = Boolean(headerCompany?.icon);
 
   const submitSearch = useCallback(() => {
     const normalizedTerm = String(searchTerm || '').trim();
@@ -263,6 +264,28 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
+  const resolvedActiveEntryLabel = useMemo(() => {
+    return homeEntries.find(entry => entry.key === resolvedActiveHomeEntry)?.label || '';
+  }, [homeEntries, resolvedActiveHomeEntry]);
+  const headerTitle = useMemo(() => {
+    const baseName = String(purchaseCompanyLabel || '').trim();
+    const sectionName = String(resolvedActiveEntryLabel || '').trim();
+
+    if (!baseName) return sectionName;
+    if (!sectionName) return baseName;
+
+    const normalizedBase = baseName.toLowerCase();
+    const normalizedSection = sectionName.toLowerCase();
+    if (
+      normalizedBase === normalizedSection ||
+      normalizedBase.endsWith(` - ${normalizedSection}`) ||
+      normalizedBase.endsWith(`: ${normalizedSection}`)
+    ) {
+      return baseName;
+    }
+
+    return `${baseName} - ${sectionName}`;
+  }, [purchaseCompanyLabel, resolvedActiveEntryLabel]);
   const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
   const showHomeAction =
     !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
@@ -333,6 +356,7 @@ export default function ShopShell({
             <View
               style={inlineStyle_128_12({
                 isMobile: isMobile,
+                showSearch,
               })}>
               <View
                 style={inlineStyle_135_14}>
@@ -341,9 +365,17 @@ export default function ShopShell({
                   {logoUrl ? (
                     <Image
                       source={{uri: logoUrl}}
-                      style={inlineStyle_146_20({
-                        isMobile: isMobile,
-                      })}
+                      style={
+                        isUsingCompanyIcon
+                          ? {
+                              width: isMobile ? 56 : 58,
+                              height: isMobile ? 56 : 58,
+                              borderRadius: 12,
+                            }
+                          : inlineStyle_146_20({
+                              isMobile: isMobile,
+                            })
+                      }
                       resizeMode="contain"
                     />
                   ) : (
@@ -363,21 +395,32 @@ export default function ShopShell({
                   )}
                 </TouchableOpacity>
 
-                {!logoUrl ? (
-                  <View style={inlineStyle_175_20}>
-                    <View
-                      style={inlineStyle_177_18}>
-                      <Text
-                        numberOfLines={1}
-                        style={inlineStyle_180_20({
-                          isMobile: isMobile,
-                        })}>
-                        {purchaseCompanyLabel}
-                      </Text>
-                    </View>
+                <View style={inlineStyle_175_20}>
+                  <View
+                    style={inlineStyle_177_18}>
+                    <Text
+                      numberOfLines={1}
+                      style={inlineStyle_180_20({
+                        isMobile: isMobile,
+                      })}>
+                      {headerTitle}
+                    </Text>
                   </View>
-                ) : null}
+                </View>
               </View>
+
+              {!showSearch && (
+                <TouchableOpacity
+                  accessibilityLabel="Abrir menu do shop"
+                  onPress={openAccountMenu}
+                  style={inlineStyle_241_16({isMobile, theme})}>
+                  <Icon
+                    name="menu"
+                    size={22}
+                    color={isMobile ? theme.primary : '#fff'}
+                  />
+                </TouchableOpacity>
+              )}
 
             </View>
 
