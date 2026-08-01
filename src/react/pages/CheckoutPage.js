@@ -991,7 +991,6 @@ export default function CheckoutPage() {
     invoiceActions,
     loadDeliveryQuotes,
     refreshCart,
-    sellerCompanyId,
     sessionChecked,
     statusActions,
   ]);

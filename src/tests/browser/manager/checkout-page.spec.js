@@ -28,7 +28,7 @@ const collection = (member = []) => ({
   'hydra:totalItems': member.length,
 });
 
-const company = {
+const baseCompany = {
   id: 1,
   '@id': '/people/1',
   name: 'Jagunços',
@@ -67,9 +67,54 @@ const walletPaymentTypes = [
   },
 ];
 
-const setupCheckoutApi = async page => {
+const cashWalletPaymentType = {
+  id: 12,
+  '@id': '/wallet_payment_types/12',
+  paymentCode: '',
+  paymentType: {
+    id: 22,
+    '@id': '/payment_types/22',
+    paymentType: 'Dinheiro',
+  },
+  wallet: {
+    id: 32,
+    '@id': '/wallets/32',
+    wallet: 'Dinheiro',
+  },
+};
+
+const setupCheckoutApi = async (page, options = {}) => {
   const apiRequests = [];
   const pageErrors = [];
+  const company = {
+    ...baseCompany,
+    configs: {
+      ...baseCompany.configs,
+      ...(options.companyConfigs || {}),
+    },
+  };
+  const cartResponse = {
+    id: 72651,
+    '@id': '/orders/72651',
+    orderType: 'cart',
+    status: 'cart',
+    realStatus: 'cart',
+    provider: '/people/1',
+    client: '/people/1',
+    price: 174.6,
+    orderProducts: [
+      {
+        id: 1,
+        quantity: 4,
+      },
+    ],
+    ...(options.cart || {}),
+  };
+  const walletPaymentTypeItems =
+    options.walletPaymentTypes || walletPaymentTypes;
+  const addresses = options.addresses || [];
+  const deviceConfigs = options.deviceConfigs || [];
+  const invoices = [];
 
   page.on('pageerror', error => {
     pageErrors.push(error);
@@ -145,22 +190,7 @@ const setupCheckoutApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify({
-          id: 72651,
-          '@id': '/orders/72651',
-          orderType: 'cart',
-          status: 'cart',
-          realStatus: 'cart',
-          provider: '/people/1',
-          client: '/people/1',
-          price: 174.6,
-          orderProducts: [
-            {
-              id: 1,
-              quantity: 4,
-            },
-          ],
-        }),
+        body: JSON.stringify(cartResponse),
       });
     }
 
@@ -168,7 +198,7 @@ const setupCheckoutApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection(walletPaymentTypes)),
+        body: JSON.stringify(collection(walletPaymentTypeItems)),
       });
     }
 
@@ -197,11 +227,32 @@ const setupCheckoutApi = async page => {
       });
     }
 
-    if (pathname === 'invoices') {
+    if (pathname === 'invoices' && method === 'GET') {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection([])),
+        body: JSON.stringify(collection(invoices)),
+      });
+    }
+
+    if (pathname === 'invoices' && method === 'POST') {
+      const payload = request.postDataJSON();
+      const invoice = {
+        id: 802,
+        '@id': '/invoices/802',
+        status: {
+          id: 91,
+          '@id': '/statuses/91',
+          status: 'Aguardando pagamento',
+          realStatus: 'pending',
+        },
+        ...payload,
+      };
+      invoices.unshift(invoice);
+      return route.fulfill({
+        status: 201,
+        headers: jsonHeaders(),
+        body: JSON.stringify(invoice),
       });
     }
 
@@ -209,7 +260,41 @@ const setupCheckoutApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection([])),
+        body: JSON.stringify(collection(addresses)),
+      });
+    }
+
+    if (pathname === 'device_configs' && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        headers: jsonHeaders(),
+        body: JSON.stringify(collection(deviceConfigs)),
+      });
+    }
+
+    if (pathname === 'device_configs' && method === 'POST') {
+      const payload = request.postDataJSON();
+      const deviceConfig = {
+        ...(deviceConfigs[0] || {}),
+        id: deviceConfigs[0]?.id || 501,
+        '@id': deviceConfigs[0]?.['@id'] || '/device_configs/501',
+        ...payload,
+      };
+      return route.fulfill({
+        status: 201,
+        headers: jsonHeaders(),
+        body: JSON.stringify(deviceConfig),
+      });
+    }
+
+    if (pathname === 'orders/72651/confirm' && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          errno: 0,
+          order: {...cartResponse, orderType: 'sale'},
+        }),
       });
     }
 
@@ -253,13 +338,13 @@ const setupCheckoutApi = async page => {
         }),
       );
       localStorage.setItem('config', JSON.stringify({language: 'pt-br'}));
-      localStorage.setItem('app-type', 'SHOP');
+      localStorage.setItem('app-type', 'MANAGER');
       localStorage.setItem(
         'device',
         JSON.stringify({
-          id: 'web-manager',
-          device: 'web-manager',
-          type: 'WEB',
+          id: 'web-7',
+          device: 'web-7',
+          type: 'MANAGER',
           appName: 'Browser Manager',
           appVersion,
           buildNumber: appVersion,
@@ -300,6 +385,84 @@ test.describe('checkout browser smoke', () => {
     ).toHaveLength(0);
     expect(
       apiRequests.filter(pathname => pathname.startsWith('invoices?')),
+    ).toHaveLength(1);
+    expect(pageErrors.map(error => error.message)).toEqual([]);
+  });
+
+  test('confirms charge on delivery without repeating checkout discovery', async ({
+    page,
+  }) => {
+    const {apiRequests, pageErrors} = await setupCheckoutApi(page, {
+      companyConfigs: {
+        'order-charge-on-delivery-enabled': '1',
+        'payment-type-ids': '[12]',
+      },
+      cart: {
+        addressDestination: {
+          id: 101,
+          '@id': '/addresses/101',
+          street: 'Rua Teste',
+          number: 10,
+        },
+      },
+      walletPaymentTypes: [cashWalletPaymentType],
+      deviceConfigs: [
+        {
+          id: 501,
+          '@id': '/device_configs/501',
+          people: '/people/1',
+          type: 'MANAGER',
+          device: {
+            id: 7,
+            device: 'web-7',
+            type: 'MANAGER',
+          },
+          configs: {
+            'payment-type-ids': '[12]',
+          },
+        },
+      ],
+      addresses: [
+        {
+          id: 101,
+          '@id': '/addresses/101',
+          street: 'Rua Teste',
+          number: 10,
+          city: 'Sao Paulo',
+          state: 'SP',
+          country: 'BR',
+          cep: '01001000',
+        },
+      ],
+    });
+
+    await page.goto('/shop/checkout');
+
+    await expect(page.getByText('Pedido #72651')).toBeVisible();
+    await page.getByText('Cobrar na entrega').last().click();
+    await expect(page.getByText('Dinheiro na entrega')).toBeVisible();
+    await page.getByText('Confirmar').click();
+    await page.waitForURL('**/orders/my/id/72651', {timeout: 10000});
+
+    expect(
+      apiRequests.filter(pathname =>
+        pathname.startsWith('wallet_payment_types?'),
+      ),
+    ).toHaveLength(1);
+    expect(
+      apiRequests.filter(pathname => pathname.startsWith('statuses?')),
+    ).toHaveLength(1);
+    expect(
+      apiRequests.filter(pathname => pathname.startsWith('addresses?')).length,
+    ).toBeLessThanOrEqual(1);
+    expect(
+      apiRequests.filter(pathname => pathname.startsWith('invoices?')),
+    ).toHaveLength(2);
+    expect(
+      apiRequests.filter(pathname => pathname === 'invoices?'),
+    ).toHaveLength(1);
+    expect(
+      apiRequests.filter(pathname => pathname.startsWith('orders/72651/confirm?')),
     ).toHaveLength(1);
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });
