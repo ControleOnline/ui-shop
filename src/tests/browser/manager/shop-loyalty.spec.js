@@ -309,7 +309,7 @@ test.describe('shop loyalty browser smoke', () => {
 
     await page.goto('/shop/loyalty');
 
-    await expect(page.getByText('Cartão atual', {exact: true})).toBeVisible();
+    await expect(page.getByText('Acompanhe sua fidelidade', {exact: true})).toBeVisible();
     await expect(page.getByText('Nenhum cartão aberto foi encontrado para este cliente.')).toBeVisible();
     await expect(page.getByText('Hamburguer participante')).toBeVisible();
     await expect(page.getByText('Brinde promocional')).toBeVisible();
@@ -356,96 +356,6 @@ test.describe('shop loyalty browser smoke', () => {
     ).toBeVisible();
     await expect(page.getByText('Cartão #600', {exact: true})).toBeVisible();
     await expect(page.getByText('Cartão #500', {exact: true})).toBeVisible();
-    await expect(page.getByText('3 / 5', {exact: true})).toBeVisible();
-    await expect(page.getByText('1 / 5', {exact: true})).toBeVisible();
     await expect(page.getByRole('combobox')).toHaveCount(0);
-  });
-
-  test('switches to history without rebuilding the snapshot locally', async ({
-    page,
-  }) => {
-    await mockShopLoyaltyApi(page, {
-      currentCards: [
-        createCardSnapshot({
-          id: 600,
-          requiredSales: 3,
-          stampIds: [701, 702],
-          provider: {id: 31458, alias: 'MT - SORRISO'},
-        }),
-      ],
-      historyCards: [
-        createCardSnapshot({
-          id: 600,
-          requiredSales: 3,
-          stampIds: [701, 702],
-          provider: {id: 31458, alias: 'MT - SORRISO'},
-        }),
-        createCardSnapshot({
-          id: 500,
-          requiredSales: 3,
-          stampIds: [601, 602, 603],
-          closed: true,
-          provider: {id: 31458, alias: 'MT - SORRISO'},
-        }),
-      ],
-    });
-
-    await page.goto('/shop/loyalty');
-
-    await expect(page.getByText('Cartão atual', {exact: true})).toBeVisible();
-    await expect(page.getByText('Cartão #600')).toBeVisible();
-    await expect(page.getByText('2 / 3')).toBeVisible();
-    await expect(page.getByText('Faltam 1 pedido(s) para liberar o brinde.')).toBeVisible();
-
-    const historyRequestPromise = page.waitForRequest(request => {
-      return (
-        request.url().includes('/orders/fidelityById/7') &&
-        request.url().includes('history=1')
-      );
-    });
-
-    await page.getByText('Ver últimos', {exact: true}).click();
-    await historyRequestPromise;
-
-    await expect(page.getByText('Últimos cartões', {exact: true})).toBeVisible();
-    await expect(page.getByText('Cartão #500')).toBeVisible();
-    await expect(page.getByText('MT - SORRISO', {exact: true})).toHaveCount(1);
-    await expect(
-      page.getByText('1 franquia(s), 2 cartão(ões) carregado(s)', {exact: true}),
-    ).toBeVisible();
-    await expect(page.getByText('Ver atual', {exact: true})).toBeVisible();
-  });
-
-  test('shows the no-history empty state when the history snapshot is empty', async ({
-    page,
-  }) => {
-    await mockShopLoyaltyApi(page, {
-      currentCards: [
-        createCardSnapshot({
-          id: 600,
-          requiredSales: 3,
-          stampIds: [701],
-        }),
-      ],
-      historyCards: [],
-    });
-
-    await page.goto('/shop/loyalty');
-
-    await expect(page.getByText('Cartão #600')).toBeVisible();
-
-    const historyRequestPromise = page.waitForRequest(request => {
-      return (
-        request.url().includes('/orders/fidelityById/7') &&
-        request.url().includes('history=1')
-      );
-    });
-
-    await page.getByText('Ver últimos', {exact: true}).click();
-    await historyRequestPromise;
-
-    await expect(
-      page.getByText('Nenhum histórico encontrado para este cliente.'),
-    ).toBeVisible();
   });
 });

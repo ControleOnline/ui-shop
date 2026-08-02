@@ -172,6 +172,10 @@ export default function ShopMobileCatalog({
     onLoadMoreCategories,
   ]);
 
+  const handleNavigateHome = useCallback(() => {
+    navigation.navigate('ShopIndex');
+  }, [navigation]);
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -184,6 +188,7 @@ export default function ShopMobileCatalog({
       <ShopMobileStoreHeader
         categories={visibleCategories}
         company={company}
+        onNavigateHome={handleNavigateHome}
         onOpenMenu={onOpenMenu}
         onSearch={onSearch}
         searchPlaceholder={searchPlaceholder}

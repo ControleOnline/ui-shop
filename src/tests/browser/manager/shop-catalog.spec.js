@@ -272,6 +272,20 @@ test.describe('shop catalog browser smoke', () => {
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });
 
+  test('keeps the mobile home header clickable without a redundant home action', async ({
+    page,
+  }) => {
+    await page.setViewportSize({width: 390, height: 844});
+
+    const {pageErrors} = await setupShopCatalogApi(page);
+
+    await page.goto('/shop?store=categories&q=');
+
+    await expect(page.getByLabel('Abrir pagina inicial do shop')).toBeVisible();
+    await expect(page.getByLabel('Voltar ao inicio do shop')).toHaveCount(0);
+    expect(pageErrors.map(error => error.message)).toEqual([]);
+  });
+
   test('reloads catalog after returning home from the cart', async ({page}) => {
     const {pageErrors} = await setupShopCatalogApi(page);
 
