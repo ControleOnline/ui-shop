@@ -24,6 +24,7 @@ export default function ShopMobileProductSection({
   company = null,
   defaultCompany = null,
   isLoading = false,
+  isAllProducts = false,
   isLoadingMore = false,
   products = [],
   refreshCart = null,
@@ -39,7 +40,9 @@ export default function ShopMobileProductSection({
       <View style={mobileProductSectionHeaderStyle}>
         <View>
           <Text numberOfLines={1} style={mobileProductSectionTitleStyle({theme})}>
-            {category?.name || 'Produtos'}
+            {isAllProducts
+              ? global.t?.t?.('shop', 'title', 'allProducts')
+              : category?.name || 'Produtos'}
           </Text>
           <Text
             numberOfLines={2}
@@ -72,7 +75,9 @@ export default function ShopMobileProductSection({
       {!isLoading && rows.length === 0 ? (
         <View style={mobileProductSectionEmptyStyle({theme})}>
           <Text style={mobileProductSectionEmptyTextStyle({theme})}>
-            Nenhum produto nesta categoria.
+            {isAllProducts
+              ? global.t?.t?.('shop', 'title', 'emptyProducts')
+              : global.t?.t?.('shop', 'title', 'emptyCategoryProducts')}
           </Text>
         </View>
       ) : null}

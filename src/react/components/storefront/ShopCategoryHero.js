@@ -25,6 +25,7 @@ export default function ShopCategoryHero({
   mode = 'default',
   productsCount = 0,
   categoriesCount = 0,
+  isAllProducts = false,
   query = '',
 }) {
   const {width} = useWindowDimensions();
@@ -36,13 +37,17 @@ export default function ShopCategoryHero({
       ? query
         ? `Resultados para "${query}"`
         : 'Busque no cardapio'
-      : category?.name || 'Categoria';
+      : isAllProducts
+        ? global.t?.t?.('shop', 'title', 'allProducts')
+        : category?.name || 'Categoria';
   const description =
     mode === 'search'
       ? query
         ? `${productsCount} produto(s) e ${categoriesCount} categoria(s) encontrados.`
         : 'Use a busca para encontrar itens do cardapio sem sair da tela principal.'
-      : getShopCategoryDescription(category);
+      : isAllProducts
+        ? global.t?.t?.('shop', 'message', 'allProductsCatalog')
+        : getShopCategoryDescription(category);
 
   return (
     <View
@@ -66,7 +71,11 @@ export default function ShopCategoryHero({
           style={categoryHeroEyebrowStyle({
             theme: company,
           })}>
-          {mode === 'search' ? 'BUSCA' : 'CATEGORIA ATIVA'}
+          {mode === 'search'
+            ? 'BUSCA'
+            : isAllProducts
+              ? global.t?.t?.('shop', 'label', 'allProducts')
+              : 'CATEGORIA ATIVA'}
         </Text>
         <Text
           style={categoryHeroTitleStyle({

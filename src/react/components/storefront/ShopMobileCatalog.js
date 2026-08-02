@@ -41,6 +41,7 @@ export default function ShopMobileCatalog({
   hasMoreCategories = false,
   hasMoreProducts = false,
   isLoadingCatalog = false,
+  isAllProductsCatalog = false,
   isLoadingMoreCategories = false,
   isLoadingMoreProducts = false,
   mode = 'default',
@@ -171,6 +172,10 @@ export default function ShopMobileCatalog({
     onLoadMoreCategories,
   ]);
 
+  const handleNavigateHome = useCallback(() => {
+    navigation.navigate('ShopIndex');
+  }, [navigation]);
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -183,6 +188,7 @@ export default function ShopMobileCatalog({
       <ShopMobileStoreHeader
         categories={visibleCategories}
         company={company}
+        onNavigateHome={handleNavigateHome}
         onOpenMenu={onOpenMenu}
         onSearch={onSearch}
         searchPlaceholder={searchPlaceholder}
@@ -336,6 +342,7 @@ export default function ShopMobileCatalog({
             company={company}
             defaultCompany={defaultCompany}
             isLoading={isLoadingCatalog}
+            isAllProducts={isAllProductsCatalog}
             isLoadingMore={isLoadingMoreProducts}
             products={products}
             refreshCart={refreshCart}

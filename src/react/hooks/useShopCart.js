@@ -27,6 +27,10 @@ export default function useShopCart({autoRefresh = false} = {}) {
     selectSalesCompany,
   } = useShopSalesCompany();
   const providerId = normalizeNumericId(salesCompany?.id || defaultCompany?.id);
+  const cartId = cartGetters.item?.id || '';
+  const cartExternalCode = String(
+    cartGetters.item?.externalCode || cartGetters.item?.external_code || '',
+  ).trim();
 
   const refreshCart = useCallback(() => {
     const appType = String(app_type || '').toUpperCase();
@@ -39,7 +43,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
       : currentCompanyId;
 
     if (requiresCompanySelection || !providerId) {
-      if (cartGetters.item?.id) {
+      if (cartId) {
         cartActions.setItem({});
       }
       return Promise.resolve(null);
@@ -63,7 +67,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
         })
       : cartActions.discoveryAnonymousCart({
           provider: providerId,
-          externalCode: cartGetters.item?.externalCode,
+          externalCode: cartExternalCode,
         }))
       .finally(() => {
         if (cartRequestInFlight?.key === key) {
@@ -77,7 +81,8 @@ export default function useShopCart({autoRefresh = false} = {}) {
     return promise;
   }, [
     cartActions,
-    cartGetters.item,
+    cartExternalCode,
+    cartId,
     currentCompany?.id,
     providerId,
     requiresCompanySelection,
