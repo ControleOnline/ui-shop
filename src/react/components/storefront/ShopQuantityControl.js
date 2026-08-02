@@ -238,6 +238,8 @@ export default function ShopQuantityControl({
     width,
   ]);
 
+  const productName = String(product?.product || product?.name || 'produto').trim();
+
   const decrease = useCallback(() => {
     const next = quantity > 0 ? quantity - 1 : 0;
     setQuantity(next);
@@ -262,7 +264,10 @@ export default function ShopQuantityControl({
         },
         style,
       ]}>
-      <TouchableOpacity onPress={decrease} disabled={quantity <= 0}>
+      <TouchableOpacity
+        accessibilityLabel={`Diminuir quantidade de ${productName}`}
+        onPress={decrease}
+        disabled={quantity <= 0}>
         <Icon
           name={quantity <= 1 ? 'delete' : 'remove'}
           size={22}
@@ -282,7 +287,9 @@ export default function ShopQuantityControl({
         {quantity}
       </Text>
 
-      <TouchableOpacity onPress={increase}>
+      <TouchableOpacity
+        accessibilityLabel={`Aumentar quantidade de ${productName}`}
+        onPress={increase}>
         <Icon name="add" size={24} color={activeControlColor} />
       </TouchableOpacity>
     </View>
