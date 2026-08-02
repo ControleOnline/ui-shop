@@ -338,6 +338,7 @@ export default function CheckoutPage() {
   } = useShopSettings();
 
   const walletPaymentTypeStore = useStore('walletPaymentType');
+  const walletPaymentTypeActions = walletPaymentTypeStore.actions;
   const walletPaymentTypes = walletPaymentTypeStore.getters.items || [];
   const cardStore = useStore('card');
   const cardActions = cardStore.actions;
@@ -377,6 +378,7 @@ export default function CheckoutPage() {
     country: 'BR',
   });
   const [addressFormVisible, setAddressFormVisible] = useState(false);
+  const [localDeliveryAddressIri, setLocalDeliveryAddressIri] = useState('');
   const [addressOptionsLoading, setAddressOptionsLoading] = useState(true);
   const [addressSaveLoading, setAddressSaveLoading] = useState(false);
   const [addressSelectingId, setAddressSelectingId] = useState('');
@@ -435,7 +437,9 @@ export default function CheckoutPage() {
     cartAddressDestination,
     'addresses',
   );
-  const hasDeliveryAddress = Boolean(cartAddressDestinationIri);
+  const hasDeliveryAddress = Boolean(
+    cartAddressDestinationIri || localDeliveryAddressIri,
+  );
   const cartItems = Array.isArray(cart?.orderProducts) ? cart.orderProducts : [];
   const itemsCount = cartItems.reduce(
     (sum, item) => sum + Number(item?.quantity || 0),
@@ -740,6 +744,7 @@ export default function CheckoutPage() {
       try {
         setAddressSelectingId(addressId);
         await updateCartDeliveryAddress(addressIri);
+        setLocalDeliveryAddressIri(addressIri);
         setAddressFormVisible(false);
         setMessage('Endereco de entrega selecionado.');
       } catch (e) {
@@ -806,6 +811,7 @@ export default function CheckoutPage() {
       }
 
       await updateCartDeliveryAddress(savedAddressIri);
+      setLocalDeliveryAddressIri(savedAddressIri);
       setDeliveryAddresses(current => [
         savedAddress,
         ...current.filter(
@@ -927,6 +933,7 @@ export default function CheckoutPage() {
         statusResponse,
         invoicesResponse,
         addressesResponse,
+        walletPaymentTypesResponse,
       ] = await Promise.all([
         asaasConfigured
           ? cardActions.getItems({
@@ -950,6 +957,12 @@ export default function CheckoutPage() {
               itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
             }).catch(() => [])
           : Promise.resolve([]),
+        currentCompany?.id && effectiveCompanyConfigs
+          ? walletPaymentTypeActions.getItems({
+              people: `/people/${currentCompany.id}`,
+              itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
+            }).catch(() => [])
+          : Promise.resolve([]),
       ]);
 
       const fetchedCards = extractItems(cardsResponse);
@@ -958,6 +971,15 @@ export default function CheckoutPage() {
         extractItems(invoicesResponse),
       );
       const fetchedAddresses = extractItems(addressesResponse);
+      const fetchedWalletPaymentTypes = extractItems(walletPaymentTypesResponse);
+      /*
+       * @agents Checkout owns the payment bar visibility. Load the wallet
+       * payment types here too so the page is not dependent on provider timing
+       * when entered directly from the shop purchase flow.
+       */
+      if (fetchedWalletPaymentTypes.length > 0) {
+        walletPaymentTypeActions.setItems(fetchedWalletPaymentTypes);
+      }
       setCards(fetchedCards);
       setInvoices(fetchedInvoices);
       setDeliveryAddresses(fetchedAddresses);
@@ -987,12 +1009,14 @@ export default function CheckoutPage() {
     cardActions,
     cart?.id,
     currentCompany?.id,
+    effectiveCompanyConfigs,
     isLogged,
     invoiceActions,
     loadDeliveryQuotes,
     refreshCart,
     sessionChecked,
     statusActions,
+    walletPaymentTypeActions,
   ]);
   useFocusEffect(
     useCallback(() => {
@@ -1075,7 +1099,7 @@ export default function CheckoutPage() {
         throw new Error('Carrinho não encontrado para checkout.');
       }
 
-      if (!cartAddressDestinationIri) {
+      if (!hasDeliveryAddress) {
         throw new Error(
           'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
         );
@@ -1157,10 +1181,10 @@ export default function CheckoutPage() {
     [
       cart?.['@id'],
       cart?.id,
-      cartAddressDestinationIri,
       currentCompany?.id,
       deliveryFee,
       financialTotal,
+      hasDeliveryAddress,
       hasCart,
       invoiceActions,
       invoices,

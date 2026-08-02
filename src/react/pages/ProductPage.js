@@ -413,6 +413,7 @@ export default function ProductPage() {
                           </View>
                         ) : requiresCustomization ? (
                           <TouchableOpacity
+                            accessibilityLabel={`Personalizar ${product?.product || 'produto'}`}
                             onPress={handleOpenCustomize}
                             style={productPageCustomizeButtonStyle({
                               theme,
@@ -500,6 +501,7 @@ export default function ProductPage() {
                     </View>
                   ) : requiresCustomization ? (
                     <TouchableOpacity
+                      accessibilityLabel={`Personalizar ${product?.product || 'produto'}`}
                       onPress={handleOpenCustomize}
                       style={productPageCustomizeButtonStyle({
                         theme,
