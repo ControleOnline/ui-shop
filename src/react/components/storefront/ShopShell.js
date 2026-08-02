@@ -207,9 +207,11 @@ export default function ShopShell({
   const headerTitle = useMemo(() => {
     const baseName = String(purchaseCompanyLabel || '').trim();
     const sectionName = String(resolvedActiveEntryLabel || '').trim();
+    const isLoyaltyHeader = resolvedActiveHomeEntry === SHOP_HOME_OPTION_LOYALTY;
 
     if (!baseName) return sectionName;
     if (!sectionName) return baseName;
+    if (isLoyaltyHeader) return baseName;
 
     const normalizedBase = baseName.toLowerCase();
     const normalizedSection = sectionName.toLowerCase();
@@ -222,7 +224,7 @@ export default function ShopShell({
     }
 
     return `${baseName} - ${sectionName}`;
-  }, [purchaseCompanyLabel, resolvedActiveEntryLabel]);
+  }, [purchaseCompanyLabel, resolvedActiveEntryLabel, resolvedActiveHomeEntry]);
   const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
   const showHomeAction =
     !isHomeEntryRoute && route?.name !== primaryEntryRouteName;

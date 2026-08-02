@@ -55,7 +55,7 @@ const HOME_ACTION_LABEL = 'Voltar ao inicio do shop';
 const MENU_LABEL = 'Abrir menu do shop';
 
 const resolveHeaderFile = company =>
-  company?.logo || company?.icon || company?.stamp || null;
+  company?.icon || company?.logo || company?.stamp || null;
 
 export default function ShopMobileStoreHeader({
   company = null,
@@ -77,6 +77,7 @@ export default function ShopMobileStoreHeader({
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const searchValueRef = useRef(String(searchValue || '').trim());
   const logoFile = resolveHeaderFile(company);
+  const isHeaderIcon = Boolean(company?.icon);
   const logoUrl = logoFile ? buildFileUrl(logoFile, company) : '';
   const headerTitle = String(title || '').trim();
   const headerSubtitle = String(subtitle || '').trim();
@@ -134,8 +135,13 @@ export default function ShopMobileStoreHeader({
           source={{uri: logoUrl}}
           style={
             shell
-              ? isMobile
-                ? inlineStyle_146_20({isMobile})
+              ? isHeaderIcon
+                ? {
+                    width: isMobile ? 64 : 66,
+                    height: isMobile ? 64 : 66,
+                    borderRadius: 16,
+                    marginLeft: 0,
+                  }
                 : inlineStyle_146_20({isMobile})
               : mobileStoreLogoStyle({theme})
           }
@@ -183,7 +189,11 @@ export default function ShopMobileStoreHeader({
 
   const renderShellHeader = () => (
     <View style={inlineStyle_119_12({theme})}>
-      <View style={inlineStyle_121_10({isMobile, shellPadding: isMobile ? 14 : 26})}>
+      <View
+        style={inlineStyle_121_10({
+          isMobile,
+          shellPadding: isMobile && !showSearch ? 16 : isMobile ? 14 : 26,
+        })}>
         <View style={inlineStyle_128_12({isMobile, showSearch})}>
           <View style={inlineStyle_135_14}>
             {renderLogo({shell: true})}
