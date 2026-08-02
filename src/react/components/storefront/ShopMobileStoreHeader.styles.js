@@ -46,6 +46,14 @@ export const mobileStoreCardStyle = ({theme}) => ({
   elevation: 4,
 });
 
+export const mobileStoreActionsRowStyle = {
+  marginTop: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 10,
+};
+
 export const mobileStoreMenuButtonStyle = ({theme}) => ({
   width: 42,
   height: 42,
@@ -104,6 +112,12 @@ export const mobileStoreSearchInputStyle = ({theme}) => ({
 export const mobileStoreTextColumnStyle = {
   flex: 1,
   minWidth: 0,
+};
+
+export const mobileStoreContentColumnStyle = {
+  flex: 1,
+  minWidth: 0,
+  gap: 10,
 };
 
 export const mobileStoreNameStyle = ({theme}) => ({

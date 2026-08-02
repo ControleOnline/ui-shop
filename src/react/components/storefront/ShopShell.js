@@ -1,9 +1,7 @@
 import React, {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 
@@ -11,7 +9,6 @@ import {
   Image,
   Modal,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
@@ -24,11 +21,11 @@ import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSettings from '@controleonline/ui-shop/src/react/hooks/useShopSettings';
 import ShopHomeEntryControls from '@controleonline/ui-shop/src/react/components/storefront/ShopHomeEntryControls';
+import ShopMobileStoreHeader from '@controleonline/ui-shop/src/react/components/storefront/ShopMobileStoreHeader';
 
 import {
   buildFileUrl,
   getInitials,
-  normalizeId,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
 import {
@@ -39,23 +36,7 @@ import {
 
 import {
   inlineStyle_118_10,
-  inlineStyle_119_12,
-  inlineStyle_121_10,
-  inlineStyle_128_12,
-  inlineStyle_135_14,
-  inlineStyle_146_20,
-  inlineStyle_155_20,
-  inlineStyle_164_22,
-  inlineStyle_175_20,
-  inlineStyle_177_18,
-  inlineStyle_180_20,
   inlineStyle_214_18,
-  inlineStyle_224_18,
-  inlineStyle_228_18,
-  inlineStyle_241_16,
-  inlineStyle_255_12,
-  inlineStyle_273_14,
-  inlineStyle_282_14,
   inlineStyle_345_10,
   inlineStyle_358_12,
   inlineStyle_369_18,
@@ -122,14 +103,12 @@ export default function ShopShell({
   activeHomeEntry = '',
   showHomeEntryControls = false,
   showSearch = true,
-  subtitle = 'Cardapio digital',
   searchPlaceholder = 'Busque pratos, bebidas ou categorias',
 }) {
   const navigation = useNavigation();
   const route = useRoute();
   const {width} = useWindowDimensions();
   const isMobile = width < 920;
-  const shellPadding = isMobile ? 14 : 26;
 
   const authStore = useStore('auth');
   const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
@@ -155,15 +134,7 @@ export default function ShopShell({
   const cardRegistrationEnabled = Boolean(effectiveCompanyConfigs?.['asaas-key']);
   const canShowSalesShortcuts = showSalesShortcuts && salesPageEnabled;
 
-  const [searchTerm, setSearchTerm] = useState(searchValue);
   const [accountOpen, setAccountOpen] = useState(false);
-  const searchValueRef = useRef('');
-  useEffect(() => {
-    setSearchTerm(searchValue);
-  }, [searchValue]);
-  useEffect(() => {
-    searchValueRef.current = String(searchValue || '').trim();
-  }, [searchValue]);
 
   useLayoutEffect(() => {
     if (typeof showBottomCart !== 'boolean') {
@@ -195,41 +166,6 @@ export default function ShopShell({
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
   const headerCompany = salesCompany || defaultCompany || null;
-  const publicHeaderIconFile = headerCompany?.logo || null;
-
-  const logoUrl = publicHeaderIconFile
-    ? buildFileUrl(publicHeaderIconFile, headerCompany)
-    : '';
-
-  const submitSearch = useCallback(() => {
-    const normalizedTerm = String(searchTerm || '').trim();
-    if (normalizedTerm.length === 0 || normalizedTerm.length >= 3) {
-      onSearch?.(normalizedTerm);
-    }
-  }, [onSearch, searchTerm]);
-
-  useEffect(() => {
-    if (!onSearch) {
-      return undefined;
-    }
-
-    const normalizedTerm = String(searchTerm || '').trim();
-    const currentSearchValue = searchValueRef.current;
-    if (normalizedTerm.length > 0 && normalizedTerm.length < 3) {
-      if (currentSearchValue) {
-        const timeoutId = setTimeout(() => onSearch(''), 250);
-        return () => clearTimeout(timeoutId);
-      }
-      return undefined;
-    }
-
-    if (normalizedTerm === currentSearchValue) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => onSearch(normalizedTerm), 300);
-    return () => clearTimeout(timeoutId);
-  }, [onSearch, searchTerm]);
 
   const shellBackground = theme.background;
   const surface = theme.surface;
@@ -263,10 +199,34 @@ export default function ShopShell({
     return '';
   }, [route?.name]);
   const resolvedActiveHomeEntry = activeHomeEntry || routeActiveHomeEntry;
+  const resolvedActiveEntryLabel = useMemo(() => {
+    return (
+      homeEntries.find(entry => entry.key === resolvedActiveHomeEntry)?.label || ''
+    );
+  }, [homeEntries, resolvedActiveHomeEntry]);
+  const headerTitle = useMemo(() => {
+    const baseName = String(purchaseCompanyLabel || '').trim();
+    const sectionName = String(resolvedActiveEntryLabel || '').trim();
+
+    if (!baseName) return sectionName;
+    if (!sectionName) return baseName;
+
+    const normalizedBase = baseName.toLowerCase();
+    const normalizedSection = sectionName.toLowerCase();
+    if (
+      normalizedBase === normalizedSection ||
+      normalizedBase.endsWith(` - ${normalizedSection}`) ||
+      normalizedBase.endsWith(`: ${normalizedSection}`)
+    ) {
+      return baseName;
+    }
+
+    return `${baseName} - ${sectionName}`;
+  }, [purchaseCompanyLabel, resolvedActiveEntryLabel]);
   const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
   const showHomeAction =
     !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
-  const menuIconName = isMobile || isHomeEntryRoute ? 'menu' : 'account-circle';
+  const menuIconName = isHomeEntryRoute ? 'menu' : 'account-circle';
   const showConfiguredBottomBar =
     showHomeEntryControls && bottomBarEnabled && homeEntries.length > 1;
   const bottomBarOffset = showBottomCart === true ? 88 : 18;
@@ -287,9 +247,9 @@ export default function ShopShell({
 
   const handleNavigateHome = useCallback(() => {
     const targetRoute =
-      primaryEntryRouteName ||
       homeEntries.find(entry => entry.key === resolvedActiveHomeEntry)
         ?.routeName ||
+      primaryEntryRouteName ||
       'ShopIndex';
 
     if (targetRoute === route?.name) {
@@ -322,117 +282,19 @@ export default function ShopShell({
       shellBackground: shellBackground,
     })}>
       {!hideHeader && (
-        <View style={inlineStyle_119_12({
-          theme: theme,
-        })}>
-          <View
-            style={inlineStyle_121_10({
-              isMobile: isMobile,
-              shellPadding: shellPadding,
-            })}>
-            <View
-              style={inlineStyle_128_12({
-                isMobile: isMobile,
-              })}>
-              <View
-                style={inlineStyle_135_14}>
-                <TouchableOpacity
-                  onPress={handleNavigateHome}>
-                  {logoUrl ? (
-                    <Image
-                      source={{uri: logoUrl}}
-                      style={inlineStyle_146_20({
-                        isMobile: isMobile,
-                      })}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <View
-                      style={inlineStyle_155_20({
-                        isMobile: isMobile,
-                      })}>
-                      <Text
-                        style={inlineStyle_164_22({
-                          isMobile: isMobile,
-                        })}>
-                        {getInitials(
-                          headerCompany?.alias || headerCompany?.name || 'CO',
-                        )}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {!logoUrl ? (
-                  <View style={inlineStyle_175_20}>
-                    <View
-                      style={inlineStyle_177_18}>
-                      <Text
-                        numberOfLines={1}
-                        style={inlineStyle_180_20({
-                          isMobile: isMobile,
-                        })}>
-                        {purchaseCompanyLabel}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-              </View>
-
-            </View>
-
-            {showSearch && (
-              <View
-                style={inlineStyle_255_12({
-                  isMobile,
-                  theme,
-                })}>
-                <View style={inlineStyle_282_14({isMobile, theme})}>
-                  <Icon
-                    name="search"
-                    size={20}
-                    color={isMobile ? theme.muted : 'rgba(255,255,255,0.85)'}
-                  />
-                  <TextInput
-                    value={searchTerm}
-                    onChangeText={setSearchTerm}
-                    onSubmitEditing={submitSearch}
-                    placeholder={searchPlaceholder}
-                    placeholderTextColor={
-                      isMobile ? theme.muted : 'rgba(255,255,255,0.75)'
-                    }
-                    style={inlineStyle_273_14({isMobile, theme})}
-                  />
-                </View>
-                <View style={inlineStyle_224_18}>
-                  {showHomeAction && (
-                    <TouchableOpacity
-                      accessibilityLabel="Voltar ao inicio do shop"
-                      onPress={handleNavigateHome}
-                      style={inlineStyle_228_18({isMobile, theme})}>
-                      <Icon
-                        name="home"
-                        size={20}
-                        color={isMobile ? theme.primary : '#fff'}
-                      />
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    accessibilityLabel="Abrir menu do shop"
-                    onPress={openAccountMenu}
-                    style={inlineStyle_241_16({isMobile, theme})}>
-                    <Icon
-                      name={menuIconName}
-                      size={22}
-                      color={isMobile ? theme.primary : '#fff'}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-          </View>
-        </View>
+        <ShopMobileStoreHeader
+          company={headerCompany}
+          menuIconName={menuIconName}
+          onNavigateHome={handleNavigateHome}
+          onOpenMenu={openAccountMenu}
+          onSearch={onSearch}
+          searchPlaceholder={searchPlaceholder}
+          searchValue={searchValue}
+          showHomeAction={showHomeAction}
+          showSearch={showSearch}
+          title={headerTitle}
+          variant="shell"
+        />
       )}
       {children({
         foreground,
