@@ -1,9 +1,6 @@
-## Shop Module
+## Ponto de entrada
 
-- Shop institutional images must come from company media fields exposed by the backend.
-- `logo`, `icon`, `stamp`, and `pin` are different media roles and must not be read from shop config URL keys.
-- Franchise map marker icons use the company or address `pin` media, falling back to the default map marker when no pin exists.
-
-## Qualidade de código
-
-- A barra comum de modularizacao, testes, smoke tests e limite de tamanho de componentes vive em `https://github.com/ControleOnline/agents-mcp/blob/master/skills/shared/code-quality.md`.
+- A documentação funcional e de regras deste modulo vive na wiki do proprio repositório e na wiki principal do app.
+- Regras transversais de qualidade, modularizacao e limites de componente vivem em `https://github.com/ControleOnline/agents-mcp/blob/master/skills/shared/code-quality.md`.
+- Quando houver detalhe especifico de implementacao, prefira comentar no codigo em ingles perto da regra.
+- Este arquivo deve ficar curto e servir apenas como ponte para as fontes oficiais.
