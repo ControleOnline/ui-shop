@@ -134,9 +134,7 @@ export default function ShopMobileStoreHeader({
           source={{uri: logoUrl}}
           style={
             shell
-              ? isMobile
-                ? inlineStyle_146_20({isMobile})
-                : inlineStyle_146_20({isMobile})
+              ? inlineStyle_146_20({isMobile})
               : mobileStoreLogoStyle({theme})
           }
         />
@@ -183,34 +181,32 @@ export default function ShopMobileStoreHeader({
 
   const renderShellHeader = () => (
     <View style={inlineStyle_119_12({theme})}>
-      <View style={inlineStyle_121_10({isMobile, shellPadding: isMobile ? 14 : 26})}>
-        <View style={inlineStyle_128_12({isMobile, showSearch})}>
+      <View
+        style={inlineStyle_121_10({
+          isMobile,
+          shellPadding: isMobile ? 14 : 26,
+        })}>
+        <View
+          style={[
+            inlineStyle_128_12({isMobile, showSearch}),
+            !showSearch && {
+              justifyContent: 'center',
+              position: 'relative',
+            },
+          ]}>
           <View style={inlineStyle_135_14}>
             {renderLogo({shell: true})}
-
-            {showHeaderText ? (
-              <View style={inlineStyle_175_20}>
-                <View style={inlineStyle_177_18}>
-                  <Text
-                    numberOfLines={1}
-                    style={inlineStyle_180_20({isMobile})}>
-                    {headerTitle}
-                  </Text>
-                </View>
-
-                {headerSubtitle ? (
-                  <Text
-                    numberOfLines={1}
-                    style={[inlineStyle_180_20({isMobile}), {fontSize: 12, fontWeight: '500', opacity: 0.84}]}>
-                    {headerSubtitle}
-                  </Text>
-                ) : null}
-              </View>
-            ) : null}
           </View>
 
           {!showSearch ? (
-            <View style={inlineStyle_224_18}>
+            <View
+              style={[
+                inlineStyle_224_18,
+                {
+                  position: 'absolute',
+                  right: 0,
+                },
+              ]}>
               {showHomeAction
                 ? renderActionButton({
                     iconName: 'home',
