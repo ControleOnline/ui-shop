@@ -30,15 +30,16 @@ export const openShopCustomize = async ({
     customizeParams.presentation = presentation;
   }
 
-  if (activeCart?.id) {
+  if (!activeCart?.id) {
+    /*
+     * @agents Product customization owns its cart rehydration on submit. The
+     * product page should still open the customizer when the cart store is not
+     * ready yet, instead of leaving the customer on a dead button.
+     */
     navigation.navigate('CustomizeScreen', customizeParams);
     return true;
   }
 
-  navigation.navigate('SignInPage', {
-    redirectRoute: 'ShopProductPage',
-    redirectParams: {id: normalizedProductId},
-  });
-
-  return false;
+  navigation.navigate('CustomizeScreen', customizeParams);
+  return true;
 };
