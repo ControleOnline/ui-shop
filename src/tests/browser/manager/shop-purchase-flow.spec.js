@@ -3,6 +3,8 @@ const {browserApi, setupShopPurchaseApi} = require('./shopPurchaseFlowApi');
 const {
   addonProduct,
   customProduct,
+  nestedAddonProduct,
+  nestedSeasoningProduct,
   simpleProduct,
 } = require('./shopPurchaseFlowData');
 
@@ -28,22 +30,33 @@ const expectManagerReflectsCart = async (page, productName) => {
   await expectVisibleText(page, productName, {timeout: 15000});
 };
 
-const expectVisibleText = async (page, text, options = {}) => {
+const hasVisibleText = async (page, text, options = {}) => {
   const locator = page.getByText(text, {exact: options.exact ?? true});
+  const count = await locator.count();
+  for (let index = 0; index < count; index += 1) {
+    if (await locator.nth(index).isVisible()) return true;
+  }
+  return false;
+};
+
+const expectVisibleText = async (page, text, options = {}) => {
   await expect
     .poll(
-      async () => {
-        const count = await locator.count();
-        for (let index = 0; index < count; index += 1) {
-          if (await locator.nth(index).isVisible()) {
-            return true;
-          }
-        }
-        return false;
-      },
+      () => hasVisibleText(page, text, options),
       {timeout: options.timeout || 5000},
     )
     .toBe(true);
+};
+
+const getVisibleBoundingBox = async locator => {
+  const count = await locator.count();
+  for (let index = 0; index < count; index += 1) {
+    const candidate = locator.nth(index);
+    if (await candidate.isVisible()) {
+      return candidate.boundingBox();
+    }
+  }
+  return null;
 };
 
 const expectCartQuantity = async (state, product, quantity) => {
@@ -68,6 +81,77 @@ const openCustomization = async (page, product) => {
 };
 
 test.describe('shop complete purchase flow smoke', () => {
+  test('customizes a selected product at the second level', async ({page}) => {
+    const state = await setupShopPurchaseApi(page);
+
+    await login(page);
+    await openCustomization(page, customProduct);
+    await page.getByLabel(`Selecionar ${nestedAddonProduct.product}`).click();
+    await expect(page.getByText('Personalize sua escolha')).toBeVisible();
+    await expect(
+      page.getByText(nestedAddonProduct.product, {exact: true}).last(),
+    ).toBeVisible();
+    await page.getByLabel(`Selecionar ${nestedSeasoningProduct.product}`).click();
+    await page
+      .getByLabel(`Confirmar personalizacao de ${nestedAddonProduct.product}`)
+      .click();
+    await expectVisibleText(page, 'Escolha o tempero smoke');
+    await expectVisibleText(page, nestedSeasoningProduct.product);
+    await expect(page.getByText(/1 selecionado.*R\$\s*1,00/)).toBeVisible();
+    await expect(page.getByText(/R\$\s*1,00 adicionais/)).toBeVisible();
+    await page.setViewportSize({width: 390, height: 844});
+    expect(await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    )).toBe(true);
+    await page
+      .getByRole('button', {name: `ADICIONAR ${customProduct.product}`})
+      .click();
+
+    await expect.poll(() => state.lastAddProductsPayload).not.toBeNull();
+    expect(state.lastAddProductsPayload[0].sub_products).toEqual([{
+      product: String(nestedAddonProduct.id),
+      productGroup: '401',
+      quantity: 1,
+      sub_products: [{
+        product: String(nestedSeasoningProduct.id),
+        productGroup: '402',
+        quantity: 1,
+        sub_products: [],
+      }],
+    }]);
+    await page.waitForURL(url => url.pathname.includes('/cart'));
+    await expectVisibleText(page, customProduct.product, {exact: false});
+    await expectVisibleText(page, nestedAddonProduct.product, {exact: false});
+    await expectVisibleText(page, nestedSeasoningProduct.product, {exact: false});
+    await expect(
+      page.getByLabel(`Personalizar ${nestedAddonProduct.product}`),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(`Remover ${nestedAddonProduct.product}`),
+    ).toHaveCount(0);
+    await expect(
+      page.getByLabel(`Remover ${nestedSeasoningProduct.product}`),
+    ).toHaveCount(0);
+
+    const imageWidths = await Promise.all([
+      customProduct,
+      nestedAddonProduct,
+      nestedSeasoningProduct,
+    ].map(async product => {
+      const box = await getVisibleBoundingBox(
+        page.getByLabel(`Imagem de ${product.product}`),
+      );
+      return Math.round(box?.width || 0);
+    }));
+    expect(imageWidths).toEqual([48, 32, 26]);
+    await page.setViewportSize({width: 390, height: 844});
+    await expectVisibleText(page, nestedSeasoningProduct.product, {exact: false});
+    expect(await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    )).toBe(true);
+    expect(state.requests.filter(item => item.startsWith('pageerror:'))).toEqual([]);
+  });
+
   test('covers cart, custom products, login, addresses, payments and manager reflection', async ({
     page,
   }) => {
@@ -103,8 +187,11 @@ test.describe('shop complete purchase flow smoke', () => {
       .click();
     await expectCartQuantity(state, customProduct, 2);
     await expect(page).toHaveURL(/\/cart/);
-    await expectVisibleText(page, customProduct.product);
-    await expect(page.getByText(/Complementos smoke/)).toBeVisible();
+    await expectVisibleText(page, customProduct.product, {exact: false});
+    await expectVisibleText(page, addonProduct.product, {exact: false});
+    await expect.poll(
+      () => hasVisibleText(page, 'Complementos smoke', {exact: false}),
+    ).toBe(false);
     await expectManagerReflectsCart(page, customProduct.product);
 
     await page.goto('/cart');
@@ -166,8 +253,8 @@ test.describe('shop complete purchase flow smoke', () => {
     await browserApi(page, `addresses/${savedAddress.id}`, {method: 'DELETE'});
     expect(state.addresses).toHaveLength(0);
 
-    await expectVisibleText(page, simpleProduct.product);
-    await expectVisibleText(page, customProduct.product);
+    await expectVisibleText(page, simpleProduct.product, {exact: false});
+    await expectVisibleText(page, customProduct.product, {exact: false});
     expect(state.payments.some(item => item.startsWith('pix:'))).toBe(true);
     expect(state.payments.some(item => item.startsWith('card:'))).toBe(true);
     expect(

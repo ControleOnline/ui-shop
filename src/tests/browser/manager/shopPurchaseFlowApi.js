@@ -8,7 +8,10 @@ const {
   customProduct,
   createState,
   normalizeId,
+  nestedAddonProduct,
+  nestedSeasoningProduct,
   refreshOrderTotals,
+  removeOrderProductTree,
   saveSimpleQuantity,
   simpleProduct,
   user,
@@ -35,7 +38,13 @@ const fulfillOptions = route =>
 
 const setupShopPurchaseApi = async page => {
   const state = createState();
-  const products = [simpleProduct, customProduct];
+  const products = [
+    simpleProduct,
+    customProduct,
+    addonProduct,
+    nestedAddonProduct,
+    nestedSeasoningProduct,
+  ];
 
   page.on('pageerror', error => {
     state.requests.push(`pageerror:${error.message}`);
@@ -118,13 +127,35 @@ const setupShopPurchaseApi = async page => {
                 priceCalculation: 'sum',
               },
             ])
+          : requestedProduct === String(nestedAddonProduct.id)
+            ? collection([{
+                id: 402,
+                '@id': '/product_groups/402',
+                productGroup: 'Escolha o tempero smoke',
+                required: true,
+                minimum: 1,
+                maximum: 1,
+                priceCalculation: 'sum',
+              }])
           : collection([]),
       );
     }
 
     if (pathname === 'product_group_products') {
+      const requestedGroup = normalizeId(url.searchParams.get('productGroup'));
       return fulfill(
-        collection([
+        requestedGroup === '402'
+          ? collection([{
+              id: 502,
+              '@id': '/product_group_products/502',
+              productGroup: '/product_groups/402',
+              productChild: nestedSeasoningProduct,
+              product: nestedSeasoningProduct,
+              productType: 'component',
+              quantity: 1,
+              price: nestedSeasoningProduct.price,
+            }])
+          : collection([
           {
             id: 501,
             '@id': '/product_group_products/501',
@@ -134,6 +165,16 @@ const setupShopPurchaseApi = async page => {
             productType: 'component',
             quantity: 1,
             price: addonProduct.price,
+          },
+          {
+            id: 503,
+            '@id': '/product_group_products/503',
+            productGroup: '/product_groups/401',
+            productChild: nestedAddonProduct,
+            product: nestedAddonProduct,
+            productType: 'component',
+            quantity: 1,
+            price: nestedAddonProduct.price,
           },
         ]),
       );
@@ -165,15 +206,13 @@ const setupShopPurchaseApi = async page => {
       );
     }
     if (orderProductMatch && method === 'DELETE') {
-      state.orderProducts = state.orderProducts.filter(
-        item => String(item.id) !== String(orderProductMatch[1]),
-      );
-      refreshOrderTotals(state);
+      removeOrderProductTree(state, orderProductMatch[1]);
       return fulfill({});
     }
 
     if (pathname === 'orders/72651/add-products' && method === 'PUT') {
-      return fulfill(addCustomizedProduct(state, request.postDataJSON()));
+      state.lastAddProductsPayload = request.postDataJSON();
+      return fulfill(addCustomizedProduct(state, state.lastAddProductsPayload));
     }
     if (pathname === 'orders/72651' && method === 'GET') {
       refreshOrderTotals(state);
