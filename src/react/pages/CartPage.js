@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 
 import {
   ActivityIndicator,
@@ -14,8 +14,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStore} from '@store';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
-import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
+import ShopCartTree from '@controleonline/ui-shop/src/react/components/storefront/ShopCartTree';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
+import {getCartTreeRoots} from '@controleonline/ui-shop/src/react/domain/cartTree';
 import {
   formatMoney,
   normalizeId,
@@ -35,17 +36,6 @@ import {
   inlineStyle_203_18,
   inlineStyle_214_20,
   inlineStyle_222_18,
-  inlineStyle_237_24,
-  inlineStyle_244_26,
-  inlineStyle_252_28,
-  inlineStyle_261_28,
-  inlineStyle_274_30,
-  inlineStyle_295_26,
-  inlineStyle_301_32,
-  inlineStyle_312_30,
-  inlineStyle_321_28,
-  inlineStyle_326_34,
-  inlineStyle_331_30,
   inlineStyle_353_18,
   inlineStyle_363_20,
   inlineStyle_367_26,
@@ -65,22 +55,7 @@ import {
   cartSummaryTitleWrapStyle,
 } from './CartPage.styles';
 
-import { inlineStyle_185_12, inlineStyle_310_30 } from './CartPage.styles';
-
-const groupOrderProductComponents = orderProduct => {
-  const components = Array.isArray(orderProduct?.orderProductComponents)
-    ? orderProduct.orderProductComponents
-    : [];
-
-  return components.reduce((acc, component) => {
-    const groupName = component?.productGroup?.productGroup || 'Opções';
-    if (!acc[groupName]) {
-      acc[groupName] = [];
-    }
-    acc[groupName].push(component);
-    return acc;
-  }, {});
-};
+import {inlineStyle_185_12} from './CartPage.styles';
 
 const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
@@ -95,7 +70,6 @@ export default function CartPage() {
 
   const [orderProducts, setOrderProducts] = useState([]);
   const [isClearing, setIsClearing] = useState(false);
-  const removeTimeoutsRef = useRef({});
 
   const isMobile = width < 980;
 
@@ -115,8 +89,7 @@ export default function CartPage() {
 
     return orderProductsStore.actions
       .getItems({
-        order: `orders/${cart.id}`,
-        'exists[parentProduct]': 'false',
+        'order.id': Number(cart.id),
         itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       })
       .then(data => {
@@ -131,7 +104,10 @@ export default function CartPage() {
     }, [reloadRows]),
   );
 
-  const rows = useMemo(() => orderProducts.filter(Boolean), [orderProducts]);
+  const rows = useMemo(
+    () => getCartTreeRoots(orderProducts.filter(Boolean)),
+    [orderProducts],
+  );
   const itemsCount = useMemo(
     () => rows.reduce((sum, row) => sum + Number(row?.quantity || 0), 0),
     [rows],
@@ -148,48 +124,6 @@ export default function CartPage() {
       ),
     [rows],
   );
-
-  const handleRemoveRow = async row => {
-    if (!row?.id) return;
-
-    const rowId = String(row.id);
-    if (removeTimeoutsRef.current[rowId]) {
-      clearTimeout(removeTimeoutsRef.current[rowId]);
-    }
-
-    removeTimeoutsRef.current[rowId] = setTimeout(async () => {
-      try {
-        const orderIri = cart?.['@id'] || (cart?.id ? `/orders/${cart.id}` : null);
-        const productIri =
-          row?.product?.['@id'] ||
-          (row?.product?.id ? `/products/${row.product.id}` : null);
-
-        if (!orderIri || !productIri) {
-          return;
-        }
-        const providerId = normalizeId(
-          cart?.provider?.id ||
-            cart?.provider?.['@id'] ||
-            cart?.provider ||
-            salesCompany?.id,
-        );
-
-        await orderProductsStore.actions.saveQuantityQueued({
-          anonymous: cart?.anonymous === true,
-          externalCode: cart?.externalCode,
-          id: row.id,
-          order: orderIri,
-          product: productIri,
-          provider: providerId,
-          quantity: 0,
-        });
-        await refreshCart();
-        await reloadRows();
-      } finally {
-        delete removeTimeoutsRef.current[rowId];
-      }
-    }, 300);
-  };
 
   const handleClearCart = () => {
     if (!rows.length) return;
@@ -261,6 +195,23 @@ export default function CartPage() {
     navigation.navigate('SignInPage', {
       redirectRoute: 'ShopCheckoutPage',
     });
+  };
+
+  const handleEditRow = row => {
+    const productId = normalizeId(row?.product?.id || row?.product?.['@id']);
+    const orderProductId = normalizeId(row?.id || row?.['@id']);
+    if (!productId || !orderProductId) return;
+
+    navigation.navigate('CustomizeScreen', {
+      productId,
+      orderProductId,
+      redirectToCart: true,
+    });
+  };
+
+  const refreshRows = async () => {
+    await refreshCart();
+    await reloadRows();
   };
 
   return (
@@ -359,101 +310,14 @@ export default function CartPage() {
                   style={inlineStyle_222_18({
                     theme: theme,
                   })}>
-                  {rows.map(row => {
-                    const computedRowTotal =
-                      Number(row?.quantity || 0) * Number(row?.price || 0);
-                    const rowTotal = Number(
-                      row?.total ?? computedRowTotal,
-                    );
-                    const groupedComponents = groupOrderProductComponents(row);
-                    return (
-                      <View
-                        key={row.id}
-                        style={inlineStyle_237_24({
-                          theme: theme,
-                        })}>
-                        <View
-                          style={inlineStyle_244_26}>
-                          <Text
-                            numberOfLines={2}
-                            style={inlineStyle_252_28({
-                              theme: theme,
-                            })}>
-                            {row?.product?.product}
-                          </Text>
-                          <Text
-                            style={inlineStyle_261_28({
-                              theme: theme,
-                            })}>
-                            {formatMoney(rowTotal)}
-                          </Text>
-                        </View>
-                        {Object.entries(groupedComponents).map(
-                          ([groupName, components]) => (
-                            <Text
-                              key={`${row.id}-${groupName}`}
-                              style={inlineStyle_274_30({
-                                theme: theme,
-                              })}>
-                              {groupName}:{' '}
-                              {components
-                                .map(component => {
-                                  const componentName =
-                                    component?.product?.product || '--';
-                                  const qty = Number(component?.quantity || 1);
-                                  return qty > 1
-                                    ? `${qty}x ${componentName}`
-                                    : componentName;
-                                })
-                                .join(', ')}
-                            </Text>
-                          ),
-                        )}
-                        <View
-                          style={inlineStyle_295_26({
-                            isMobile: isMobile,
-                          })}>
-                          <View style={inlineStyle_301_32({
-                            isMobile: isMobile,
-                          })}>
-                            <ShopQuantityControl
-                              product={row.product}
-                              orderProduct={row}
-                              orderProductId={row.id}
-                              cart={cart}
-                              refreshCart={async () => {
-                                await refreshCart();
-                                await reloadRows();
-                              }}
-                              iconColor={theme.primary}
-                              style={inlineStyle_312_30}
-                              textStyle={inlineStyle_310_30}
-                            />
-                          </View>
-
-                          <View
-                            style={inlineStyle_321_28}>
-                            <Text style={inlineStyle_326_34({
-                              theme: theme,
-                            })}>
-                              {formatMoney(row?.price)}
-                            </Text>
-                            <TouchableOpacity
-                              onPress={() => handleRemoveRow(row)}
-                              style={inlineStyle_331_30({
-                                theme: theme,
-                              })}>
-                              <Icon
-                                name="delete-outline"
-                                size={20}
-                                color={theme.danger}
-                              />
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-                    );
-                  })}
+                  <ShopCartTree
+                    cart={cart}
+                    compact={isMobile}
+                    onEdit={handleEditRow}
+                    orderProducts={orderProducts}
+                    refreshCart={refreshRows}
+                    theme={theme}
+                  />
                 </View>
 
                 <View
