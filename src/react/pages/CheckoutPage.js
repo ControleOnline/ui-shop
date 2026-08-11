@@ -46,6 +46,7 @@ import {
   createEmptyAddressForm,
   normalizePostalCodeInput,
 } from '@controleonline/ui-common/src/react/utils/entityDisplay';
+import AddressForm from '@controleonline/ui-common/src/react/components/address/AddressForm';
 import {
   normalizeEntityId,
   toEntityIri,
@@ -775,8 +776,8 @@ export default function CheckoutPage() {
     const street = String(addressForm.street || '').trim();
     const district = String(addressForm.district || '').trim();
     const city = String(addressForm.city || '').trim();
-    const state = String(addressForm.state || '').trim();
-    const country = String(addressForm.country || 'BR').trim();
+    const state = String(addressForm.uf || addressForm.state || '').trim();
+    const country = String(addressForm.countryCode || addressForm.country || 'BR').trim();
     const number = String(addressForm.number ?? '').replace(/\D+/g, '').trim();
     const cep = normalizePostalCodeInput(addressForm.cep);
     const complement = String(addressForm.complement || '').trim();
@@ -1739,108 +1740,13 @@ export default function CheckoutPage() {
 
               {shouldShowAddressForm ? (
                 <View style={styles.formGrid}>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {borderColor: theme.cardBorder, color: theme.text},
-                  ]}
-                  placeholder="Apelido do endereco"
-                  placeholderTextColor={theme.muted}
-                  value={addressForm.nickname}
-                  onChangeText={value => handleAddressFormChange('nickname', value)}
-                />
-                <View style={styles.formRow}>
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="CEP"
-                    placeholderTextColor={theme.muted}
-                    keyboardType="numeric"
-                    value={addressForm.cep}
-                    onChangeText={value => handleAddressFormChange('cep', value)}
+                  <AddressForm
+                    mode="create"
+                    hideActions
+                    row={addressForm}
+                    onFormChange={next => setAddressForm(current => ({...current, ...next}))}
                   />
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {width: 112, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="Numero"
-                    placeholderTextColor={theme.muted}
-                    keyboardType="numeric"
-                    value={String(addressForm.number || '')}
-                    onChangeText={value => handleAddressFormChange('number', value)}
-                  />
-                </View>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {borderColor: theme.cardBorder, color: theme.text},
-                  ]}
-                  placeholder="Rua"
-                  placeholderTextColor={theme.muted}
-                  value={addressForm.street}
-                  onChangeText={value => handleAddressFormChange('street', value)}
-                />
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {borderColor: theme.cardBorder, color: theme.text},
-                  ]}
-                  placeholder="Complemento"
-                  placeholderTextColor={theme.muted}
-                  value={addressForm.complement}
-                  onChangeText={value => handleAddressFormChange('complement', value)}
-                />
-                <View style={styles.formRow}>
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="Bairro"
-                    placeholderTextColor={theme.muted}
-                    value={addressForm.district}
-                    onChangeText={value => handleAddressFormChange('district', value)}
-                  />
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="Cidade"
-                    placeholderTextColor={theme.muted}
-                    value={addressForm.city}
-                    onChangeText={value => handleAddressFormChange('city', value)}
-                  />
-                </View>
-                <View style={styles.formRow}>
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="UF"
-                    placeholderTextColor={theme.muted}
-                    autoCapitalize="characters"
-                    value={addressForm.state}
-                    onChangeText={value => handleAddressFormChange('state', value)}
-                  />
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      {flex: 1, borderColor: theme.cardBorder, color: theme.text},
-                    ]}
-                    placeholder="Pais"
-                    placeholderTextColor={theme.muted}
-                    autoCapitalize="characters"
-                    value={addressForm.country}
-                    onChangeText={value => handleAddressFormChange('country', value)}
-                  />
-                </View>
-
-                <View style={styles.formRow}>
+                  <View style={styles.formRow}>
                   <TouchableOpacity
                     style={[
                       styles.secondaryButton,
