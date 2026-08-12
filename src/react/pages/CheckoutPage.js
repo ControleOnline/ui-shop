@@ -46,7 +46,7 @@ import {
   createEmptyAddressForm,
   normalizePostalCodeInput,
 } from '@controleonline/ui-common/src/react/utils/entityDisplay';
-import AddressForm from '@controleonline/ui-common/src/react/components/address/AddressForm';
+import DefaultAddress from '@controleonline/ui-default/src/react/components/address/DefaultAddress';
 import {
   normalizeEntityId,
   toEntityIri,
@@ -1740,7 +1740,7 @@ export default function CheckoutPage() {
 
               {shouldShowAddressForm ? (
                 <View style={styles.formGrid}>
-                  <AddressForm
+                  <DefaultAddress
                     mode="create"
                     hideActions
                     row={addressForm}

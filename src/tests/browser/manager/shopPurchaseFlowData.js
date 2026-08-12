@@ -30,6 +30,14 @@ const customProduct = createProduct(202, 'Produto customizado smoke', 20, 'custo
   hasCustomizationGroups: true,
 });
 const addonProduct = createProduct(303, 'Adicional smoke', 3);
+const nestedAddonProduct = createProduct(
+  304,
+  'Batata smoke personalizavel',
+  0,
+  'custom',
+  {hasCustomizationGroups: true},
+);
+const nestedSeasoningProduct = createProduct(305, 'Tempero smoke', 1);
 
 const company = {
   id: 1,
@@ -85,6 +93,7 @@ const createOrderProduct = ({id, product, quantity, components = []}) => ({
 const createState = () => ({
   requests: [],
   payments: [],
+  lastAddProductsPayload: null,
   nextOrderProductId: 900,
   nextAddressId: 500,
   orderProducts: [],
@@ -105,7 +114,9 @@ const createState = () => ({
 });
 
 const refreshOrderTotals = state => {
-  const total = state.orderProducts.reduce(
+  const total = state.orderProducts
+    .filter(row => !row?.orderProduct)
+    .reduce(
     (sum, row) => sum + Number(row.total || 0),
     0,
   );
@@ -115,6 +126,35 @@ const refreshOrderTotals = state => {
     payable: total,
     orderProducts: state.orderProducts,
   };
+};
+
+const removeOrderProductTree = (state, orderProductId) => {
+  const removedIds = new Set([normalizeId(orderProductId)]);
+  let foundDescendant = true;
+
+  while (foundDescendant) {
+    foundDescendant = false;
+    state.orderProducts.forEach(item => {
+      const itemId = normalizeId(item?.id || item?.['@id']);
+      const parentId = normalizeId(
+        item?.orderProduct || item?.order_product,
+      );
+      if (
+        itemId &&
+        parentId &&
+        removedIds.has(parentId) &&
+        !removedIds.has(itemId)
+      ) {
+        removedIds.add(itemId);
+        foundDescendant = true;
+      }
+    });
+  }
+
+  state.orderProducts = state.orderProducts.filter(
+    item => !removedIds.has(normalizeId(item?.id || item?.['@id'])),
+  );
+  refreshOrderTotals(state);
 };
 
 const saveSimpleQuantity = (state, payload) => {
@@ -128,12 +168,12 @@ const saveSimpleQuantity = (state, payload) => {
   );
 
   if (quantity <= 0) {
-    state.orderProducts = state.orderProducts.filter(item =>
-      targetId
-        ? normalizeId(item.id) !== targetId
-        : normalizeId(item.product) !== productId,
+    const removedRoot = row || state.orderProducts.find(
+      item => normalizeId(item.product) === productId,
     );
-    refreshOrderTotals(state);
+    if (removedRoot) {
+      removeOrderProductTree(state, removedRoot.id || removedRoot['@id']);
+    }
     return null;
   }
 
@@ -155,29 +195,74 @@ const saveSimpleQuantity = (state, payload) => {
 const addCustomizedProduct = (state, payloadRows) => {
   const payload = Array.isArray(payloadRows) ? payloadRows[0] : payloadRows;
   const quantity = Number(payload?.quantity || 1);
-  const components = (Array.isArray(payload?.sub_products)
-    ? payload.sub_products
-    : []
-  ).map(subProduct => ({
+  const root = createOrderProduct({
     id: state.nextOrderProductId++,
-    product: addonProduct,
-    productGroup: {
+    product: customProduct,
+    quantity,
+  });
+  state.orderProducts.push(root);
+
+  const productsById = new Map([
+    [String(addonProduct.id), addonProduct],
+    [String(nestedAddonProduct.id), nestedAddonProduct],
+    [String(nestedSeasoningProduct.id), nestedSeasoningProduct],
+  ]);
+  const groupsById = {
+    401: {
       id: 401,
       '@id': '/product_groups/401',
       productGroup: 'Complementos smoke',
+      required: true,
+      minimum: 1,
     },
-    quantity: Number(subProduct.quantity || 1),
-    price: Number(addonProduct.price || 0),
-  }));
+    402: {
+      id: 402,
+      '@id': '/product_groups/402',
+      productGroup: 'Escolha o tempero smoke',
+      required: true,
+      minimum: 1,
+    },
+  };
 
-  state.orderProducts.push(
-    createOrderProduct({
-      id: state.nextOrderProductId++,
-      product: customProduct,
-      quantity,
-      components,
-    }),
+  const appendChildren = (parent, childPayloads) => {
+    parent.orderProductComponents = (Array.isArray(childPayloads)
+      ? childPayloads
+      : []
+    ).map(childPayload => {
+      const product = productsById.get(normalizeId(childPayload.product));
+      const groupId = normalizeId(childPayload.productGroup);
+      const child = {
+        id: state.nextOrderProductId++,
+        '@id': orderProductIri(state.nextOrderProductId - 1),
+        order: '/orders/72651',
+        orderProduct: orderProductIri(parent.id),
+        parentProduct: productIri(parent.product.id),
+        product,
+        productGroup: groupsById[groupId],
+        quantity: Number(childPayload.quantity || 1),
+        price: Number(product?.price || 0),
+        total:
+          Number(product?.price || 0) * Number(childPayload.quantity || 1),
+        showInParentQueue: normalizeId(product) === String(addonProduct.id),
+        orderProductComponents: [],
+      };
+      appendChildren(child, childPayload.sub_products);
+      child.price += child.orderProductComponents.reduce(
+        (sum, component) => sum + Number(component.price || 0),
+        0,
+      );
+      child.total = child.price * child.quantity;
+      state.orderProducts.push(child);
+      return child;
+    });
+  };
+
+  appendChildren(root, payload?.sub_products);
+  root.price = Number(customProduct.price || 0) + root.orderProductComponents.reduce(
+    (sum, component) => sum + Number(component.price || 0),
+    0,
   );
+  root.total = root.price * root.quantity;
   refreshOrderTotals(state);
   return state.order;
 };
@@ -190,7 +275,10 @@ module.exports = {
   customProduct,
   createState,
   normalizeId,
+  nestedAddonProduct,
+  nestedSeasoningProduct,
   refreshOrderTotals,
+  removeOrderProductTree,
   saveSimpleQuantity,
   simpleProduct,
   user,
