@@ -3,6 +3,7 @@ import {useFocusEffect} from '@react-navigation/native';
 
 import {
   fetchShopFranchiseDirectory,
+  filterShopFranchiseDirectory,
   SHOP_FRANCHISE_PAGE_SIZE,
 } from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/shopConfig';
@@ -60,6 +61,7 @@ export default function useShopSalesCompany({
 } = {}) {
   const {
     defaultCompany,
+    franchiseAddressCategoryIds,
     salesPageEnabled,
     visibleFranchiseAddressIds,
     visibleFranchiseCompanyIds,
@@ -149,28 +151,18 @@ export default function useShopSalesCompany({
       return [];
     }
 
-    const visibleCompanyIdSet = new Set(visibleFranchiseCompanyIds);
-    const visibleAddressIdSet = new Set(visibleFranchiseAddressIds);
-
-    return directory
-      .filter(company =>
-        visibleCompanyIdSet.has(normalizeShopEntityId(company)),
-      )
-      .map(company => {
-        const addresses = (company?.shopAddresses || []).filter(address => {
-          if (visibleAddressIdSet.size === 0) {
-            return true;
-          }
-
-          return visibleAddressIdSet.has(normalizeShopEntityId(address));
-        });
-
-        return {
-          ...company,
-          shopAddresses: addresses,
-        };
-      });
-  }, [directory, visibleFranchiseAddressIds, visibleFranchiseCompanyIds]);
+    return filterShopFranchiseDirectory({
+      directory,
+      visibleCompanyIds: visibleFranchiseCompanyIds,
+      addressCategoryIds: franchiseAddressCategoryIds,
+      legacyVisibleAddressIds: visibleFranchiseAddressIds,
+    });
+  }, [
+    directory,
+    franchiseAddressCategoryIds,
+    visibleFranchiseAddressIds,
+    visibleFranchiseCompanyIds,
+  ]);
 
   const storedSelectionId = normalizeShopEntityId(storedSelection);
   const matchedSelection = useMemo(
