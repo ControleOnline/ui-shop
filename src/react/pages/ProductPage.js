@@ -13,7 +13,6 @@
 import React, {useCallback, useMemo, useState} from 'react';
 
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -32,8 +31,8 @@ import {
 
 import ShopSalesCompanySelector from '@controleonline/ui-shop/src/react/components/storefront/ShopSalesCompanySelector';
 import ShopFeatureState from '@controleonline/ui-shop/src/react/components/storefront/ShopFeatureState';
-import ShopQuantityControl from '@controleonline/ui-shop/src/react/components/storefront/ShopQuantityControl';
 import ShopShell from '@controleonline/ui-shop/src/react/components/storefront/ShopShell';
+import ProductActionBlock from './ProductActionBlock';
 import {openShopCustomize} from '@controleonline/ui-shop/src/react/utils/shopCustomizeNavigation';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
 import useShopSalesCompany from '@controleonline/ui-shop/src/react/hooks/useShopSalesCompany';
@@ -73,13 +72,6 @@ import {
   productPageHelperChipStyle,
   productPageHelperChipTextStyle,
   productPageInlineActionWrapStyle,
-  productPageLoadingActionStyle,
-  productPageCustomizeButtonStyle,
-  productPageCustomizeButtonTextStyle,
-  productPageSimpleActionRowStyle,
-  productPageQuantitySlotStyle,
-  productPageCartButtonStyle,
-  productPageCartButtonTextStyle,
   productPageDetailsCardStyle,
   productPageDetailsTitleStyle,
   productPageDetailsTextStyle,
@@ -404,55 +396,17 @@ export default function ProductPage() {
 
                     {!isMobile ? (
                       <View style={productPageInlineActionWrapStyle}>
-                        {isCheckingGroups ? (
-                          <View
-                            style={productPageLoadingActionStyle({
-                              theme,
-                            })}>
-                            <ActivityIndicator color={theme.primary} />
-                          </View>
-                        ) : requiresCustomization ? (
-                          <TouchableOpacity
-                            accessibilityLabel={`Personalizar ${product?.product || 'produto'}`}
-                            onPress={handleOpenCustomize}
-                            style={productPageCustomizeButtonStyle({
-                              theme,
-                            })}>
-                            <Text
-                              style={productPageCustomizeButtonTextStyle({
-                                theme,
-                              })}>
-                              Personalizar
-                            </Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <View
-                            style={productPageSimpleActionRowStyle({
-                              isMobile,
-                            })}>
-                            <View style={productPageQuantitySlotStyle}>
-                              <ShopQuantityControl
-                                product={product}
-                                cart={cart}
-                                refreshCart={refreshCart}
-                                iconColor={theme.primary}
-                              />
-                            </View>
-
-                            <TouchableOpacity
-                              onPress={() => navigation.navigate('ShopCartPage')}
-                              style={productPageCartButtonStyle({
-                                theme,
-                              })}>
-                              <Text
-                                style={productPageCartButtonTextStyle({
-                                  theme,
-                                })}>
-                                Ir para carrinho
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                        <ProductActionBlock
+                          theme={theme}
+                          isMobile={isMobile}
+                          isCheckingGroups={isCheckingGroups}
+                          requiresCustomization={requiresCustomization}
+                          product={product}
+                          cart={cart}
+                          refreshCart={refreshCart}
+                          handleOpenCustomize={handleOpenCustomize}
+                          onNavigateCart={() => navigation.navigate('ShopCartPage')}
+                        />
                       </View>
                     ) : null}
                   </View>
@@ -488,59 +442,18 @@ export default function ProductPage() {
               </ScrollView>
 
               {isMobile ? (
-                <View
-                  style={productPageMobileFooterStyle({
-                    theme,
-                  })}>
-                  {isCheckingGroups ? (
-                    <View
-                      style={productPageLoadingActionStyle({
-                        theme,
-                      })}>
-                      <ActivityIndicator color={theme.primary} />
-                    </View>
-                  ) : requiresCustomization ? (
-                    <TouchableOpacity
-                      accessibilityLabel={`Personalizar ${product?.product || 'produto'}`}
-                      onPress={handleOpenCustomize}
-                      style={productPageCustomizeButtonStyle({
-                        theme,
-                      })}>
-                      <Text
-                        style={productPageCustomizeButtonTextStyle({
-                          theme,
-                        })}>
-                        Personalizar
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View
-                      style={productPageSimpleActionRowStyle({
-                        isMobile,
-                      })}>
-                      <View style={productPageQuantitySlotStyle}>
-                        <ShopQuantityControl
-                          product={product}
-                          cart={cart}
-                          refreshCart={refreshCart}
-                          iconColor={theme.primary}
-                        />
-                      </View>
-
-                      <TouchableOpacity
-                        onPress={() => navigation.navigate('ShopCartPage')}
-                        style={productPageCartButtonStyle({
-                          theme,
-                        })}>
-                        <Text
-                          style={productPageCartButtonTextStyle({
-                            theme,
-                          })}>
-                          Ir para carrinho
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                <View style={productPageMobileFooterStyle({theme})}>
+                  <ProductActionBlock
+                    theme={theme}
+                    isMobile={isMobile}
+                    isCheckingGroups={isCheckingGroups}
+                    requiresCustomization={requiresCustomization}
+                    product={product}
+                    cart={cart}
+                    refreshCart={refreshCart}
+                    handleOpenCustomize={handleOpenCustomize}
+                    onNavigateCart={() => navigation.navigate('ShopCartPage')}
+                  />
                 </View>
               ) : null}
             </>
