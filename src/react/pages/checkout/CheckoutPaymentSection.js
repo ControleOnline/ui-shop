@@ -29,7 +29,7 @@ import {
   inlineStyle_572_16,
   inlineStyle_578_22,
 } from '../CheckoutPage.styles';
-import {CheckoutSkeletonRows} from './checkoutHelpers';
+import CheckoutSkeletonRows from './CheckoutSkeletonRows';
 
 export default function CheckoutPaymentSection({
   theme,

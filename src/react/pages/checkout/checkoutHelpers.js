@@ -1,6 +1,3 @@
-import React from 'react';
-import {View} from 'react-native';
-import ShopSkeleton from '@controleonline/ui-shop/src/react/components/storefront/ShopSkeleton';
 import {
   detectPaymentOptionKind,
   getInvoiceDestinationWalletId,
@@ -9,7 +6,7 @@ import {
   getPaymentOptionWalletId,
 } from '@controleonline/ui-common/src/react/utils/paymentOptions';
 import {normalizeEntityId} from '@controleonline/ui-common/src/react/utils/commercialDocumentOrders';
-import styles from '../CheckoutPage.styles';
+
 
 export const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
 
@@ -225,10 +222,3 @@ export const getActionResult = response =>
     ? response.result
     : response;
 
-export const CheckoutSkeletonRows = ({theme}) => (
-  <View style={styles.skeletonStack}>
-    <ShopSkeleton height={18} width="48%" theme={{theme: {colors: theme}}} />
-    <ShopSkeleton height={14} width="86%" theme={{theme: {colors: theme}}} />
-    <ShopSkeleton height={46} radius={12} theme={{theme: {colors: theme}}} />
-  </View>
-);

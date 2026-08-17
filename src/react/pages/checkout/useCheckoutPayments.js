@@ -10,5 +10,5 @@ export default function useCheckoutPayments(core) {
   const paymentState = useCheckoutPaymentState(core);
   const merged = {...core, ...paymentState};
   const actions = useCheckoutPaymentActions(merged);
-  return {...paymentState, ...actions};
+  return {...core, ...paymentState, ...actions};
 }

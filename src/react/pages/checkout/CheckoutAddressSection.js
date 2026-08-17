@@ -14,7 +14,7 @@ import {
   inlineStyle_375_16,
 } from '../CheckoutPage.styles';
 import styles from '../CheckoutPage.styles';
-import {CheckoutSkeletonRows} from './checkoutHelpers';
+import CheckoutSkeletonRows from './CheckoutSkeletonRows';
 import {formatMoney} from '@controleonline/ui-shop/src/react/utils/shop';
 
 export default function CheckoutAddressSection({
