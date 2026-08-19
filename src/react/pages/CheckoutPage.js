@@ -107,7 +107,7 @@ export default function CheckoutPage() {
           <ShopAuthRequiredState
             theme={theme}
             title="Entre para finalizar o pedido"
-            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
+            description="Para concluir a compra precisamos identificar o cliente e o endereço de entrega."
           />
         )}
       </ShopShell>
