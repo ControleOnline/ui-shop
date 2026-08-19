@@ -162,7 +162,7 @@ const isSelectableDeliveryQuote = quote =>
 
 const formatApiError = error => {
   if (!error) {
-    return 'Nao foi possivel concluir a solicitacao.';
+    return 'Não foi possível concluir a solicitação.';
   }
 
   if (typeof error === 'string') {
@@ -173,7 +173,7 @@ const formatApiError = error => {
     error?.message ||
     error?.errmsg ||
     error?.data?.message ||
-    'Nao foi possivel concluir a solicitacao.'
+    'Não foi possível concluir a solicitação.'
   );
 };
 
@@ -467,7 +467,7 @@ export default function CheckoutPage() {
     deliveryFeeSourceLabel = 'Taxa fixa configurada pela loja.';
   } else if (deliveryQuotes.length > 0) {
     deliveryFeeSourceLabel =
-      'Selecione uma cotacao disponivel para aplicar a taxa.';
+      'Selecione uma cotação disponível para aplicar a taxa.';
   }
   const financialTotal = cartTotal + deliveryFee;
   const paidAmount = useMemo(
@@ -682,14 +682,14 @@ export default function CheckoutPage() {
   const updateCartDeliveryAddress = useCallback(
     async addressIri => {
       if (!cart?.id) {
-        throw new Error('Carrinho nao encontrado para atualizar a entrega.');
+        throw new Error('Carrinho não encontrado para atualizar a entrega.');
       }
 
       const clientIri = toEntityIri(currentCompany, 'people');
       const providerIri = toEntityIri(sellerCompany, 'people');
 
       if (!clientIri) {
-        throw new Error('Cliente nao encontrado para atualizar a entrega.');
+        throw new Error('Cliente não encontrado para atualizar a entrega.');
       }
 
       const savedOrder = await ordersActions.save({
@@ -731,7 +731,7 @@ export default function CheckoutPage() {
       const addressId = normalizeEntityId(address);
 
       if (!addressIri) {
-        setError('Nao foi possivel identificar o endereco selecionado.');
+        setError('Não foi possível identificar o endereço selecionado.');
         return;
       }
 
@@ -747,7 +747,7 @@ export default function CheckoutPage() {
         await updateCartDeliveryAddress(addressIri);
         setLocalDeliveryAddressIri(addressIri);
         setAddressFormVisible(false);
-        setMessage('Endereco de entrega selecionado.');
+        setMessage('Endereço de entrega selecionado.');
       } catch (e) {
         setError(formatApiError(e));
       } finally {
@@ -762,14 +762,14 @@ export default function CheckoutPage() {
     setMessage('');
 
     if (!cart?.id) {
-      setError('Carrinho nao encontrado para atualizar a entrega.');
+      setError('Carrinho não encontrado para atualizar a entrega.');
       return;
     }
 
     const clientIri = toEntityIri(currentCompany, 'people');
 
     if (!clientIri) {
-      setError('Cliente nao encontrado para cadastrar o endereco.');
+      setError('Cliente não encontrado para cadastrar o endereço.');
       return;
     }
 
@@ -808,7 +808,7 @@ export default function CheckoutPage() {
       const savedAddressIri = toEntityIri(savedAddress, 'addresses');
 
       if (!savedAddressIri) {
-        throw new Error('Endereco criado sem identificador valido.');
+        throw new Error('Endereço criado sem identificador válido.');
       }
 
       await updateCartDeliveryAddress(savedAddressIri);
@@ -879,7 +879,7 @@ export default function CheckoutPage() {
     }
 
     if (!cartAddressDestinationIri) {
-      setError('Salve o endereco de entrega antes de cotar.');
+      setError('Salve o endereço de entrega antes de cotar.');
       return;
     }
 
@@ -900,7 +900,7 @@ export default function CheckoutPage() {
       } else {
         await loadDeliveryQuotes();
       }
-      setMessage('Cotacao de entrega solicitada.');
+      setMessage('Cotação de entrega solicitada.');
     } catch (e) {
       setError(formatApiError(e));
     } finally {
@@ -1102,7 +1102,7 @@ export default function CheckoutPage() {
 
       if (!hasDeliveryAddress) {
         throw new Error(
-          'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
+          'Selecione ou cadastre um endereço de entrega antes de concluir o checkout.',
         );
       }
 
@@ -1271,7 +1271,7 @@ export default function CheckoutPage() {
       } catch (e) {
         setError(
           formatApiError(e) ||
-            'Nao foi possivel registrar a cobranca para pagamento na entrega.',
+            'Não foi possível registrar a cobrança para pagamento na entrega.',
         );
       } finally {
         setIsProcessing(false);
@@ -1293,7 +1293,7 @@ export default function CheckoutPage() {
 
       if (!selectedPaymentType) {
         setError(
-          'Nao foi possivel identificar o meio de pagamento da entrega.',
+          'Não foi possível identificar o meio de pagamento da entrega.',
         );
         return;
       }
@@ -1385,14 +1385,14 @@ export default function CheckoutPage() {
 
     if (!hasDeliveryAddress) {
       setError(
-        'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
+        'Selecione ou cadastre um endereço de entrega antes de concluir o checkout.',
       );
       return;
     }
 
     if (deliveryModeOptions.length === 0) {
       setError(
-        'A loja ainda nao configurou maquininha ou dinheiro para cobrar na entrega.',
+        'A loja ainda não configurou maquininha ou dinheiro para cobrar na entrega.',
       );
       return;
     }
@@ -1424,7 +1424,7 @@ export default function CheckoutPage() {
   const handleConfirmDeliveryChange = useCallback(async () => {
     if (!selectedDeliveryPaymentType) {
       setError(
-        'Nao foi possivel identificar o pagamento em dinheiro para registrar a entrega.',
+        'Não foi possível identificar o pagamento em dinheiro para registrar a entrega.',
       );
       return;
     }
@@ -1436,7 +1436,7 @@ export default function CheckoutPage() {
 
     if (cashPaymentDetails.missingAmount > 0.009) {
       setError(
-        'O valor informado para troco nao pode ser menor que o total do pedido.',
+        'O valor informado para troco não pode ser menor que o total do pedido.',
       );
       return;
     }
@@ -1523,7 +1523,7 @@ export default function CheckoutPage() {
           <ShopAuthRequiredState
             theme={theme}
             title="Entre para finalizar o pedido"
-            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
+            description="Para concluir a compra precisamos identificar o cliente e o endereço de entrega."
           />
         )}
       </ShopShell>
@@ -1699,7 +1699,7 @@ export default function CheckoutPage() {
                     styles.methodCardHint,
                     {color: theme.muted},
                   ]}>
-                  Nenhum endereco cadastrado para este cliente.
+                  Nenhum endereço cadastrado para este cliente.
                 </Text>
               )}
 
@@ -1715,7 +1715,7 @@ export default function CheckoutPage() {
                     ]}
                     onPress={() => setAddressFormVisible(true)}>
                     <Text style={[styles.confirmButtonText, {color: '#FFFFFF'}]}>
-                      Adicionar endereco
+                      Adicionar endereço
                     </Text>
                   </TouchableOpacity>
                   {hasDeliveryAddress ? (
@@ -1759,7 +1759,7 @@ export default function CheckoutPage() {
                     disabled={addressSaveLoading}
                     onPress={saveDeliveryAddress}>
                     <Text style={[styles.confirmButtonText, {color: theme.text}]}>
-                      {addressSaveLoading ? 'Salvando...' : 'Salvar endereco'}
+                      {addressSaveLoading ? 'Salvando...' : 'Salvar endereço'}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1832,7 +1832,7 @@ export default function CheckoutPage() {
                         <Text style={[styles.quoteMeta, {color: theme.muted}]}>
                           {canSelectQuote
                             ? `Valor: ${formatMoney(quotePrice)}`
-                            : quote?.quoteStateLabel || 'Aguardando cotacao'}
+                            : quote?.quoteStateLabel || 'Aguardando cotação'}
                         </Text>
                       </TouchableOpacity>
                     );
