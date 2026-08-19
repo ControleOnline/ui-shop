@@ -120,7 +120,7 @@ export default function useCheckoutState() {
   const updateCartDeliveryAddress = useCallback(
     async addressIri => {
       if (!cart?.id) {
-        throw new Error('Carrinho nao encontrado para atualizar a entrega.');
+        throw new Error('Carrinho não encontrado para atualizar a entrega.');
       }
 
       const clientIri = toEntityIri(currentCompany, 'people');
@@ -178,7 +178,7 @@ export default function useCheckoutState() {
         await updateCartDeliveryAddress(addressIri);
         setLocalDeliveryAddressIri(addressIri);
         setAddressFormVisible(false);
-        setMessage('Endereco de entrega selecionado.');
+        setMessage('Endereço de entrega selecionado.');
       } catch (e) {
         setError(formatApiError(e));
       } finally {
@@ -193,7 +193,7 @@ export default function useCheckoutState() {
     setMessage('');
 
     if (!cart?.id) {
-      setError('Carrinho nao encontrado para atualizar a entrega.');
+      setError('Carrinho não encontrado para atualizar a entrega.');
       return;
     }
 
@@ -308,7 +308,7 @@ export default function useCheckoutState() {
       } else {
         await loadDeliveryQuotes();
       }
-      setMessage('Cotacao de entrega solicitada.');
+      setMessage('Cotação de entrega solicitada.');
     } catch (e) {
       setError(formatApiError(e));
     } finally {

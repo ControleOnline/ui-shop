@@ -80,7 +80,7 @@ export default function useCheckoutPaymentActions(state) {
 
       if (!hasDeliveryAddress) {
         throw new Error(
-          'Selecione ou cadastre um endereco de entrega antes de concluir o checkout.',
+          'Selecione ou cadastre um endereço de entrega antes de concluir o checkout.',
         );
       }
 
@@ -247,7 +247,7 @@ export default function useCheckoutPaymentActions(state) {
       } catch (e) {
         setError(
           formatApiError(e) ||
-            'Nao foi possivel registrar a cobranca para pagamento na entrega.',
+            'Não foi possível registrar a cobrança para pagamento na entrega.',
         );
       } finally {
         setIsProcessing(false);
@@ -274,7 +274,7 @@ export default function useCheckoutPaymentActions(state) {
       const selectedPaymentType = deliveryOption?.paymentType || null;
 
       if (!selectedPaymentType) {
-        setError('Nao foi possivel identificar o meio de pagamento da entrega.');
+        setError('Não foi possível identificar o meio de pagamento da entrega.');
         return;
       }
 
@@ -363,12 +363,12 @@ export default function useCheckoutPaymentActions(state) {
     if (!chargeOnDeliveryEnabled) return;
 
     if (!hasDeliveryAddress) {
-      setError('Selecione ou cadastre um endereco de entrega antes de concluir o checkout.');
+      setError('Selecione ou cadastre um endereço de entrega antes de concluir o checkout.');
       return;
     }
 
     if (deliveryModeOptions.length === 0) {
-      setError('A loja ainda nao configurou maquininha ou dinheiro para cobrar na entrega.');
+      setError('A loja ainda não configurou maquininha ou dinheiro para cobrar na entrega.');
       return;
     }
 
@@ -402,7 +402,7 @@ export default function useCheckoutPaymentActions(state) {
 
   const handleConfirmDeliveryChange = useCallback(async () => {
     if (!selectedDeliveryPaymentType) {
-      setError('Nao foi possivel identificar o pagamento em dinheiro para registrar a entrega.');
+      setError('Não foi possível identificar o pagamento em dinheiro para registrar a entrega.');
       return;
     }
 
@@ -412,7 +412,7 @@ export default function useCheckoutPaymentActions(state) {
     }
 
     if (cashPaymentDetails.missingAmount > 0.009) {
-      setError('O valor informado para troco nao pode ser menor que o total do pedido.');
+      setError('O valor informado para troco não pode ser menor que o total do pedido.');
       return;
     }
 

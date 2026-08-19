@@ -72,7 +72,7 @@ export const isSelectableDeliveryQuote = quote =>
 
 export const formatApiError = error => {
   if (!error) {
-    return 'Nao foi possivel concluir a solicitacao.';
+    return 'Não foi possível concluir a solicitação.';
   }
 
   if (typeof error === 'string') {
@@ -83,7 +83,7 @@ export const formatApiError = error => {
     error?.message ||
     error?.errmsg ||
     error?.data?.message ||
-    'Nao foi possivel concluir a solicitacao.'
+    'Não foi possível concluir a solicitação.'
   );
 };
 
