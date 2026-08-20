@@ -7,6 +7,7 @@ import {
   normalizeNumericId,
   readShopSessionClientId,
 } from '@controleonline/ui-shop/src/react/utils/shopSession';
+import {readStoredQrContext} from '@controleonline/ui-shop/src/react/utils/shopQrContext';
 
 let cartRequestInFlight = null;
 let cartRequestKey = '';
@@ -31,6 +32,9 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartExternalCode = String(
     cartGetters.item?.externalCode || cartGetters.item?.external_code || '',
   ).trim();
+  const qrContext = readStoredQrContext();
+  const qrExternalCode = String(qrContext?.externalCode || '').trim();
+  const effectiveExternalCode = cartExternalCode || qrExternalCode;
 
   const refreshCart = useCallback(() => {
     const appType = String(app_type || '').toUpperCase();
@@ -67,7 +71,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
         })
       : cartActions.discoveryAnonymousCart({
           provider: providerId,
-          externalCode: cartExternalCode,
+          externalCode: effectiveExternalCode,
         }))
       .finally(() => {
         if (cartRequestInFlight?.key === key) {
