@@ -194,10 +194,24 @@ export default function ShopMobileStoreHeader({
               position: 'relative',
             },
           ]}>
-          <View style={inlineStyle_135_14}>
+          {/* Left cluster: Home (internal pages only) + logo */}
+          <View
+            style={[
+              inlineStyle_135_14,
+              {flexDirection: 'row', alignItems: 'center', gap: 8},
+            ]}>
+            {showHomeAction
+              ? renderActionButton({
+                  iconName: 'home',
+                  label: HOME_ACTION_LABEL,
+                  onPress: onNavigateHome,
+                  shell: true,
+                })
+              : null}
             {renderLogo({shell: true})}
           </View>
 
+          {/* Right cluster: menu only (Home never sits to the right of search) */}
           {!showSearch ? (
             <View
               style={[
@@ -207,14 +221,6 @@ export default function ShopMobileStoreHeader({
                   right: 0,
                 },
               ]}>
-              {showHomeAction
-                ? renderActionButton({
-                    iconName: 'home',
-                    label: HOME_ACTION_LABEL,
-                    onPress: onNavigateHome,
-                    shell: true,
-                  })
-                : null}
               {renderActionButton({
                 iconName: menuIconName,
                 label: MENU_LABEL,
@@ -245,14 +251,6 @@ export default function ShopMobileStoreHeader({
               />
             </View>
             <View style={inlineStyle_224_18}>
-              {showHomeAction
-                ? renderActionButton({
-                    iconName: 'home',
-                    label: HOME_ACTION_LABEL,
-                    onPress: onNavigateHome,
-                    shell: true,
-                  })
-                : null}
               {renderActionButton({
                 iconName: menuIconName,
                 label: MENU_LABEL,
@@ -296,6 +294,14 @@ export default function ShopMobileStoreHeader({
               mobileStoreContentColumnStyle,
               {flexDirection: 'row', alignItems: 'center', gap: 10},
             ]}>
+            {/* Home stays on the left of search; menu alone on the right */}
+            {showHomeAction
+              ? renderActionButton({
+                  iconName: 'home',
+                  label: HOME_ACTION_LABEL,
+                  onPress: onNavigateHome,
+                })
+              : null}
             <View style={[mobileStoreSearchStyle({theme}), {flex: 1}]}>
               <Icon name="search" size={19} color={theme.muted} />
               <TextInput
@@ -310,13 +316,6 @@ export default function ShopMobileStoreHeader({
             </View>
 
             <View style={[mobileStoreActionsRowStyle, {marginTop: 0}]}>
-              {showHomeAction
-                ? renderActionButton({
-                    iconName: 'home',
-                    label: HOME_ACTION_LABEL,
-                    onPress: onNavigateHome,
-                  })
-                : null}
               {renderActionButton({
                 iconName: menuIconName,
                 label: MENU_LABEL,
@@ -341,7 +340,15 @@ export default function ShopMobileStoreHeader({
               </View>
             ) : null}
 
-            <View style={mobileStoreActionsRowStyle}>
+            <View
+              style={[
+                mobileStoreActionsRowStyle,
+                {
+                  flexDirection: 'row',
+                  justifyContent: showHomeAction ? 'space-between' : 'flex-end',
+                  width: '100%',
+                },
+              ]}>
               {showHomeAction
                 ? renderActionButton({
                     iconName: 'home',
