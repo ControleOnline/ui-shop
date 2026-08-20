@@ -6,7 +6,6 @@ import React, {
 } from 'react';
 
 import {
-  Image,
   Modal,
   Text,
   TouchableOpacity,
@@ -15,7 +14,6 @@ import {
 } from 'react-native';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import md5 from 'md5';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
 import useShopCart from '@controleonline/ui-shop/src/react/hooks/useShopCart';
@@ -25,9 +23,9 @@ import ShopMobileStoreHeader from '@controleonline/ui-shop/src/react/components/
 
 import {
   buildFileUrl,
-  getInitials,
   pickTheme,
 } from '@controleonline/ui-shop/src/react/utils/shop';
+import UserAvatar from '@controleonline/ui-common/src/react/components/UserAvatar';
 import {
   SHOP_HOME_OPTION_FRANCHISE_LOCATOR,
   SHOP_HOME_OPTION_LOYALTY,
@@ -87,12 +85,6 @@ const getSession = () => {
   }
 };
 
-const getAvatarUrl = user => {
-  if (user?.avatar) return buildFileUrl(user.avatar);
-  if (!user?.email) return '';
-  return `https://www.gravatar.com/avatar/${md5(String(user.email).trim().toLowerCase())}?s=200&d=identicon`;
-};
-
 export default function ShopShell({
   children,
   hideHeader = false,
@@ -146,7 +138,6 @@ export default function ShopShell({
 
   const session = getSession();
   const accountUser = user && Object.keys(user).length > 0 ? user : session;
-  const avatarUrl = getAvatarUrl(accountUser);
   const isSalesContext =
     activeHomeEntry === SHOP_HOME_OPTION_SALES ||
     SALES_FLOW_ROUTE_NAMES.has(route?.name);
@@ -491,20 +482,18 @@ export default function ShopShell({
                   style={inlineStyle_473_18({
                     menuPalette: menuPalette,
                   })}>
-                  {avatarUrl ? (
-                    <Image
-                      source={{uri: avatarUrl}}
-                      style={inlineStyle_485_22}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Text
-                      style={inlineStyle_490_22({
-                        menuPalette: menuPalette,
-                      })}>
-                      {getInitials(displayName)}
-                    </Text>
-                  )}
+                  <UserAvatar
+                    imageUrl={buildFileUrl(accountUser?.avatar)}
+                    email={accountUser?.email}
+                    name={displayName}
+                    size={40}
+                    backgroundColor={menuPalette.buttonBackground}
+                    borderColor={menuPalette.buttonText}
+                    borderWidth={0}
+                    textColor={menuPalette.buttonText}
+                    style={inlineStyle_485_22}
+                    useGravatar
+                  />
                 </View>
 
                 <Text
