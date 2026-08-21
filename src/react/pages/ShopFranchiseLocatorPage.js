@@ -21,6 +21,7 @@ import {
 import {pickTheme} from '@controleonline/ui-shop/src/react/utils/shop';
 import {
   fetchShopFranchiseDirectory,
+  filterShopFranchiseDirectory,
   SHOP_FRANCHISE_PAGE_SIZE,
 } from '@controleonline/ui-common/src/react/utils/shopFranchises';
 import {
@@ -147,6 +148,7 @@ export default function ShopFranchiseLocatorPage() {
   const {height} = useWindowDimensions();
   const {
     defaultCompany,
+    franchiseAddressCategoryIds,
     franchiseLocatorEnabled,
     primaryEntryRouteName,
     salesPageEnabled,
@@ -242,29 +244,18 @@ export default function ShopFranchiseLocatorPage() {
       return [];
     }
 
-    const visibleCompanyIdSet = new Set(visibleFranchiseCompanyIds);
-    const visibleAddressIdSet = new Set(visibleFranchiseAddressIds);
-
-    return directory
-      .map(company => {
-        const companyId = normalizeShopEntityId(company);
-
-        if (!visibleCompanyIdSet.has(companyId)) {
-          return null;
-        }
-
-        const addresses = (company?.shopAddresses || []).filter(address =>
-          visibleAddressIdSet.size === 0 ||
-          visibleAddressIdSet.has(normalizeShopEntityId(address)),
-        );
-
-        return {
-          ...company,
-          shopAddresses: addresses,
-        };
-      })
-      .filter(Boolean);
-  }, [directory, visibleFranchiseAddressIds, visibleFranchiseCompanyIds]);
+    return filterShopFranchiseDirectory({
+      directory,
+      visibleCompanyIds: visibleFranchiseCompanyIds,
+      addressCategoryIds: franchiseAddressCategoryIds,
+      legacyVisibleAddressIds: visibleFranchiseAddressIds,
+    });
+  }, [
+    directory,
+    franchiseAddressCategoryIds,
+    visibleFranchiseAddressIds,
+    visibleFranchiseCompanyIds,
+  ]);
 
   const effectiveDirectory = configuredDirectory;
 
