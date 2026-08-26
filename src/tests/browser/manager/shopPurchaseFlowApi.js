@@ -298,6 +298,14 @@ const setupShopPurchaseApi = async page => {
         ]),
       );
     }
+    if (pathname === 'displays' || pathname.startsWith('displays')) {
+      return fulfill(
+        collection([
+          {id: 2, display: 'Conferencia smoke', displayType: 'conference'},
+        ]),
+      );
+    }
+
     if (pathname === 'statuses') {
       return fulfill(
         collection([
@@ -307,6 +315,20 @@ const setupShopPurchaseApi = async page => {
             status: 'Aguardando pagamento',
             realStatus: 'pending',
             context: 'invoice',
+          },
+          {
+            id: 93,
+            '@id': '/statuses/93',
+            status: 'Conference',
+            realStatus: 'conference',
+            context: 'order',
+          },
+          {
+            id: 94,
+            '@id': '/statuses/94',
+            status: 'Ready',
+            realStatus: 'ready',
+            context: 'order',
           },
         ]),
       );
