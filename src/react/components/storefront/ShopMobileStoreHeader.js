@@ -196,22 +196,14 @@ export default function ShopMobileStoreHeader({
         style={inlineStyle_121_10({
           isMobile,
           shellPadding: isMobile ? 14 : 26,
-          showSearch,
         })}>
-        <View
-          style={[
-            inlineStyle_128_12({isMobile, showSearch}),
-            !showSearch && {
-              justifyContent: 'center',
-              position: 'relative',
-            },
-          ]}>
-          {/* Left cluster: Home (internal pages only) + logo */}
+        {isMobile && showSearch ? (
           <View
             style={[
-              inlineStyle_135_14,
-              {flexDirection: 'row', alignItems: 'center', gap: 8},
+              inlineStyle_128_12({isMobile, showSearch}),
+              {justifyContent: 'flex-start', gap: 8},
             ]}>
+            {/* Compact shell contract: Home -> search -> menu on internal routes. */}
             {showHomeAction
               ? renderActionButton({
                   iconName: 'home',
@@ -220,32 +212,76 @@ export default function ShopMobileStoreHeader({
                   shell: true,
                   testID: 'shop-home-action',
                 })
-              : null}
-            {(!isMobile || !showSearch || !showHomeAction) &&
-              renderLogo({shell: true})}
+              : renderLogo({shell: true})}
+            <View style={{flex: 1, minWidth: 0}}>
+              <View style={inlineStyle_282_14({isMobile, theme})}>
+                <Icon name="search" size={20} color={theme.muted} />
+                <TextInput
+                  value={searchTerm}
+                  onChangeText={setSearchTerm}
+                  onSubmitEditing={submitSearch}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={theme.muted}
+                  style={inlineStyle_273_14({isMobile, theme})}
+                />
+              </View>
+            </View>
+            {renderActionButton({
+              iconName: menuIconName,
+              label: MENU_LABEL,
+              onPress: onOpenMenu,
+              shell: true,
+            })}
           </View>
-
-          {/* Right cluster: menu only (Home never sits to the right of search) */}
-          {!showSearch ? (
+        ) : (
+          <View
+            style={[
+              inlineStyle_128_12({isMobile, showSearch}),
+              !showSearch && {
+                justifyContent: 'center',
+                position: 'relative',
+              },
+            ]}>
+            {/* Left cluster: Home (internal pages only) + logo */}
             <View
               style={[
-                inlineStyle_224_18,
-                {
-                  position: 'absolute',
-                  right: 0,
-                },
+                inlineStyle_135_14,
+                {flexDirection: 'row', alignItems: 'center', gap: 8},
               ]}>
-              {renderActionButton({
-                iconName: menuIconName,
-                label: MENU_LABEL,
-                onPress: onOpenMenu,
-                shell: true,
-              })}
+              {showHomeAction
+                ? renderActionButton({
+                    iconName: 'home',
+                    label: HOME_ACTION_LABEL,
+                    onPress: onNavigateHome,
+                    shell: true,
+                    testID: 'shop-home-action',
+                  })
+                : null}
+              {renderLogo({shell: true})}
             </View>
-          ) : null}
-        </View>
 
-        {showSearch ? (
+            {/* Right cluster: menu only (Home never sits to the right of search) */}
+            {!showSearch ? (
+              <View
+                style={[
+                  inlineStyle_224_18,
+                  {
+                    position: 'absolute',
+                    right: 0,
+                  },
+                ]}>
+                {renderActionButton({
+                  iconName: menuIconName,
+                  label: MENU_LABEL,
+                  onPress: onOpenMenu,
+                  shell: true,
+                })}
+              </View>
+            ) : null}
+          </View>
+        )}
+
+        {showSearch && !isMobile ? (
           <View style={inlineStyle_255_12({isMobile, theme})}>
             <View style={inlineStyle_282_14({isMobile, theme})}>
               <Icon
