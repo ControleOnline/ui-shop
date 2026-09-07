@@ -182,7 +182,7 @@ export default function ShopMobileStoreHeader({
         <Icon
           name={iconName}
           size={shell ? 22 : 22}
-          color={isMobile ? theme.primary : '#fff'}
+          color={isMobile ? theme.primary : theme.onPrimary}
         />
       </TouchableOpacity>
     );
@@ -223,6 +223,7 @@ export default function ShopMobileStoreHeader({
                   placeholder={searchPlaceholder}
                   placeholderTextColor={theme.muted}
                   style={inlineStyle_273_14({isMobile, theme})}
+                  testID="shop-search-input"
                 />
               </View>
             </View>
@@ -231,6 +232,7 @@ export default function ShopMobileStoreHeader({
               label: MENU_LABEL,
               onPress: onOpenMenu,
               shell: true,
+              testID: 'shop-menu-action',
             })}
           </View>
         ) : (
@@ -275,6 +277,7 @@ export default function ShopMobileStoreHeader({
                   label: MENU_LABEL,
                   onPress: onOpenMenu,
                   shell: true,
+                  testID: 'shop-menu-action',
                 })}
               </View>
             ) : null}
@@ -298,6 +301,7 @@ export default function ShopMobileStoreHeader({
                   isMobile ? theme.muted : 'rgba(255,255,255,0.75)'
                 }
                 style={inlineStyle_273_14({isMobile, theme})}
+                testID="shop-search-input"
               />
             </View>
             <View style={inlineStyle_224_18}>
@@ -306,6 +310,7 @@ export default function ShopMobileStoreHeader({
                 label: MENU_LABEL,
                 onPress: onOpenMenu,
                 shell: true,
+                testID: 'shop-menu-action',
               })}
             </View>
           </View>
@@ -364,6 +369,7 @@ export default function ShopMobileStoreHeader({
                 placeholderTextColor={theme.muted}
                 returnKeyType="search"
                 style={mobileStoreSearchInputStyle({theme})}
+                testID="shop-search-input"
                 value={searchTerm}
               />
             </View>
@@ -373,6 +379,7 @@ export default function ShopMobileStoreHeader({
                 iconName: menuIconName,
                 label: MENU_LABEL,
                 onPress: onOpenMenu,
+                testID: 'shop-menu-action',
               })}
             </View>
           </View>
@@ -413,6 +420,7 @@ export default function ShopMobileStoreHeader({
                 iconName: menuIconName,
                 label: MENU_LABEL,
                 onPress: onOpenMenu,
+                testID: 'shop-menu-action',
               })}
             </View>
           </View>
