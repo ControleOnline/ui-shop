@@ -193,6 +193,8 @@ export default function ShopMobileCatalog({
         onSearch={onSearch}
         searchPlaceholder={searchPlaceholder}
         searchValue={searchValue}
+        showHomeAction={false}
+        variant="shell"
       />
 
       {mode !== 'search' && isLoadingCatalog && visibleCategories.length === 0 ? (

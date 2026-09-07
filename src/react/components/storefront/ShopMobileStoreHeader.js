@@ -180,7 +180,9 @@ export default function ShopMobileStoreHeader({
   };
 
   const renderShellHeader = () => (
-    <View style={inlineStyle_119_12({theme})}>
+    <View
+      style={inlineStyle_119_12({theme})}
+      testID="shop-canonical-header">
       <View
         style={inlineStyle_121_10({
           isMobile,
@@ -268,7 +270,10 @@ export default function ShopMobileStoreHeader({
     return renderShellHeader();
   }
 
-  const isCompactMobileHome = showSearch && !showHeaderText;
+  // Keep the complete compact header in one row even when the checkout
+  // provides a title. Splitting actions below the search hides the Home
+  // affordance from the compact header viewport.
+  const isCompactMobileSearch = isMobile && showSearch;
 
   return (
     <View style={mobileStorePanelStyle}>
@@ -288,7 +293,7 @@ export default function ShopMobileStoreHeader({
           </View>
         ) : null}
 
-        {isCompactMobileHome ? (
+        {isCompactMobileSearch ? (
           <View
             style={[
               mobileStoreContentColumnStyle,
