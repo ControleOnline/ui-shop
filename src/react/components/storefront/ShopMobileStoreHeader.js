@@ -196,6 +196,7 @@ export default function ShopMobileStoreHeader({
         style={inlineStyle_121_10({
           isMobile,
           shellPadding: isMobile ? 14 : 26,
+          showSearch,
         })}>
         <View
           style={[
@@ -220,7 +221,8 @@ export default function ShopMobileStoreHeader({
                   testID: 'shop-home-action',
                 })
               : null}
-            {renderLogo({shell: true})}
+            {(!isMobile || !showSearch || !showHomeAction) &&
+              renderLogo({shell: true})}
           </View>
 
           {/* Right cluster: menu only (Home never sits to the right of search) */}
