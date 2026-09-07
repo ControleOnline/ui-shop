@@ -369,6 +369,8 @@ test('shows the unified checkout header and keeps the home action clickable', as
 
     await page.goto('/shop/checkout');
 
+    await expect(page.getByTestId('shop-canonical-header')).toBeVisible();
+    await expect(page.getByTestId('shop-home-action')).toBeVisible();
     await expect(
       page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
     ).toBeVisible();
@@ -404,6 +406,8 @@ test('keeps the unified checkout header usable on mobile', async ({page}, testIn
 
     await page.goto('/shop/checkout');
 
+    await expect(page.getByTestId('shop-canonical-header')).toBeVisible();
+    await expect(page.getByTestId('shop-home-action')).toBeVisible();
     await expect(
       page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
     ).toBeVisible();
