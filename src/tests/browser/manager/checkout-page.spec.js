@@ -362,34 +362,66 @@ const setupCheckoutApi = async (page, options = {}) => {
 };
 
 test.describe('checkout browser smoke', () => {
-  test('shows the unified checkout header and keeps the home action clickable', async ({
+test('shows the unified checkout header and keeps the home action clickable', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const {pageErrors} = await setupCheckoutApi(page);
 
     await page.goto('/shop/checkout');
 
-    await expect(page.getByLabel('Abrir pagina inicial do shop')).toBeVisible();
+    await expect(
+      page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
+    ).toBeVisible();
     await expect(page.getByLabel('Voltar ao inicio do shop')).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath('checkout-desktop.png'),
+      fullPage: false,
+    });
 
     await page.getByLabel('Voltar ao inicio do shop').click();
     await page.waitForURL(
       url => url.pathname === '/shop' || url.pathname === '/shop/',
       {timeout: 10000},
     );
+    await expect(
+      page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath('shop-home-desktop.png'),
+      fullPage: false,
+    });
 
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });
 
-  test('keeps the unified checkout header usable on mobile', async ({page}) => {
+test('keeps the unified checkout header usable on mobile', async ({page}, testInfo) => {
     await page.setViewportSize({width: 390, height: 844});
 
     const {pageErrors} = await setupCheckoutApi(page);
 
     await page.goto('/shop/checkout');
 
-    await expect(page.getByLabel('Abrir pagina inicial do shop')).toBeVisible();
+    await expect(
+      page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
+    ).toBeVisible();
     await expect(page.getByLabel('Voltar ao inicio do shop')).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath('checkout-compact.png'),
+      fullPage: false,
+    });
+
+    await page.getByLabel('Voltar ao inicio do shop').click();
+    await page.waitForURL(
+      url => url.pathname === '/shop' || url.pathname === '/shop/',
+      {timeout: 10000},
+    );
+    await expect(
+      page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath('shop-home-compact.png'),
+      fullPage: false,
+    });
 
     expect(pageErrors.map(error => error.message)).toEqual([]);
   });
