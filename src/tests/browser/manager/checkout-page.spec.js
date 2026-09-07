@@ -373,6 +373,7 @@ test('shows the unified checkout header and keeps the home action clickable', as
       page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
     ).toBeVisible();
     await expect(page.getByLabel('Voltar ao inicio do shop')).toBeVisible();
+    await expect(page.getByLabel('Abrir menu do shop')).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath('checkout-desktop.png'),
       fullPage: false,
@@ -405,6 +406,7 @@ test('keeps the unified checkout header usable on mobile', async ({page}, testIn
       page.locator('[aria-label="Abrir pagina inicial do shop"]:visible').first(),
     ).toBeVisible();
     await expect(page.getByLabel('Voltar ao inicio do shop')).toBeVisible();
+    await expect(page.getByLabel('Abrir menu do shop')).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath('checkout-compact.png'),
       fullPage: false,
