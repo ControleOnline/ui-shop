@@ -1,3 +1,5 @@
+// fluxo: compra-fluxo | etapa: checkout-home-header
+// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 const {expect, test} = require('playwright/test');
 const packageJson = require('../../../../../../../package.json');
 const {API_ORIGIN} = require('../../../../../../../src/tests/browser/apiOrigin');
