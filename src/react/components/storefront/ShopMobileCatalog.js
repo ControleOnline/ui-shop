@@ -1,3 +1,5 @@
+// fluxo: compra-fluxo | etapa: checkout-home-header
+// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
