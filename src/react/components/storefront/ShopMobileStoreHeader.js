@@ -180,7 +180,9 @@ export default function ShopMobileStoreHeader({
   };
 
   const renderShellHeader = () => (
-    <View style={inlineStyle_119_12({theme})}>
+    <View
+      style={inlineStyle_119_12({theme})}
+      testID="shop-canonical-header">
       <View
         style={inlineStyle_121_10({
           isMobile,
