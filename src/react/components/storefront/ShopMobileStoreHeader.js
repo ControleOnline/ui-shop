@@ -1,3 +1,5 @@
+// fluxo: compra-fluxo | etapa: checkout-home-header
+// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Image,
@@ -159,7 +161,13 @@ export default function ShopMobileStoreHeader({
     </TouchableOpacity>
   );
 
-  const renderActionButton = ({iconName, label, onPress, shell = false}) => {
+  const renderActionButton = ({
+    iconName,
+    label,
+    onPress,
+    shell = false,
+    testID,
+  }) => {
     const buttonStyle = shell
       ? inlineStyle_241_16({isMobile, theme})
       : mobileStoreMenuButtonStyle({theme});
@@ -169,7 +177,8 @@ export default function ShopMobileStoreHeader({
         accessibilityLabel={label}
         activeOpacity={0.9}
         onPress={onPress}
-        style={buttonStyle}>
+        style={buttonStyle}
+        testID={testID}>
         <Icon
           name={iconName}
           size={shell ? 22 : 22}
@@ -180,32 +189,64 @@ export default function ShopMobileStoreHeader({
   };
 
   const renderShellHeader = () => (
-    <View style={inlineStyle_119_12({theme})}>
+    <View
+      style={inlineStyle_119_12({theme})}
+      testID="shop-canonical-header">
       <View
         style={inlineStyle_121_10({
           isMobile,
           shellPadding: isMobile ? 14 : 26,
         })}>
-        <View
-          style={[
-            inlineStyle_128_12({isMobile, showSearch}),
-            !showSearch && {
-              justifyContent: 'center',
-              position: 'relative',
-            },
-          ]}>
-          <View style={inlineStyle_135_14}>
-            {renderLogo({shell: true})}
+        {isMobile && showSearch ? (
+          <View
+            style={[
+              inlineStyle_128_12({isMobile, showSearch}),
+              {justifyContent: 'flex-start', gap: 8},
+            ]}>
+            {/* Compact shell contract: Home -> search -> menu on internal routes. */}
+            {showHomeAction
+              ? renderActionButton({
+                  iconName: 'home',
+                  label: HOME_ACTION_LABEL,
+                  onPress: onNavigateHome,
+                  shell: true,
+                  testID: 'shop-home-action',
+                })
+              : renderLogo({shell: true})}
+            <View style={{flex: 1, minWidth: 0}}>
+              <View style={inlineStyle_282_14({isMobile, theme})}>
+                <Icon name="search" size={20} color={theme.muted} />
+                <TextInput
+                  value={searchTerm}
+                  onChangeText={setSearchTerm}
+                  onSubmitEditing={submitSearch}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={theme.muted}
+                  style={inlineStyle_273_14({isMobile, theme})}
+                />
+              </View>
+            </View>
+            {renderActionButton({
+              iconName: menuIconName,
+              label: MENU_LABEL,
+              onPress: onOpenMenu,
+              shell: true,
+            })}
           </View>
-
-          {!showSearch ? (
+        ) : (
+          <View
+            style={[
+              inlineStyle_128_12({isMobile, showSearch}),
+              !showSearch && {
+                justifyContent: 'center',
+                position: 'relative',
+              },
+            ]}>
+            {/* Left cluster: Home (internal pages only) + logo */}
             <View
               style={[
-                inlineStyle_224_18,
-                {
-                  position: 'absolute',
-                  right: 0,
-                },
+                inlineStyle_135_14,
+                {flexDirection: 'row', alignItems: 'center', gap: 8},
               ]}>
               {showHomeAction
                 ? renderActionButton({
@@ -213,19 +254,34 @@ export default function ShopMobileStoreHeader({
                     label: HOME_ACTION_LABEL,
                     onPress: onNavigateHome,
                     shell: true,
+                    testID: 'shop-home-action',
                   })
                 : null}
-              {renderActionButton({
-                iconName: menuIconName,
-                label: MENU_LABEL,
-                onPress: onOpenMenu,
-                shell: true,
-              })}
+              {renderLogo({shell: true})}
             </View>
-          ) : null}
-        </View>
 
-        {showSearch ? (
+            {/* Right cluster: menu only (Home never sits to the right of search) */}
+            {!showSearch ? (
+              <View
+                style={[
+                  inlineStyle_224_18,
+                  {
+                    position: 'absolute',
+                    right: 0,
+                  },
+                ]}>
+                {renderActionButton({
+                  iconName: menuIconName,
+                  label: MENU_LABEL,
+                  onPress: onOpenMenu,
+                  shell: true,
+                })}
+              </View>
+            ) : null}
+          </View>
+        )}
+
+        {showSearch && !isMobile ? (
           <View style={inlineStyle_255_12({isMobile, theme})}>
             <View style={inlineStyle_282_14({isMobile, theme})}>
               <Icon
@@ -245,14 +301,6 @@ export default function ShopMobileStoreHeader({
               />
             </View>
             <View style={inlineStyle_224_18}>
-              {showHomeAction
-                ? renderActionButton({
-                    iconName: 'home',
-                    label: HOME_ACTION_LABEL,
-                    onPress: onNavigateHome,
-                    shell: true,
-                  })
-                : null}
               {renderActionButton({
                 iconName: menuIconName,
                 label: MENU_LABEL,
@@ -270,7 +318,10 @@ export default function ShopMobileStoreHeader({
     return renderShellHeader();
   }
 
-  const isCompactMobileHome = showSearch && !showHeaderText;
+  // Keep the complete compact header in one row even when the checkout
+  // provides a title. Splitting actions below the search hides the Home
+  // affordance from the compact header viewport.
+  const isCompactMobileSearch = isMobile && showSearch;
 
   return (
     <View style={mobileStorePanelStyle}>
@@ -290,12 +341,20 @@ export default function ShopMobileStoreHeader({
           </View>
         ) : null}
 
-        {isCompactMobileHome ? (
+        {isCompactMobileSearch ? (
           <View
             style={[
               mobileStoreContentColumnStyle,
               {flexDirection: 'row', alignItems: 'center', gap: 10},
             ]}>
+            {/* Home stays on the left of search; menu alone on the right */}
+            {showHomeAction
+              ? renderActionButton({
+                  iconName: 'home',
+                  label: HOME_ACTION_LABEL,
+                  onPress: onNavigateHome,
+                })
+              : null}
             <View style={[mobileStoreSearchStyle({theme}), {flex: 1}]}>
               <Icon name="search" size={19} color={theme.muted} />
               <TextInput
@@ -310,13 +369,6 @@ export default function ShopMobileStoreHeader({
             </View>
 
             <View style={[mobileStoreActionsRowStyle, {marginTop: 0}]}>
-              {showHomeAction
-                ? renderActionButton({
-                    iconName: 'home',
-                    label: HOME_ACTION_LABEL,
-                    onPress: onNavigateHome,
-                  })
-                : null}
               {renderActionButton({
                 iconName: menuIconName,
                 label: MENU_LABEL,
@@ -341,7 +393,15 @@ export default function ShopMobileStoreHeader({
               </View>
             ) : null}
 
-            <View style={mobileStoreActionsRowStyle}>
+            <View
+              style={[
+                mobileStoreActionsRowStyle,
+                {
+                  flexDirection: 'row',
+                  justifyContent: showHomeAction ? 'space-between' : 'flex-end',
+                  width: '100%',
+                },
+              ]}>
               {showHomeAction
                 ? renderActionButton({
                     iconName: 'home',
