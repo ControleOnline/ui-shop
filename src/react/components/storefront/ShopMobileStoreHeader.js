@@ -159,7 +159,13 @@ export default function ShopMobileStoreHeader({
     </TouchableOpacity>
   );
 
-  const renderActionButton = ({iconName, label, onPress, shell = false}) => {
+  const renderActionButton = ({
+    iconName,
+    label,
+    onPress,
+    shell = false,
+    testID,
+  }) => {
     const buttonStyle = shell
       ? inlineStyle_241_16({isMobile, theme})
       : mobileStoreMenuButtonStyle({theme});
@@ -169,7 +175,8 @@ export default function ShopMobileStoreHeader({
         accessibilityLabel={label}
         activeOpacity={0.9}
         onPress={onPress}
-        style={buttonStyle}>
+        style={buttonStyle}
+        testID={testID}>
         <Icon
           name={iconName}
           size={shell ? 22 : 22}
@@ -208,6 +215,7 @@ export default function ShopMobileStoreHeader({
                   label: HOME_ACTION_LABEL,
                   onPress: onNavigateHome,
                   shell: true,
+                  testID: 'shop-home-action',
                 })
               : null}
             {renderLogo({shell: true})}
