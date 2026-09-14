@@ -150,7 +150,7 @@ export const inlineStyle_241_16 = ({isMobile, theme} = {}) => ({
 export const inlineStyle_255_12 = ({isMobile, theme}) => ({
   flexDirection: 'row',
   alignItems: 'center',
-  flex: isMobile ? undefined : 1,
+  ...(isMobile ? {} : {flex: 1}),
   backgroundColor: isMobile ? theme.surface : 'transparent',
   borderRadius: isMobile ? 18 : 0,
   borderWidth: isMobile ? 1 : 0,
@@ -418,7 +418,7 @@ export const inlineStyle_468_16 = (
     isMobile: isMobile,
   },
 ) => ({
-  flex: isMobile ? undefined : 1.2,
+  ...(isMobile ? {} : {flex: 1.2}),
   alignItems: 'center',
 });
 
