@@ -49,7 +49,7 @@ export default function useShopCatalogState({
   const shopCatalogActionsRef = useRef(shopCatalogActions);
   const {
     cart,
-    defaultCompany,
+    mainCompany,
     isLoadingSalesCompanies,
     refreshCart,
     requiresCompanySelection,
@@ -129,7 +129,7 @@ export default function useShopCatalogState({
 
     return loadedCategory || activeCategoryDetails || null;
   }, [activeCategoryDetails, activeCategoryId, topLevelCategories]);
-  const theme = useMemo(() => pickTheme(defaultCompany), [defaultCompany]);
+  const theme = useMemo(() => pickTheme(mainCompany), [mainCompany]);
 
   useEffect(() => {
     categoryTotalItemsRef.current = categoryTotalItems;
@@ -706,7 +706,7 @@ export default function useShopCatalogState({
     cart,
     categories: topLevelCategories,
     categoryTotalItems,
-    defaultCompany,
+    mainCompany,
     franchiseLocatorEnabled,
     hasMoreCategories:
       Boolean(categoryTotalItems) && categories.length < categoryTotalItems,
