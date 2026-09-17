@@ -30,7 +30,7 @@ export default function useCheckoutState() {
   const {
     cart,
     currentCompany,
-    defaultCompany,
+    mainCompany,
     refreshCart,
     salesCompany,
   } = useShopCart({autoRefresh: false});
@@ -80,7 +80,7 @@ export default function useCheckoutState() {
   const [message, setMessage] = useState('');
   const loadDataInFlightRef = useRef(false);
 
-  const sellerCompany = salesCompany || defaultCompany || null;
+  const sellerCompany = salesCompany || mainCompany || null;
   const sellerCompanyId = sellerCompany?.id || null;
 
   const hasCart = Boolean(cart?.id);
@@ -450,7 +450,7 @@ export default function useCheckoutState() {
 
   return {
     navigation, isLogged, sessionChecked,
-    cart, currentCompany, defaultCompany, salesCompany,
+    cart, currentCompany, mainCompany, salesCompany,
     sellerCompany, sellerCompanyId,
     shopChargeOnDeliveryEnabled, settingsCompanyConfigs, deliveryFeeEnabled, deliveryFeeValue,
     walletPaymentTypes, walletPaymentTypeActions,

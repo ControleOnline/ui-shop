@@ -32,19 +32,19 @@ import {
 export default function ShopMobileProductCard({
   cart = null,
   company = null,
-  defaultCompany = null,
+  mainCompany = null,
   product = null,
   refreshCart = null,
 }) {
   const navigation = useNavigation();
-  const theme = pickTheme(company || defaultCompany);
+  const theme = pickTheme(company || mainCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = normalizeId(product?.id || product?.['@id']);
   const companyId = normalizeId(
     company?.id ||
       company?.['@id'] ||
-      defaultCompany?.id ||
-      defaultCompany?.['@id'],
+      mainCompany?.id ||
+      mainCompany?.['@id'],
   );
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;

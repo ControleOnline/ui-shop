@@ -147,7 +147,7 @@ export default function ShopFranchiseLocatorPage() {
   const navigation = useNavigation();
   const {height} = useWindowDimensions();
   const {
-    defaultCompany,
+    mainCompany,
     franchiseAddressCategoryIds,
     franchiseLocatorEnabled,
     primaryEntryRouteName,
@@ -159,7 +159,7 @@ export default function ShopFranchiseLocatorPage() {
   const {salesCompany, selectSalesCompany} = useShopSalesCompany({
     loadOptions: false,
   });
-  const theme = pickTheme(defaultCompany);
+  const theme = pickTheme(mainCompany);
   const mapHeight = Math.max(height - (Platform.OS === 'web' ? 118 : 150), 420);
 
   const [directory, setDirectory] = useState([]);
@@ -168,7 +168,7 @@ export default function ShopFranchiseLocatorPage() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!defaultCompany?.id || !franchiseLocatorEnabled) {
+      if (!mainCompany?.id || !franchiseLocatorEnabled) {
         setDirectory([]);
         return;
       }
@@ -177,7 +177,7 @@ export default function ShopFranchiseLocatorPage() {
       setIsLoading(true);
 
       fetchShopFranchiseDirectory({
-        companyId: defaultCompany.id,
+        companyId: mainCompany.id,
         publicDirectory: true,
         itemsPerPage: SHOP_FRANCHISE_PAGE_SIZE,
       })
@@ -200,7 +200,7 @@ export default function ShopFranchiseLocatorPage() {
       return () => {
         isMounted = false;
       };
-    }, [defaultCompany?.id, franchiseLocatorEnabled]),
+    }, [mainCompany?.id, franchiseLocatorEnabled]),
   );
 
   useFocusEffect(
@@ -263,9 +263,9 @@ export default function ShopFranchiseLocatorPage() {
     () =>
       buildFranchiseMarkerAddresses({
         directory: effectiveDirectory,
-        fallbackCompany: defaultCompany,
+        fallbackCompany: mainCompany,
       }),
-    [defaultCompany, effectiveDirectory],
+    [mainCompany, effectiveDirectory],
   );
 
   const selectedCompanyId = normalizeShopEntityId(salesCompany);

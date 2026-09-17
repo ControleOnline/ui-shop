@@ -28,7 +28,7 @@ const collection = member => ({
   'hydra:totalItems': member.length,
 });
 
-const defaultCompany = {
+const mainCompany = {
   id: 3,
   '@id': '/people/3',
   name: 'Matriz',
@@ -123,7 +123,7 @@ const setupFranchiseLocatorApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(defaultCompany),
+        body: JSON.stringify(mainCompany),
       });
     }
 
@@ -131,7 +131,7 @@ const setupFranchiseLocatorApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify(collection([defaultCompany])),
+        body: JSON.stringify(collection([mainCompany])),
       });
     }
 
@@ -139,7 +139,7 @@ const setupFranchiseLocatorApi = async page => {
       return route.fulfill({
         status: 200,
         headers: jsonHeaders(),
-        body: JSON.stringify({configs: {...defaultCompany.configs}}),
+        body: JSON.stringify({configs: {...mainCompany.configs}}),
       });
     }
 
