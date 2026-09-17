@@ -26,7 +26,7 @@ import {
 export default function ShopProductsSection({
   cart = null,
   company = null,
-  defaultCompany = null,
+  mainCompany = null,
   emptyDescription = '',
   emptyTitle = '',
   isLoading = false,
@@ -149,7 +149,7 @@ export default function ShopProductsSection({
                 cart={cart}
                 company={company}
                 compact={columns > 1}
-                defaultCompany={defaultCompany}
+                mainCompany={mainCompany}
                 product={product}
                 refreshCart={refreshCart}
               />

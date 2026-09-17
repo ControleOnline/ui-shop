@@ -33,20 +33,20 @@ export default function ShopDownloadPage() {
   const navigation = useNavigation();
   const peopleStore = useStore('people');
   const peopleActions = peopleStore.actions;
-  const {defaultCompany} = useShopCart();
+  const {mainCompany} = useShopCart();
   const [isDownloading, setIsDownloading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const isActiveRef = useRef(false);
   const hasStartedRef = useRef(false);
-  const theme = pickTheme(defaultCompany);
+  const theme = pickTheme(mainCompany);
 
   const companyName = useMemo(
     () =>
-      defaultCompany?.alias ||
-      defaultCompany?.name ||
-      `Empresa ${defaultCompany?.id || ''}`.trim(),
-    [defaultCompany?.alias, defaultCompany?.id, defaultCompany?.name],
+      mainCompany?.alias ||
+      mainCompany?.name ||
+      `Empresa ${mainCompany?.id || ''}`.trim(),
+    [mainCompany?.alias, mainCompany?.id, mainCompany?.name],
   );
 
   const startDownload = useCallback(async () => {
@@ -54,7 +54,7 @@ export default function ShopDownloadPage() {
       return;
     }
 
-    if (!defaultCompany?.id) {
+    if (!mainCompany?.id) {
       return;
     }
 
@@ -69,10 +69,10 @@ export default function ShopDownloadPage() {
 
     try {
       const result = await downloadMenuCatalog({
-        companyId: defaultCompany.id,
+        companyId: mainCompany.id,
         companyName,
         modelReference:
-          defaultCompany?.configs?.[MENU_CATALOG_MODEL_CONFIG_KEY] || '',
+          mainCompany?.configs?.[MENU_CATALOG_MODEL_CONFIG_KEY] || '',
       });
 
       if (!isActiveRef.current) {
@@ -93,7 +93,7 @@ export default function ShopDownloadPage() {
         setIsDownloading(false);
       }
     }
-  }, [companyName, defaultCompany?.configs, defaultCompany?.id]);
+  }, [companyName, mainCompany?.configs, mainCompany?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -102,13 +102,13 @@ export default function ShopDownloadPage() {
       hasStartedRef.current = false;
 
       const run = async () => {
-        if (!defaultCompany?.id) {
+        if (!mainCompany?.id) {
           setIsDownloading(true);
           setErrorMessage('');
           setSuccessMessage('');
 
           try {
-            await peopleActions.defaultCompany();
+            await peopleActions.mainCompany();
           } catch (error) {
             if (!cancelled) {
               setErrorMessage(
@@ -132,7 +132,7 @@ export default function ShopDownloadPage() {
         cancelled = true;
         isActiveRef.current = false;
       };
-    }, [defaultCompany?.id, peopleActions, startDownload]),
+    }, [mainCompany?.id, peopleActions, startDownload]),
   );
 
   return (
