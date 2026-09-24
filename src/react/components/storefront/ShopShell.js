@@ -103,7 +103,7 @@ export default function ShopShell({
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
-  const {mainCompany, requiresCompanySelection, salesCompany} = useShopCart();
+  const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     companyConfigs,
@@ -116,7 +116,7 @@ export default function ShopShell({
   const {isLogged, user} = authStore.getters;
   const authActions = authStore.actions;
 
-  const theme = pickTheme(salesCompany || mainCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -152,11 +152,11 @@ export default function ShopShell({
       ? 'selecione uma unidade'
       : salesCompany?.alias ||
         salesCompany?.name ||
-        mainCompany?.alias ||
-        mainCompany?.name ||
+        defaultCompany?.alias ||
+        defaultCompany?.name ||
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
-  const headerCompany = salesCompany || mainCompany || null;
+  const headerCompany = salesCompany || defaultCompany || null;
 
   const shellBackground = theme.background;
   const surface = theme.surface;

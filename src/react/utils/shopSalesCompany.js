@@ -7,14 +7,14 @@ import {normalizeShopEntityId} from '@controleonline/ui-common/src/react/utils/s
 const shopSalesCompanyListeners = new Set();
 const shopSalesCompanySelections = new Map();
 
-const getSelectionKey = mainCompanyId => {
-  const normalizedMainCompanyId = normalizeShopEntityId(mainCompanyId);
+const getSelectionKey = defaultCompanyId => {
+  const normalizedDefaultCompanyId = normalizeShopEntityId(defaultCompanyId);
 
-  if (!normalizedMainCompanyId) {
+  if (!normalizedDefaultCompanyId) {
     return '';
   }
 
-  return normalizedMainCompanyId;
+  return normalizedDefaultCompanyId;
 };
 
 let legacyShopStorageCleaned = false;
@@ -76,8 +76,8 @@ const notifyShopSalesCompanyListeners = payload => {
   });
 };
 
-export const readStoredShopSalesCompany = mainCompanyId => {
-  const selectionKey = getSelectionKey(mainCompanyId);
+export const readStoredShopSalesCompany = defaultCompanyId => {
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
   if (!selectionKey) {
     return null;
@@ -86,11 +86,11 @@ export const readStoredShopSalesCompany = mainCompanyId => {
   return shopSalesCompanySelections.get(selectionKey) || null;
 };
 
-export const readStoredShopSalesCompanyId = mainCompanyId =>
-  normalizeShopEntityId(readStoredShopSalesCompany(mainCompanyId));
+export const readStoredShopSalesCompanyId = defaultCompanyId =>
+  normalizeShopEntityId(readStoredShopSalesCompany(defaultCompanyId));
 
-export const persistShopSalesCompany = (mainCompanyId, company) => {
-  const selectionKey = getSelectionKey(mainCompanyId);
+export const persistShopSalesCompany = (defaultCompanyId, company) => {
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
   if (!selectionKey) {
     return;
@@ -102,7 +102,7 @@ export const persistShopSalesCompany = (mainCompanyId, company) => {
     shopSalesCompanySelections.delete(selectionKey);
     notifyShopSalesCompanyListeners({
       company: null,
-      mainCompanyId: normalizeShopEntityId(mainCompanyId),
+      defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
     });
     return;
   }
@@ -110,12 +110,12 @@ export const persistShopSalesCompany = (mainCompanyId, company) => {
   shopSalesCompanySelections.set(selectionKey, snapshot);
   notifyShopSalesCompanyListeners({
     company: snapshot,
-    mainCompanyId: normalizeShopEntityId(mainCompanyId),
+    defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
   });
 };
 
-export const clearStoredShopSalesCompany = mainCompanyId => {
-  const selectionKey = getSelectionKey(mainCompanyId);
+export const clearStoredShopSalesCompany = defaultCompanyId => {
+  const selectionKey = getSelectionKey(defaultCompanyId);
 
   if (!selectionKey) {
     return;
@@ -124,7 +124,7 @@ export const clearStoredShopSalesCompany = mainCompanyId => {
   shopSalesCompanySelections.delete(selectionKey);
   notifyShopSalesCompanyListeners({
     company: null,
-    mainCompanyId: normalizeShopEntityId(mainCompanyId),
+    defaultCompanyId: normalizeShopEntityId(defaultCompanyId),
   });
 };
 

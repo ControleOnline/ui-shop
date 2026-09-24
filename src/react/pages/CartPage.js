@@ -63,10 +63,10 @@ export default function CartPage() {
   const navigation = useNavigation();
   const {width} = useWindowDimensions();
   const orderProductsStore = useStore('order_products');
-  const {cart, refreshCart, mainCompany, salesCompany} = useShopCart({
+  const {cart, refreshCart, defaultCompany, salesCompany} = useShopCart({
     autoRefresh: true,
   });
-  const theme = pickTheme(salesCompany || mainCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
 
   const [orderProducts, setOrderProducts] = useState([]);
   const [isClearing, setIsClearing] = useState(false);
