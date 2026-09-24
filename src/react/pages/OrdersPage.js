@@ -42,15 +42,15 @@ export default function OrdersPage() {
   const ordersStore = useStore('orders');
   const peopleStore = useStore('people');
   const {isLogged, sessionChecked} = authStore.getters;
-  const {currentCompany, mainCompany} = peopleStore.getters;
-  const {mainCompany: shellCompany, salesCompany} = useShopCart();
+  const {currentCompany, defaultCompany} = peopleStore.getters;
+  const {defaultCompany: shellCompany, salesCompany} = useShopCart();
   const theme = pickTheme(shellCompany);
 
   useFocusEffect(
     useCallback(() => {
       const clientId = currentCompany?.id || readShopSessionClientId();
 
-      if (!clientId || !(salesCompany?.id || mainCompany?.id)) {
+      if (!clientId || !(salesCompany?.id || defaultCompany?.id)) {
         return;
       }
 
@@ -62,13 +62,13 @@ export default function OrdersPage() {
         app: 'SHOP',
         client: clientId,
         orderType: 'sale',
-        provider: salesCompany?.id || mainCompany.id,
+        provider: salesCompany?.id || defaultCompany.id,
         page: 1,
         itemsPerPage: SHOP_COLLECTION_ITEMS_PER_PAGE,
       });
     }, [
       currentCompany?.id,
-      mainCompany?.id,
+      defaultCompany?.id,
       isLogged,
       ordersStore.actions,
       salesCompany?.id,

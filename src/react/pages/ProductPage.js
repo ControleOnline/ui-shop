@@ -93,7 +93,7 @@ export default function ProductPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasCustomizationGroups, setHasCustomizationGroups] = useState(false);
   const [isCheckingGroups, setIsCheckingGroups] = useState(false);
-  const {cart, refreshCart, mainCompany} = useShopCart();
+  const {cart, refreshCart, defaultCompany} = useShopCart();
   const {
     catalogProductTypes,
     franchiseLocatorEnabled,
@@ -108,7 +108,7 @@ export default function ProductPage() {
     selectSalesCompany,
   } = useShopSalesCompany({preferredCompanyId: routeCompanyId});
   const detailCompany = useMemo(() => {
-    const activeCompany = salesCompany || mainCompany;
+    const activeCompany = salesCompany || defaultCompany;
     const companyTheme = activeCompany?.theme || {};
     const companyColors = companyTheme?.colors || {};
 
@@ -124,7 +124,7 @@ export default function ProductPage() {
         },
       },
     };
-  }, [mainCompany, salesCompany]);
+  }, [defaultCompany, salesCompany]);
   const theme = pickTheme(detailCompany);
 
   useFocusEffect(
@@ -193,11 +193,11 @@ export default function ProductPage() {
       (Array.isArray(product?.productFiles) ? product.productFiles : [])
         .map(productFile =>
           productFile?.file
-            ? buildFileUrl(productFile.file, salesCompany || mainCompany)
+            ? buildFileUrl(productFile.file, salesCompany || defaultCompany)
             : '',
         )
         .filter(Boolean),
-    [mainCompany, product?.productFiles, salesCompany],
+    [defaultCompany, product?.productFiles, salesCompany],
   );
   const imageUrl = productImages[selectedImageIndex] || productImages[0] || '';
   const requiresCustomization = Boolean(
