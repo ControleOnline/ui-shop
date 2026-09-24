@@ -149,7 +149,7 @@ export default function ShopLoyaltyPage() {
   const themeColors = themeStore.getters?.colors || {};
   const {isLogged, sessionChecked, user} = authStore.getters;
   const {
-    mainCompany,
+    defaultCompany,
     loyaltyCouponsEnabled,
     loyaltyGiftProductId,
     loyaltyProductIds,
@@ -157,7 +157,7 @@ export default function ShopLoyaltyPage() {
     primaryEntryRouteName,
   } = useShopSettings();
   const {
-    mainCompany: cartMainCompany,
+    defaultCompany: cartDefaultCompany,
     salesCompany,
   } = useShopCart({autoRefresh: true});
   const palette = {
@@ -183,7 +183,7 @@ export default function ShopLoyaltyPage() {
     muted: palette.textMuted,
   };
   const loyaltyStampIconSource =
-    resolvePublicStampUrl(salesCompany, cartMainCompany, mainCompany);
+    resolvePublicStampUrl(salesCompany, cartDefaultCompany, defaultCompany);
 
   const [participantProducts, setParticipantProducts] = useState([]);
   const [giftProduct, setGiftProduct] = useState(null);
@@ -287,7 +287,7 @@ export default function ShopLoyaltyPage() {
     const requestId = loyaltySnapshotRequestRef.current + 1;
     loyaltySnapshotRequestRef.current = requestId;
     const providerId = normalizeId(
-      salesCompany?.id || cartMainCompany?.id || mainCompany?.id,
+      salesCompany?.id || cartDefaultCompany?.id || defaultCompany?.id,
     );
     const clientId =
       normalizeId(user?.people?.id || user?.people?.['@id'] || user?.people) ||
@@ -363,8 +363,8 @@ export default function ShopLoyaltyPage() {
       }
     }
   }, [
-    cartMainCompany?.id,
-    mainCompany?.id,
+    cartDefaultCompany?.id,
+    defaultCompany?.id,
     isLogged,
     loyaltyCouponsEnabled,
     ordersStore.actions,
