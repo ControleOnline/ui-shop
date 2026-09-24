@@ -1,5 +1,3 @@
-// fluxo: compra-fluxo | etapa: checkout-home-header
-// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 import React, {
   useCallback,
   useLayoutEffect,
@@ -105,7 +103,7 @@ export default function ShopShell({
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
-  const {mainCompany, requiresCompanySelection, salesCompany} = useShopCart();
+  const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     companyConfigs,
@@ -118,7 +116,7 @@ export default function ShopShell({
   const {isLogged, user} = authStore.getters;
   const authActions = authStore.actions;
 
-  const theme = pickTheme(salesCompany || mainCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -154,11 +152,11 @@ export default function ShopShell({
       ? 'selecione uma unidade'
       : salesCompany?.alias ||
         salesCompany?.name ||
-        mainCompany?.alias ||
-        mainCompany?.name ||
+        defaultCompany?.alias ||
+        defaultCompany?.name ||
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
-  const headerCompany = salesCompany || mainCompany || null;
+  const headerCompany = salesCompany || defaultCompany || null;
 
   const shellBackground = theme.background;
   const surface = theme.surface;
@@ -219,10 +217,9 @@ export default function ShopShell({
     return `${baseName} - ${sectionName}`;
   }, [purchaseCompanyLabel, resolvedActiveEntryLabel, resolvedActiveHomeEntry]);
   const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
-  // Every non-home route keeps the same left Home affordance as the canonical shell.
-  const showHomeAction = !isHomeEntryRoute;
-  // The right action is always the canonical menu; account actions remain inside it.
-  const menuIconName = 'menu';
+  const showHomeAction =
+    !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
+  const menuIconName = isHomeEntryRoute ? 'menu' : 'account-circle';
   const showConfiguredBottomBar =
     showHomeEntryControls && bottomBarEnabled && homeEntries.length > 1;
   const bottomBarOffset = showBottomCart === true ? 88 : 18;
