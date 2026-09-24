@@ -60,13 +60,13 @@ export default function useShopSalesCompany({
   preferredCompanyId = '',
 } = {}) {
   const {
-    mainCompany,
+    defaultCompany,
     franchiseAddressCategoryIds,
     salesPageEnabled,
     visibleFranchiseAddressIds,
     visibleFranchiseCompanyIds,
   } = useShopSettings();
-  const mainCompanyId = normalizeShopEntityId(mainCompany);
+  const defaultCompanyId = normalizeShopEntityId(defaultCompany);
   const preferredSelectionId = normalizeShopEntityId(preferredCompanyId);
   const hasConfiguredSalesCompanies = visibleFranchiseCompanyIds.length > 0;
 
@@ -74,7 +74,7 @@ export default function useShopSalesCompany({
   const [directoryLoadFailed, setDirectoryLoadFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(loadOptions);
   const [storedSelection, setStoredSelection] = useState(() =>
-    readStoredShopSalesCompany(mainCompanyId),
+    readStoredShopSalesCompany(defaultCompanyId),
   );
 
   useEffect(() => {
@@ -82,21 +82,21 @@ export default function useShopSalesCompany({
   }, []);
 
   useEffect(() => {
-    setStoredSelection(readStoredShopSalesCompany(mainCompanyId));
-  }, [mainCompanyId]);
+    setStoredSelection(readStoredShopSalesCompany(defaultCompanyId));
+  }, [defaultCompanyId]);
 
   useEffect(
     () =>
       subscribeShopSalesCompany(payload => {
         if (
-          normalizeShopEntityId(payload?.mainCompanyId) !== mainCompanyId
+          normalizeShopEntityId(payload?.defaultCompanyId) !== defaultCompanyId
         ) {
           return;
         }
 
         setStoredSelection(payload?.company || null);
       }),
-    [mainCompanyId],
+    [defaultCompanyId],
   );
 
   useFocusEffect(
@@ -104,7 +104,7 @@ export default function useShopSalesCompany({
       if (
         !loadOptions ||
         !salesPageEnabled ||
-        !mainCompanyId ||
+        !defaultCompanyId ||
         !hasConfiguredSalesCompanies
       ) {
         setDirectory([]);
@@ -117,7 +117,7 @@ export default function useShopSalesCompany({
       setIsLoading(true);
       setDirectoryLoadFailed(false);
 
-      loadDirectory(mainCompanyId)
+      loadDirectory(defaultCompanyId)
         .then(items => {
           if (isMounted) {
             setDirectory(Array.isArray(items) ? items : []);
@@ -139,7 +139,7 @@ export default function useShopSalesCompany({
         isMounted = false;
       };
     }, [
-      mainCompanyId,
+      defaultCompanyId,
       hasConfiguredSalesCompanies,
       loadOptions,
       salesPageEnabled,
@@ -181,7 +181,7 @@ export default function useShopSalesCompany({
   const fallbackStoredSelection =
     !loadOptions && hasConfiguredSalesCompanies ? storedSelection : null;
   const salesCompany = !hasConfiguredSalesCompanies
-    ? mainCompany
+    ? defaultCompany
     : matchedSelection ||
       (selectionOptions.length === 1 ? selectionOptions[0] : null) ||
       fallbackStoredSelection ||
@@ -194,12 +194,12 @@ export default function useShopSalesCompany({
       (!matchedSelection && selectionOptions.length !== 1));
 
   useEffect(() => {
-    if (!loadOptions || !mainCompanyId) {
+    if (!loadOptions || !defaultCompanyId) {
       return;
     }
 
     if (!hasConfiguredSalesCompanies) {
-      clearStoredShopSalesCompany(mainCompanyId);
+      clearStoredShopSalesCompany(defaultCompanyId);
       setStoredSelection(current => (current ? null : current));
       return;
     }
@@ -209,7 +209,7 @@ export default function useShopSalesCompany({
     }
 
     if (selectionOptions.length === 0) {
-      clearStoredShopSalesCompany(mainCompanyId);
+      clearStoredShopSalesCompany(defaultCompanyId);
       setStoredSelection(current => (current ? null : current));
       return;
     }
@@ -219,7 +219,7 @@ export default function useShopSalesCompany({
       const onlyCompanyId = normalizeShopEntityId(onlyCompany);
 
       if (storedSelectionId !== onlyCompanyId) {
-        persistShopSalesCompany(mainCompanyId, onlyCompany);
+        persistShopSalesCompany(defaultCompanyId, onlyCompany);
         setStoredSelection(onlyCompany);
       }
 
@@ -231,17 +231,17 @@ export default function useShopSalesCompany({
       matchedSelection &&
       storedSelectionId !== preferredSelectionId
     ) {
-      persistShopSalesCompany(mainCompanyId, matchedSelection);
+      persistShopSalesCompany(defaultCompanyId, matchedSelection);
       setStoredSelection(matchedSelection);
       return;
     }
 
     if (storedSelectionId && !matchedSelection) {
-      clearStoredShopSalesCompany(mainCompanyId);
+      clearStoredShopSalesCompany(defaultCompanyId);
       setStoredSelection(null);
     }
   }, [
-    mainCompanyId,
+    defaultCompanyId,
     hasConfiguredSalesCompanies,
     isLoading,
     loadOptions,
@@ -253,34 +253,34 @@ export default function useShopSalesCompany({
 
   const selectSalesCompany = useCallback(
     company => {
-      if (!mainCompanyId) {
+      if (!defaultCompanyId) {
         return;
       }
 
       if (!company) {
-        clearStoredShopSalesCompany(mainCompanyId);
+        clearStoredShopSalesCompany(defaultCompanyId);
         setStoredSelection(null);
         return;
       }
 
-      persistShopSalesCompany(mainCompanyId, company);
+      persistShopSalesCompany(defaultCompanyId, company);
       setStoredSelection(company);
     },
-    [mainCompanyId],
+    [defaultCompanyId],
   );
 
   const clearSalesCompanySelection = useCallback(() => {
-    if (!mainCompanyId) {
+    if (!defaultCompanyId) {
       return;
     }
 
-    clearStoredShopSalesCompany(mainCompanyId);
+    clearStoredShopSalesCompany(defaultCompanyId);
     setStoredSelection(null);
-  }, [mainCompanyId]);
+  }, [defaultCompanyId]);
 
   return {
     clearSalesCompanySelection,
-    mainCompany,
+    defaultCompany,
     directoryLoadFailed,
     isLoading,
     franchiseDirectoryLoadFailed: directoryLoadFailed,
