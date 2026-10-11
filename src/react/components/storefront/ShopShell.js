@@ -6,13 +6,16 @@ import React, {
 } from 'react';
 
 import {
+  Dimensions,
   Modal,
+  Platform,
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
 
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
@@ -99,7 +102,17 @@ export default function ShopShell({
 }) {
   const navigation = useNavigation();
   const route = useRoute();
-  const {width} = useWindowDimensions();
+  const {width, height} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  /*
+   * The account Modal is drawn in its own window, so on Android it can extend
+   * under the system navigation bar. Respect the bottom inset; when the inset
+   * is not reported, fall back to the screen/window height difference.
+   */
+  const systemBottomInset =
+    insets.bottom > 0 || Platform.OS !== 'android'
+      ? insets.bottom
+      : Math.max(Dimensions.get('screen').height - height, 0);
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
@@ -307,6 +320,7 @@ export default function ShopShell({
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({
+            bottomInset: systemBottomInset,
             isMobile: isMobile,
             menuPalette: menuPalette,
           })}
