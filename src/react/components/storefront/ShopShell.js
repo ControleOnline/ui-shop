@@ -6,13 +6,16 @@ import React, {
 } from 'react';
 
 import {
+  Dimensions,
   Modal,
+  Platform,
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
 
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
@@ -99,11 +102,21 @@ export default function ShopShell({
 }) {
   const navigation = useNavigation();
   const route = useRoute();
-  const {width} = useWindowDimensions();
+  const {width, height} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  /*
+   * The account Modal is drawn in its own window, so on Android it can extend
+   * under the system navigation bar. Respect the bottom inset; when the inset
+   * is not reported, fall back to the screen/window height difference.
+   */
+  const systemBottomInset =
+    insets.bottom > 0 || Platform.OS !== 'android'
+      ? insets.bottom
+      : Math.max(Dimensions.get('screen').height - height, 0);
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
-  const {mainCompany, requiresCompanySelection, salesCompany} = useShopCart();
+  const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     companyConfigs,
@@ -116,7 +129,7 @@ export default function ShopShell({
   const {isLogged, user} = authStore.getters;
   const authActions = authStore.actions;
 
-  const theme = pickTheme(salesCompany || mainCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -152,11 +165,11 @@ export default function ShopShell({
       ? 'selecione uma unidade'
       : salesCompany?.alias ||
         salesCompany?.name ||
-        mainCompany?.alias ||
-        mainCompany?.name ||
+        defaultCompany?.alias ||
+        defaultCompany?.name ||
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
-  const headerCompany = salesCompany || mainCompany || null;
+  const headerCompany = salesCompany || defaultCompany || null;
 
   const shellBackground = theme.background;
   const surface = theme.surface;
@@ -307,6 +320,7 @@ export default function ShopShell({
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({
+            bottomInset: systemBottomInset,
             isMobile: isMobile,
             menuPalette: menuPalette,
           })}

@@ -43,7 +43,7 @@ jest.mock('@store', () => ({
 }));
 
 jest.mock('@controleonline/ui-shop/src/react/hooks/useShopCart', () => () => ({
-  mainCompany: {
+  defaultCompany: {
     id: 1,
     theme: {
       colors: {},

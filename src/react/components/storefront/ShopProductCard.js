@@ -36,19 +36,19 @@ export default function ShopProductCard({
   cart = null,
   compact = false,
   company = null,
-  mainCompany = null,
+  defaultCompany = null,
   product,
   refreshCart = null,
 }) {
   const navigation = useNavigation();
-  const theme = pickTheme(company || mainCompany);
+  const theme = pickTheme(company || defaultCompany);
   const imageUrl = getImageFromRelations(product?.productFiles);
   const productId = String(product?.id || '');
   const companyId = normalizeId(
     company?.id ||
       company?.['@id'] ||
-      mainCompany?.id ||
-      mainCompany?.['@id'],
+      defaultCompany?.id ||
+      defaultCompany?.['@id'],
   );
   const hasInlineGroups =
     Array.isArray(product?.productGroups) && product.productGroups.length > 0;
