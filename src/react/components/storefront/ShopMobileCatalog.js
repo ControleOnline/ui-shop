@@ -1,3 +1,5 @@
+// fluxo: compra-fluxo | etapa: checkout-home-header
+// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
@@ -37,7 +39,7 @@ export default function ShopMobileCatalog({
   cart = null,
   categories = [],
   company = null,
-  defaultCompany = null,
+  mainCompany = null,
   hasMoreCategories = false,
   hasMoreProducts = false,
   isLoadingCatalog = false,
@@ -193,6 +195,8 @@ export default function ShopMobileCatalog({
         onSearch={onSearch}
         searchPlaceholder={searchPlaceholder}
         searchValue={searchValue}
+        showHomeAction={false}
+        variant="shell"
       />
 
       {mode !== 'search' && isLoadingCatalog && visibleCategories.length === 0 ? (
@@ -321,7 +325,7 @@ export default function ShopMobileCatalog({
                 key={String(product?.id || product?.['@id'] || product?.product)}
                 cart={cart}
                 company={company}
-                defaultCompany={defaultCompany}
+                mainCompany={mainCompany}
                 product={product}
                 refreshCart={refreshCart}
               />
@@ -340,7 +344,7 @@ export default function ShopMobileCatalog({
             cart={cart}
             category={resolvedActiveCategory}
             company={company}
-            defaultCompany={defaultCompany}
+            mainCompany={mainCompany}
             isLoading={isLoadingCatalog}
             isAllProducts={isAllProductsCatalog}
             isLoadingMore={isLoadingMoreProducts}
