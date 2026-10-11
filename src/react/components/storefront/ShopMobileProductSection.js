@@ -22,7 +22,7 @@ export default function ShopMobileProductSection({
   cart = null,
   category = null,
   company = null,
-  defaultCompany = null,
+  mainCompany = null,
   isLoading = false,
   isAllProducts = false,
   isLoadingMore = false,
@@ -91,7 +91,7 @@ export default function ShopMobileProductSection({
               <ShopMobileProductCard
                 cart={cart}
                 company={company}
-                defaultCompany={defaultCompany}
+                mainCompany={mainCompany}
                 product={product}
                 refreshCart={refreshCart}
               />

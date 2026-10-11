@@ -55,7 +55,7 @@ export default function ShopCatalogPage({
     cart,
     categories,
     categoryTotalItems,
-    defaultCompany,
+    mainCompany,
     franchiseLocatorEnabled,
     hasMoreCategories,
     hasMoreProducts,
@@ -88,7 +88,7 @@ export default function ShopCatalogPage({
   });
   const [pageLayoutHeight, setPageLayoutHeight] = useState(0);
   const [pageContentHeight, setPageContentHeight] = useState(0);
-  const company = salesCompany || defaultCompany;
+  const company = salesCompany || mainCompany;
   const catalogCompany = useMemo(() => {
     const companyTheme = company?.theme || {};
     const companyColors = companyTheme?.colors || {};
@@ -260,7 +260,7 @@ export default function ShopCatalogPage({
             cart={cart}
             categories={categories}
             company={catalogCompany}
-            defaultCompany={defaultCompany}
+            mainCompany={mainCompany}
             hasMoreCategories={hasMoreCategories}
             hasMoreProducts={hasMoreProducts}
             isLoadingCatalog={isLoadingCatalog}
@@ -328,7 +328,7 @@ export default function ShopCatalogPage({
                   <ShopProductsSection
                     cart={cart}
                     company={catalogCompany}
-                    defaultCompany={defaultCompany}
+                    mainCompany={mainCompany}
                     emptyDescription={
                       mode === 'search'
                         ? normalizedSearchQuery

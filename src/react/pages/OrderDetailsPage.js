@@ -49,8 +49,8 @@ export default function OrderDetailsPage() {
   const ordersStore = useStore('orders');
   const peopleStore = useStore('people');
   const {isLogged, sessionChecked} = authStore.getters;
-  const {defaultCompany} = peopleStore.getters;
-  const theme = pickTheme(defaultCompany);
+  const {mainCompany} = peopleStore.getters;
+  const theme = pickTheme(mainCompany);
   const [order, setOrder] = useState(null);
 
   useFocusEffect(

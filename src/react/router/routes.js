@@ -11,6 +11,7 @@ import OrderDetailsPage from '@controleonline/ui-shop/src/react/pages/OrderDetai
 import ProfilePage from '@controleonline/ui-shop/src/react/pages/ProfilePage';
 import CardsPage from '@controleonline/ui-shop/src/react/pages/CardsPage';
 import ShopDownloadPage from '@controleonline/ui-shop/src/react/pages/ShopDownloadPage';
+import ShopQrEntryPage from '@controleonline/ui-shop/src/react/pages/ShopQrEntryPage';
 
 const shopRoutes = [
   {
@@ -146,6 +147,26 @@ const shopRoutes = [
     options: {
       headerShown: false,
       title: 'Baixar cardapio',
+    },
+  },
+  {
+    name: 'ShopQrEntryPage',
+    path: 'shop/qr',
+    component: ShopQrEntryPage,
+    options: {
+      headerShown: false,
+      showBottomCart: false,
+      title: 'QR',
+    },
+  },
+  {
+    name: 'ShopQrEntryTokenPage',
+    path: 'shop/qr/:token',
+    component: ShopQrEntryPage,
+    options: {
+      headerShown: false,
+      showBottomCart: false,
+      title: 'QR',
     },
   },
 ];

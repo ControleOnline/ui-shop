@@ -19,8 +19,8 @@ export default function ShopBottomCart({
 }) {
   const navigationHook = useNavigation();
   const navigation = navigationProp || navigationHook;
-  const {cart, defaultCompany} = useShopCart({autoRefresh: true});
-  const theme = pickTheme(defaultCompany);
+  const {cart, mainCompany} = useShopCart({autoRefresh: true});
+  const theme = pickTheme(mainCompany);
   const itemsCount = (cart?.orderProducts || []).reduce(
     (sum, item) => sum + Number(item?.quantity || 0),
     0,
