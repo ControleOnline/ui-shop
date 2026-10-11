@@ -189,15 +189,18 @@ export default StyleSheet.create({
     opacity: 1,
   },
   stampImageWrap: {
+    /*
+     * Android (Yoga) and web resolve percentage offsets plus negative margins
+     * differently, which left the stamp off-center on POS. Stretch the wrapper
+     * over the slot and center the image with flex so both platforms match.
+     */
     alignItems: 'center',
-    width: 92,
-    height: 92,
+    bottom: 0,
     justifyContent: 'center',
-    top: '50%',
-    left: '50%',
-    marginLeft: -46,
-    marginTop: -46,
+    left: 0,
     position: 'absolute',
+    right: 0,
+    top: 0,
   },
   stampMarkMain: {
     fontSize: 22,
