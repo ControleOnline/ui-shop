@@ -1,0 +1,11 @@
+{
+  "version": "1.0.17",
+  "rc": 1,
+  "branch": "rc/1.0.17-rc.1",
+  "baseMaster": "3c5e32a13319f11b6258c3f44e5d9e809c050dfa",
+  "tasks": [18, 21],
+  "repositories": {
+    "ControleOnline/ui-shop": "1289457692a029fb85ac1be6b98acfbd053d57d6"
+  },
+  "frozen": true
+}
