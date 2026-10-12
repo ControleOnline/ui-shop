@@ -6,13 +6,16 @@ import React, {
 } from 'react';
 
 import {
+  Dimensions,
   Modal,
+  Platform,
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
 
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useStore} from '@store';
@@ -99,7 +102,12 @@ export default function ShopShell({
 }) {
   const navigation = useNavigation();
   const route = useRoute();
-  const {width} = useWindowDimensions();
+  const {width, height} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const systemBottomInset =
+    insets.bottom > 0 || Platform.OS !== 'android'
+      ? insets.bottom
+      : Math.max(Dimensions.get('screen').height - height, 0);
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
@@ -307,6 +315,7 @@ export default function ShopShell({
       <Modal visible={accountOpen} transparent animationType="fade">
         <TouchableOpacity
           style={inlineStyle_345_10({
+            bottomInset: systemBottomInset,
             isMobile: isMobile,
             menuPalette: menuPalette,
           })}
@@ -486,10 +495,10 @@ export default function ShopShell({
                     imageUrl={buildFileUrl(accountUser?.avatar)}
                     email={accountUser?.email}
                     name={displayName}
-                    size={40}
+                    size={74}
                     backgroundColor={menuPalette.buttonBackground}
-                    borderColor={menuPalette.buttonText}
-                    borderWidth={0}
+                    borderColor={menuPalette.buttonText || '#FFFFFF'}
+                    borderWidth={3}
                     textColor={menuPalette.buttonText}
                     style={inlineStyle_485_22}
                     useGravatar
