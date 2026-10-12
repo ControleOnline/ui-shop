@@ -1,11 +1,14 @@
 {
   "version": "1.0.17",
-  "rc": 1,
-  "branch": "rc/1.0.17-rc.1",
+  "rc": 2,
+  "branch": "rc/1.0.17-rc.2",
   "baseMaster": "3c5e32a13319f11b6258c3f44e5d9e809c050dfa",
   "tasks": [18, 21],
   "repositories": {
-    "ControleOnline/ui-shop": "1289457692a029fb85ac1be6b98acfbd053d57d6"
+    "ControleOnline/ui-shop": "ca1f4855acb7aa62c6da506405a37b78fa7d5f8a"
   },
+  "compositionNotes": [
+    "rc.1 never reached the app: ui-shop was not published to npm (app pins 1.0.16). rc.2 only bumps version to 1.0.17 for npm publication; no code change."
+  ],
   "frozen": true
 }
