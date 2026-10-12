@@ -190,14 +190,12 @@ export default StyleSheet.create({
   },
   stampImageWrap: {
     alignItems: 'center',
-    width: 92,
-    height: 92,
+    bottom: 0,
     justifyContent: 'center',
-    top: '50%',
-    left: '50%',
-    marginLeft: -46,
-    marginTop: -46,
+    left: 0,
     position: 'absolute',
+    right: 0,
+    top: 0,
   },
   stampMarkMain: {
     fontSize: 22,
