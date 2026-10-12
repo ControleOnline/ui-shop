@@ -1,0 +1,13 @@
+{
+  "version": "1.0.18",
+  "rc": 1,
+  "branch": "rc/1.0.18-rc.1",
+  "baseMaster": "3c5e32a13319f11b6258c3f44e5d9e809c050dfa",
+  "tasks": [18, 21],
+  "repositories": { "ControleOnline/ui-shop": "6a54f8f9a55008b8f6e5cd8fe856b20db337ec80" },
+  "compositionNotes": [
+    "Base 5227ddc = content of npm @controleonline/ui-shop 1.0.16 (includes task-823 mainCompany). Only the deltas of tasks 18 and 21 on top.",
+    "Supersedes rc/1.0.17-rc.1 and rc.2, which were master-based and dropped mainCompany (broke theme)."
+  ],
+  "frozen": true
+}

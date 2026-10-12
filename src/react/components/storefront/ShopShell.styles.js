@@ -238,6 +238,7 @@ export const inlineStyle_332_18 = (
 
 export const inlineStyle_345_10 = (
   {
+    bottomInset: bottomInset = 0,
     isMobile: isMobile,
     menuPalette: menuPalette,
   },
@@ -247,7 +248,7 @@ export const inlineStyle_345_10 = (
   alignItems: 'center',
   justifyContent: isMobile ? 'flex-end' : 'flex-start',
   paddingTop: isMobile ? 0 : 92,
-  paddingBottom: isMobile ? 14 : 0,
+  paddingBottom: isMobile ? 14 + bottomInset : 0,
   paddingHorizontal: 12,
 });
 
