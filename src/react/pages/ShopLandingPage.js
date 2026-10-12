@@ -17,13 +17,13 @@ import {
 export default function ShopLandingPage() {
   const navigation = useNavigation();
   const {
-    defaultCompany,
+    mainCompany,
     homeEntries,
   } = useShopSettings();
-  const theme = pickTheme(defaultCompany);
+  const theme = pickTheme(mainCompany);
   const resolvedPrimaryEntry = homeEntries[0]?.key || '';
   const shouldRenderSales = resolvedPrimaryEntry === SHOP_HOME_OPTION_SALES;
-  const isLoadingDefaultCompany = !defaultCompany?.id;
+  const isLoadingMainCompany = !mainCompany?.id;
 
   useLayoutEffect(() => {
     navigation.setParams({showBottomCart: shouldRenderSales});
@@ -41,7 +41,7 @@ export default function ShopLandingPage() {
     return <ShopLoyaltyPage />;
   }
 
-  if (isLoadingDefaultCompany) {
+  if (isLoadingMainCompany) {
     return (
       <ShopShell hideHeader showSearch={false}>
         {() => (

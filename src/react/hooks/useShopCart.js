@@ -17,7 +17,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartActions = cartStore.actions;
   const cartGetters = cartStore.getters;
   const peopleStore = useStore('people');
-  const {currentCompany, defaultCompany} = peopleStore.getters;
+  const {currentCompany, mainCompany} = peopleStore.getters;
   const {
     clearSalesCompanySelection,
     isLoading: isLoadingSalesCompanies,
@@ -26,7 +26,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
     salesCompanyOptions,
     selectSalesCompany,
   } = useShopSalesCompany();
-  const providerId = normalizeNumericId(salesCompany?.id || defaultCompany?.id);
+  const providerId = normalizeNumericId(salesCompany?.id || mainCompany?.id);
   const cartId = cartGetters.item?.id || '';
   const cartExternalCode = String(
     cartGetters.item?.externalCode || cartGetters.item?.external_code || '',
@@ -100,7 +100,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
     cartGetters,
     clearSalesCompanySelection,
     currentCompany,
-    defaultCompany,
+    mainCompany,
     isLoadingSalesCompanies,
     refreshCart,
     requiresCompanySelection,

@@ -104,11 +104,6 @@ export default function ShopShell({
   const route = useRoute();
   const {width, height} = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  /*
-   * The account Modal is drawn in its own window, so on Android it can extend
-   * under the system navigation bar. Respect the bottom inset; when the inset
-   * is not reported, fall back to the screen/window height difference.
-   */
   const systemBottomInset =
     insets.bottom > 0 || Platform.OS !== 'android'
       ? insets.bottom
@@ -116,7 +111,7 @@ export default function ShopShell({
   const isMobile = width < 920;
 
   const authStore = useStore('auth');
-  const {defaultCompany, requiresCompanySelection, salesCompany} = useShopCart();
+  const {mainCompany, requiresCompanySelection, salesCompany} = useShopCart();
   const {
     bottomBarEnabled,
     companyConfigs,
@@ -129,7 +124,7 @@ export default function ShopShell({
   const {isLogged, user} = authStore.getters;
   const authActions = authStore.actions;
 
-  const theme = pickTheme(salesCompany || defaultCompany);
+  const theme = pickTheme(salesCompany || mainCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;
@@ -165,11 +160,11 @@ export default function ShopShell({
       ? 'selecione uma unidade'
       : salesCompany?.alias ||
         salesCompany?.name ||
-        defaultCompany?.alias ||
-        defaultCompany?.name ||
+        mainCompany?.alias ||
+        mainCompany?.name ||
         'Empresa';
   const purchaseCompanyLabel = displayCompany;
-  const headerCompany = salesCompany || defaultCompany || null;
+  const headerCompany = salesCompany || mainCompany || null;
 
   const shellBackground = theme.background;
   const surface = theme.surface;
@@ -500,10 +495,10 @@ export default function ShopShell({
                     imageUrl={buildFileUrl(accountUser?.avatar)}
                     email={accountUser?.email}
                     name={displayName}
-                    size={40}
+                    size={74}
                     backgroundColor={menuPalette.buttonBackground}
-                    borderColor={menuPalette.buttonText}
-                    borderWidth={0}
+                    borderColor={menuPalette.buttonText || '#FFFFFF'}
+                    borderWidth={3}
                     textColor={menuPalette.buttonText}
                     style={inlineStyle_485_22}
                     useGravatar

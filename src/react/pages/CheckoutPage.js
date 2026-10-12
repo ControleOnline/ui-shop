@@ -40,7 +40,7 @@ export default function CheckoutPage() {
     sessionChecked,
     cart,
     sellerCompany,
-    defaultCompany,
+    mainCompany,
     itemsCount,
     cartTotal,
     hasDeliveryAddress,
@@ -95,7 +95,7 @@ export default function CheckoutPage() {
     handleConfirmDeliveryChange,
   } = payments;
 
-  const theme = pickTheme(sellerCompany || defaultCompany);
+  const theme = pickTheme(sellerCompany || mainCompany);
 
   if (sessionChecked && !isLogged) {
     return (
