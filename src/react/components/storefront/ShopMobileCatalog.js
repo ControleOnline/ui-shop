@@ -37,7 +37,7 @@ export default function ShopMobileCatalog({
   cart = null,
   categories = [],
   company = null,
-  mainCompany = null,
+  defaultCompany = null,
   hasMoreCategories = false,
   hasMoreProducts = false,
   isLoadingCatalog = false,
@@ -321,7 +321,7 @@ export default function ShopMobileCatalog({
                 key={String(product?.id || product?.['@id'] || product?.product)}
                 cart={cart}
                 company={company}
-                mainCompany={mainCompany}
+                defaultCompany={defaultCompany}
                 product={product}
                 refreshCart={refreshCart}
               />
@@ -340,7 +340,7 @@ export default function ShopMobileCatalog({
             cart={cart}
             category={resolvedActiveCategory}
             company={company}
-            mainCompany={mainCompany}
+            defaultCompany={defaultCompany}
             isLoading={isLoadingCatalog}
             isAllProducts={isAllProductsCatalog}
             isLoadingMore={isLoadingMoreProducts}

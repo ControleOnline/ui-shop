@@ -14,8 +14,8 @@ import Profile from '@controleonline/ui-people/src/react/pages/Profile';
 export default function ShopProfilePage() {
   const navigation = useNavigation();
   const authStore = useStore('auth');
-  const {mainCompany} = useShopCart();
-  const theme = pickTheme(mainCompany);
+  const {defaultCompany} = useShopCart();
+  const theme = pickTheme(defaultCompany);
 
   const {isLogged, sessionChecked} = authStore.getters;
 
