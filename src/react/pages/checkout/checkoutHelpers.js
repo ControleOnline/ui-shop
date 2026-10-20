@@ -6,36 +6,6 @@ import {
   getPaymentOptionWalletId,
 } from '@controleonline/ui-common/src/react/utils/paymentOptions';
 import {normalizeEntityId} from '@controleonline/ui-common/src/react/utils/commercialDocumentOrders';
-import {requiresDeliveryAddress} from '@controleonline/ui-shop/src/react/utils/shopQrContext';
-
-export {requiresDeliveryAddress};
-
-/**
- * Resolve fulfillment type from cart / order payload (fail-closed → delivery).
- */
-export const resolveFulfillmentType = (cart, order) => {
-  const source = order || cart || {};
-  const raw =
-    source.fulfillmentType ||
-    source.fulfillment_type ||
-    source.fulfillment ||
-    source.orderType ||
-    source.order_type ||
-    source.deliveryType ||
-    source.delivery_type ||
-    '';
-  return String(raw || '')
-    .trim()
-    .toLowerCase();
-};
-
-export const shouldCollectDeliveryAddress = (cart, order) => {
-  const type = resolveFulfillmentType(cart, order);
-  // Empty type: keep legacy behaviour (show address) until cart declares type.
-  if (!type) return true;
-  return requiresDeliveryAddress(type);
-};
-
 
 
 export const SHOP_COLLECTION_ITEMS_PER_PAGE = 50;
@@ -102,7 +72,7 @@ export const isSelectableDeliveryQuote = quote =>
 
 export const formatApiError = error => {
   if (!error) {
-    return 'Não foi possível concluir a solicitação.';
+    return 'Nao foi possivel concluir a solicitacao.';
   }
 
   if (typeof error === 'string') {
@@ -113,7 +83,7 @@ export const formatApiError = error => {
     error?.message ||
     error?.errmsg ||
     error?.data?.message ||
-    'Não foi possível concluir a solicitação.'
+    'Nao foi possivel concluir a solicitacao.'
   );
 };
 

@@ -40,11 +40,10 @@ export default function CheckoutPage() {
     sessionChecked,
     cart,
     sellerCompany,
-    mainCompany,
+    defaultCompany,
     itemsCount,
     cartTotal,
     hasDeliveryAddress,
-    showAddressSection,
     cartAddressDestinationIri,
     shouldShowAddressForm,
     addressForm,
@@ -96,7 +95,7 @@ export default function CheckoutPage() {
     handleConfirmDeliveryChange,
   } = payments;
 
-  const theme = pickTheme(sellerCompany || mainCompany);
+  const theme = pickTheme(sellerCompany || defaultCompany);
 
   if (sessionChecked && !isLogged) {
     return (
@@ -108,7 +107,7 @@ export default function CheckoutPage() {
           <ShopAuthRequiredState
             theme={theme}
             title="Entre para finalizar o pedido"
-            description="Para concluir a compra precisamos identificar o cliente e o endereço de entrega."
+            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
           />
         )}
       </ShopShell>
@@ -160,7 +159,6 @@ export default function CheckoutPage() {
               </View>
             )}
 
-            {showAddressSection !== false && (
             <CheckoutAddressSection
               theme={theme}
               hasDeliveryAddress={hasDeliveryAddress}
@@ -183,7 +181,6 @@ export default function CheckoutPage() {
               deliveryFee={deliveryFee}
               deliveryFeeSourceLabel={deliveryFeeSourceLabel}
             />
-            )}
 
             <CheckoutPaymentSection
               theme={theme}

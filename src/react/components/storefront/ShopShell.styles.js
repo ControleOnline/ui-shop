@@ -19,7 +19,6 @@ export const inlineStyle_121_10 = (
   {
     isMobile: isMobile,
     shellPadding: shellPadding,
-    showSearch: showSearch = true,
   },
 ) => ({
   paddingHorizontal: shellPadding,
@@ -27,12 +26,7 @@ export const inlineStyle_121_10 = (
   paddingBottom: isMobile ? 10 : 12,
   gap: 8,
   ...(isMobile
-    ? showSearch
-      ? {
-          flexDirection: 'row',
-          alignItems: 'center',
-        }
-      : {}
+    ? {}
     : {
         flexDirection: 'row',
         alignItems: 'center',
@@ -45,7 +39,6 @@ export const inlineStyle_128_12 = ({isMobile, showSearch = true} = {}) => ({
   alignItems: 'center',
   justifyContent: isMobile ? (showSearch ? 'center' : 'space-between') : 'flex-start',
   gap: 12,
-  flexShrink: isMobile ? 0 : undefined,
 });
 
 export const inlineStyle_135_14 = {
@@ -157,7 +150,7 @@ export const inlineStyle_241_16 = ({isMobile, theme} = {}) => ({
 export const inlineStyle_255_12 = ({isMobile, theme}) => ({
   flexDirection: 'row',
   alignItems: 'center',
-  flex: 1,
+  flex: isMobile ? undefined : 1,
   backgroundColor: isMobile ? theme.surface : 'transparent',
   borderRadius: isMobile ? 18 : 0,
   borderWidth: isMobile ? 1 : 0,

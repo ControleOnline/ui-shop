@@ -22,30 +22,30 @@ export default function useShopSettings() {
   const peopleStore = useStore('people');
   const configsStore = useStore('configs');
   const {isLogged} = authStore.getters;
-  const {mainCompany, currentCompany} = peopleStore.getters;
+  const {defaultCompany, currentCompany} = peopleStore.getters;
   const {items: runtimeConfigs} = configsStore.getters;
 
-  const mainCompanyId = normalizeShopEntityId(
-    mainCompany?.id || mainCompany?.['@id'],
+  const defaultCompanyId = normalizeShopEntityId(
+    defaultCompany?.id || defaultCompany?.['@id'],
   );
   const currentCompanyId = normalizeShopEntityId(
     currentCompany?.id || currentCompany?.['@id'],
   );
 
   const companyConfigs = useMemo(() => {
-    const mainCompanyConfigs = isConfigMap(mainCompany?.configs)
-      ? mainCompany.configs
+    const defaultCompanyConfigs = isConfigMap(defaultCompany?.configs)
+      ? defaultCompany.configs
       : {};
 
     if (
       isLogged &&
-      mainCompanyId &&
+      defaultCompanyId &&
       currentCompanyId &&
-      mainCompanyId === currentCompanyId &&
+      defaultCompanyId === currentCompanyId &&
       isConfigMap(runtimeConfigs)
     ) {
       return {
-        ...mainCompanyConfigs,
+        ...defaultCompanyConfigs,
         ...runtimeConfigs,
       };
     }
@@ -53,19 +53,19 @@ export default function useShopSettings() {
     if (
       isLogged &&
       isConfigMap(runtimeConfigs) &&
-      (!mainCompanyId || hasShopConfigEntries(runtimeConfigs))
+      (!defaultCompanyId || hasShopConfigEntries(runtimeConfigs))
     ) {
       return {
-        ...mainCompanyConfigs,
+        ...defaultCompanyConfigs,
         ...runtimeConfigs,
       };
     }
 
-    return mainCompanyConfigs;
+    return defaultCompanyConfigs;
   }, [
     currentCompanyId,
-    mainCompany?.configs,
-    mainCompanyId,
+    defaultCompany?.configs,
+    defaultCompanyId,
     isLogged,
     runtimeConfigs,
   ]);
@@ -125,7 +125,7 @@ export default function useShopSettings() {
     franchiseLocatorEnabled,
     companyConfigs,
     currentCompany,
-    mainCompany,
+    defaultCompany,
     homeEntries,
     hasMultipleHomeOptions: homeEntries.length > 1,
     primaryEntryRouteName,

@@ -104,9 +104,9 @@ export default function CardsPage() {
   const navigation = useNavigation();
   const authStore = useStore('auth');
   const {isLogged, sessionChecked} = authStore.getters;
-  const {mainCompany, currentCompany, salesCompany} = useShopCart();
+  const {defaultCompany, currentCompany, salesCompany} = useShopCart();
   const {companyConfigs} = useShopSettings();
-  const theme = pickTheme(salesCompany || mainCompany);
+  const theme = pickTheme(salesCompany || defaultCompany);
   const effectiveCompanyConfigs = useMemo(() => {
     if (salesCompany?.configs && typeof salesCompany.configs === 'object') {
       return salesCompany.configs;

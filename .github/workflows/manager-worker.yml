@@ -3,8 +3,8 @@ name: Manager Worker
 on:
   workflow_dispatch:
 
-# PAUSA CTO ControleOnline/agents-mcp#201 (2026-08-29): orquestracao e
-# dispatch automaticos desativados. Disponivel somente via execucao manual.
+# PAUSA CTO ControleOnline/agents-mcp#201 (2026-08-29)
+# Trigger original desativado: push em master, dev, staging.
 
 permissions:
   contents: read

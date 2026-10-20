@@ -33,20 +33,20 @@ export default function ShopDownloadPage() {
   const navigation = useNavigation();
   const peopleStore = useStore('people');
   const peopleActions = peopleStore.actions;
-  const {mainCompany} = useShopCart();
+  const {defaultCompany} = useShopCart();
   const [isDownloading, setIsDownloading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const isActiveRef = useRef(false);
   const hasStartedRef = useRef(false);
-  const theme = pickTheme(mainCompany);
+  const theme = pickTheme(defaultCompany);
 
   const companyName = useMemo(
     () =>
-      mainCompany?.alias ||
-      mainCompany?.name ||
-      `Empresa ${mainCompany?.id || ''}`.trim(),
-    [mainCompany?.alias, mainCompany?.id, mainCompany?.name],
+      defaultCompany?.alias ||
+      defaultCompany?.name ||
+      `Empresa ${defaultCompany?.id || ''}`.trim(),
+    [defaultCompany?.alias, defaultCompany?.id, defaultCompany?.name],
   );
 
   const startDownload = useCallback(async () => {
@@ -54,7 +54,7 @@ export default function ShopDownloadPage() {
       return;
     }
 
-    if (!mainCompany?.id) {
+    if (!defaultCompany?.id) {
       return;
     }
 
@@ -69,10 +69,10 @@ export default function ShopDownloadPage() {
 
     try {
       const result = await downloadMenuCatalog({
-        companyId: mainCompany.id,
+        companyId: defaultCompany.id,
         companyName,
         modelReference:
-          mainCompany?.configs?.[MENU_CATALOG_MODEL_CONFIG_KEY] || '',
+          defaultCompany?.configs?.[MENU_CATALOG_MODEL_CONFIG_KEY] || '',
       });
 
       if (!isActiveRef.current) {
@@ -86,14 +86,14 @@ export default function ShopDownloadPage() {
       }
 
       setErrorMessage(
-        error?.message || 'Não foi possível gerar o cardápio da empresa.',
+        error?.message || 'Nao foi possivel gerar o cardapio da empresa.',
       );
     } finally {
       if (isActiveRef.current) {
         setIsDownloading(false);
       }
     }
-  }, [companyName, mainCompany?.configs, mainCompany?.id]);
+  }, [companyName, defaultCompany?.configs, defaultCompany?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -102,17 +102,17 @@ export default function ShopDownloadPage() {
       hasStartedRef.current = false;
 
       const run = async () => {
-        if (!mainCompany?.id) {
+        if (!defaultCompany?.id) {
           setIsDownloading(true);
           setErrorMessage('');
           setSuccessMessage('');
 
           try {
-            await peopleActions.mainCompany();
+            await peopleActions.defaultCompany();
           } catch (error) {
             if (!cancelled) {
               setErrorMessage(
-                error?.message || 'Não foi possível identificar a empresa da vitrine.',
+                error?.message || 'Nao foi possivel identificar a empresa da vitrine.',
               );
               setIsDownloading(false);
             }
@@ -132,7 +132,7 @@ export default function ShopDownloadPage() {
         cancelled = true;
         isActiveRef.current = false;
       };
-    }, [mainCompany?.id, peopleActions, startDownload]),
+    }, [defaultCompany?.id, peopleActions, startDownload]),
   );
 
   return (

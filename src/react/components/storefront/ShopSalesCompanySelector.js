@@ -93,7 +93,7 @@ export default function ShopSalesCompanySelector({
                   <Icon name="place" size={16} color={theme.primary} />
                   <View style={styles.metaCopy}>
                     <Text style={[styles.metaPrimary, {color: theme.text}]}>
-                      {address.primary || 'Endereço indisponível'}
+                      {address.primary || 'Endereco indisponivel'}
                     </Text>
                     {!!address.secondary && (
                       <Text style={[styles.metaSecondary, {color: theme.muted}]}>

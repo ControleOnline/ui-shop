@@ -7,7 +7,6 @@ import {
   normalizeNumericId,
   readShopSessionClientId,
 } from '@controleonline/ui-shop/src/react/utils/shopSession';
-import {readStoredQrContext} from '@controleonline/ui-shop/src/react/utils/shopQrContext';
 
 let cartRequestInFlight = null;
 let cartRequestKey = '';
@@ -18,7 +17,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
   const cartActions = cartStore.actions;
   const cartGetters = cartStore.getters;
   const peopleStore = useStore('people');
-  const {currentCompany, mainCompany} = peopleStore.getters;
+  const {currentCompany, defaultCompany} = peopleStore.getters;
   const {
     clearSalesCompanySelection,
     isLoading: isLoadingSalesCompanies,
@@ -27,14 +26,11 @@ export default function useShopCart({autoRefresh = false} = {}) {
     salesCompanyOptions,
     selectSalesCompany,
   } = useShopSalesCompany();
-  const providerId = normalizeNumericId(salesCompany?.id || mainCompany?.id);
+  const providerId = normalizeNumericId(salesCompany?.id || defaultCompany?.id);
   const cartId = cartGetters.item?.id || '';
   const cartExternalCode = String(
     cartGetters.item?.externalCode || cartGetters.item?.external_code || '',
   ).trim();
-  const qrContext = readStoredQrContext();
-  const qrExternalCode = String(qrContext?.externalCode || '').trim();
-  const effectiveExternalCode = cartExternalCode || qrExternalCode;
 
   const refreshCart = useCallback(() => {
     const appType = String(app_type || '').toUpperCase();
@@ -71,7 +67,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
         })
       : cartActions.discoveryAnonymousCart({
           provider: providerId,
-          externalCode: effectiveExternalCode,
+          externalCode: cartExternalCode,
         }))
       .finally(() => {
         if (cartRequestInFlight?.key === key) {
@@ -104,7 +100,7 @@ export default function useShopCart({autoRefresh = false} = {}) {
     cartGetters,
     clearSalesCompanySelection,
     currentCompany,
-    mainCompany,
+    defaultCompany,
     isLoadingSalesCompanies,
     refreshCart,
     requiresCompanySelection,
