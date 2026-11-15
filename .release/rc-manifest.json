@@ -1,13 +1,12 @@
 {
-  "version": "1.0.18",
+  "version": "1.0.20",
   "rc": 1,
-  "branch": "rc/1.0.18-rc.1",
-  "baseMaster": "3c5e32a13319f11b6258c3f44e5d9e809c050dfa",
-  "tasks": [18, 21],
-  "repositories": { "ControleOnline/ui-shop": "6a54f8f9a55008b8f6e5cd8fe856b20db337ec80" },
+  "branch": "rc/1.0.20-rc.1",
+  "baseMaster": "379189640577e805574789ea7fa56aed12b84a45",
+  "tasks": [28],
+  "repositories": { "ControleOnline/ui-shop": "e69b5eb62a58ea98f2aa990c62eeeecfe5cc03c1" },
   "compositionNotes": [
-    "Base 5227ddc = content of npm @controleonline/ui-shop 1.0.16 (includes task-823 mainCompany). Only the deltas of tasks 18 and 21 on top.",
-    "Supersedes rc/1.0.17-rc.1 and rc.2, which were master-based and dropped mainCompany (broke theme)."
+    "Task 28: header do Shop segue o tema do Manager (headerBackground-{modo}, headerIcon, borda). Base origin/master."
   ],
   "frozen": true
 }
