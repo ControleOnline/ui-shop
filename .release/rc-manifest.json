@@ -1,12 +1,12 @@
 {
   "version": "1.0.20",
-  "rc": 1,
-  "branch": "rc/1.0.20-rc.1",
+  "rc": 2,
+  "branch": "rc/1.0.20-rc.2",
   "baseMaster": "379189640577e805574789ea7fa56aed12b84a45",
-  "tasks": [28],
-  "repositories": { "ControleOnline/ui-shop": "e69b5eb62a58ea98f2aa990c62eeeecfe5cc03c1" },
+  "tasks": [28, 33],
+  "repositories": { "ControleOnline/ui-shop": "e476b0beb03647972abefb5fc7e53507a47bf661" },
   "compositionNotes": [
-    "Task 28: header do Shop segue o tema do Manager (headerBackground-{modo}, headerIcon, borda). Base origin/master."
+    "Task 28: header do Shop segue o tema do Manager. Task 33: repository.url para publicar no npm. Supersedes rc.1 (publish falhou com E422)."
   ],
   "frozen": true
 }
