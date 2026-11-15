@@ -125,8 +125,14 @@ const resolveReadableColor = ({
   return readableCandidate || preferred || fallback;
 };
 
-export const pickTheme = source => {
+// Manager resolves header tokens from `<token>-<mode>` transport keys first and
+// falls back to the plain token. The Shop mirrors that for the header only.
+const pickModeColor = (themeColors, token, mode) =>
+  pickColor(themeColors[`${token}-${mode}`], themeColors[token]);
+
+export const pickTheme = (source, mode = 'light') => {
   const themeColors = resolveThemeColors(source);
+  const themeMode = mode === 'dark' ? 'dark' : 'light';
   const pageBackground = pickColor(
     themeColors.pageBackground,
     themeColors.background,
@@ -138,10 +144,16 @@ export const pickTheme = source => {
     '#FFFFFF',
   );
   const headerBackground = pickColor(
-    themeColors.headerBackground,
+    pickModeColor(themeColors, 'headerBackground', themeMode),
     themeColors['header-primary'],
     themeColors.primary,
     '#0B3A53',
+  );
+  const headerBottomBorder = pickColor(
+    pickModeColor(themeColors, 'headerBorder', themeMode),
+    themeColors.cardBorder,
+    themeColors.border,
+    '#D7E1EC',
   );
   const headerBorder = pickColor(
     themeColors.headerBorder,
@@ -202,6 +214,19 @@ export const pickTheme = source => {
     themeColors.modalShadow,
     '#000000',
   );
+  const headerIcon = resolveReadableColor({
+    backgrounds: [headerBackground],
+    candidates: [
+      pickModeColor(themeColors, 'headerIcon', themeMode),
+      pickModeColor(themeColors, 'headerText', themeMode),
+      buttonBackground,
+      '#FFFFFF',
+      '#111827',
+    ],
+    fallback: buttonBackground,
+    minimumRatio: 3,
+    preferred: pickModeColor(themeColors, 'headerIcon', themeMode),
+  });
   const textBackgrounds = [cardBackground, pageBackground];
   const textPrimary = resolveReadableColor({
     backgrounds: textBackgrounds,
@@ -265,6 +290,8 @@ export const pickTheme = source => {
     pageBackground,
     cardBackground,
     headerBackground,
+    headerBottomBorder,
+    headerIcon,
     headerBorder,
     buttonBackground,
     buttonText,
