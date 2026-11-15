@@ -173,7 +173,7 @@ export default function ShopMobileStoreHeader({
         <Icon
           name={iconName}
           size={shell ? 22 : 22}
-          color={isMobile ? theme.primary : '#fff'}
+          color={isMobile ? theme.headerIcon : '#fff'}
         />
       </TouchableOpacity>
     );
