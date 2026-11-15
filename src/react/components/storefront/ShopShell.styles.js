@@ -13,6 +13,8 @@ export const inlineStyle_119_12 = (
   },
 ) => ({
   backgroundColor: theme.header,
+  borderBottomWidth: 1,
+  borderBottomColor: theme.headerBottomBorder,
 });
 
 export const inlineStyle_121_10 = (
@@ -135,9 +137,9 @@ export const inlineStyle_228_18 = ({isMobile, theme} = {}) => ({
   height: 36,
   borderRadius: 18,
   backgroundColor:
-    !isMobile || !theme ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
+    !isMobile || !theme ? 'rgba(255,255,255,0.2)' : `${theme.headerIcon}1A`,
   borderWidth: isMobile && theme ? 1 : 0,
-  borderColor: isMobile && theme ? `${theme.primary}22` : 'transparent',
+  borderColor: isMobile && theme ? `${theme.headerIcon}33` : 'transparent',
   alignItems: 'center',
   justifyContent: 'center',
 });
