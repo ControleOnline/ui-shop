@@ -182,7 +182,7 @@ export default function ShopMobileStoreHeader({
         <Icon
           name={iconName}
           size={shell ? 22 : 22}
-          color={isMobile ? theme.primary : theme.onPrimary}
+          color={isMobile ? theme.headerIcon : theme.onPrimary}
         />
       </TouchableOpacity>
     );
