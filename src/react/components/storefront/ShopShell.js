@@ -1,3 +1,5 @@
+// fluxo: compra-fluxo | etapa: checkout-home-header
+// wiki: https://github.com/ControleOnline/app-community/wiki/Smoke-Test-Flows
 import React, {
   useCallback,
   useLayoutEffect,
@@ -104,6 +106,11 @@ export default function ShopShell({
   const route = useRoute();
   const {width, height} = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  /*
+   * The account Modal is drawn in its own window, so on Android it can extend
+   * under the system navigation bar. Respect the bottom inset; when the inset
+   * is not reported, fall back to the screen/window height difference.
+   */
   const systemBottomInset =
     insets.bottom > 0 || Platform.OS !== 'android'
       ? insets.bottom
@@ -225,9 +232,10 @@ export default function ShopShell({
     return `${baseName} - ${sectionName}`;
   }, [purchaseCompanyLabel, resolvedActiveEntryLabel, resolvedActiveHomeEntry]);
   const isHomeEntryRoute = HOME_ENTRY_ROUTE_NAMES.has(route?.name);
-  const showHomeAction =
-    !isHomeEntryRoute && route?.name !== primaryEntryRouteName;
-  const menuIconName = isHomeEntryRoute ? 'menu' : 'account-circle';
+  // Every non-home route keeps the same left Home affordance as the canonical shell.
+  const showHomeAction = !isHomeEntryRoute;
+  // The right action is always the canonical menu; account actions remain inside it.
+  const menuIconName = 'menu';
   const showConfiguredBottomBar =
     showHomeEntryControls && bottomBarEnabled && homeEntries.length > 1;
   const bottomBarOffset = showBottomCart === true ? 88 : 18;

@@ -86,7 +86,7 @@ export default function ShopDownloadPage() {
       }
 
       setErrorMessage(
-        error?.message || 'Nao foi possivel gerar o cardapio da empresa.',
+        error?.message || 'Não foi possível gerar o cardápio da empresa.',
       );
     } finally {
       if (isActiveRef.current) {
@@ -112,7 +112,7 @@ export default function ShopDownloadPage() {
           } catch (error) {
             if (!cancelled) {
               setErrorMessage(
-                error?.message || 'Nao foi possivel identificar a empresa da vitrine.',
+                error?.message || 'Não foi possível identificar a empresa da vitrine.',
               );
               setIsDownloading(false);
             }
