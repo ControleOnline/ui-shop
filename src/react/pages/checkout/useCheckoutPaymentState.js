@@ -120,7 +120,7 @@ export default function useCheckoutPaymentState(core) {
   } else if (configuredDeliveryFee > 0) {
     deliveryFeeSourceLabel = 'Taxa fixa configurada pela loja.';
   } else if ((core.deliveryQuotes || []).length > 0) {
-    deliveryFeeSourceLabel = 'Selecione uma cotacao disponivel para aplicar a taxa.';
+    deliveryFeeSourceLabel = 'Selecione uma cotação disponível para aplicar a taxa.';
   }
   const financialTotal = cartTotal + deliveryFee;
 

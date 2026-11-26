@@ -44,6 +44,7 @@ export default function CheckoutPage() {
     itemsCount,
     cartTotal,
     hasDeliveryAddress,
+    showAddressSection,
     cartAddressDestinationIri,
     shouldShowAddressForm,
     addressForm,
@@ -107,7 +108,7 @@ export default function CheckoutPage() {
           <ShopAuthRequiredState
             theme={theme}
             title="Entre para finalizar o pedido"
-            description="Para concluir a compra precisamos identificar o cliente e o endereco de entrega."
+            description="Para concluir a compra precisamos identificar o cliente e o endereço de entrega."
           />
         )}
       </ShopShell>
@@ -159,6 +160,7 @@ export default function CheckoutPage() {
               </View>
             )}
 
+            {showAddressSection !== false && (
             <CheckoutAddressSection
               theme={theme}
               hasDeliveryAddress={hasDeliveryAddress}
@@ -181,6 +183,7 @@ export default function CheckoutPage() {
               deliveryFee={deliveryFee}
               deliveryFeeSourceLabel={deliveryFeeSourceLabel}
             />
+            )}
 
             <CheckoutPaymentSection
               theme={theme}
