@@ -1,12 +1,20 @@
 {
-  "version": "1.0.20",
-  "rc": 2,
-  "branch": "rc/1.0.20-rc.2",
-  "baseMaster": "379189640577e805574789ea7fa56aed12b84a45",
-  "tasks": [28, 33],
-  "repositories": { "ControleOnline/ui-shop": "e476b0beb03647972abefb5fc7e53507a47bf661" },
-  "compositionNotes": [
-    "Task 28: header do Shop segue o tema do Manager. Task 33: repository.url para publicar no npm. Supersedes rc.1 (publish falhou com E422)."
+  "version": "1.0.21",
+  "rc": 1,
+  "branch": "rc/1.0.21-rc.1",
+  "baseMaster": "15062f896a4a1723c09526c2cc8262e5b7059aff",
+  "baseTag": "v1.0.20",
+  "tasks": [
+    1761
   ],
-  "frozen": true
+  "taskRepository": "ControleOnline/app-community",
+  "frozen": true,
+  "repositories": {
+    "ControleOnline/ui-shop": "65e98928df232a4df0d673d0d321cc2c45bc897f"
+  },
+  "sources": {
+    "versão de produção v1.0.20": "f907d291af0c8db83e03a6820dc39693be735e3c",
+    "staging": "f907d291af0c8db83e03a6820dc39693be735e3c",
+    "dev": "17f6310fe852d5716ff18734452ee4e471dc3563"
+  }
 }
